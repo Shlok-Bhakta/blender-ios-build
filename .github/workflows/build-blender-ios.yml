@@ -75,7 +75,7 @@ jobs:
           path: |
             lib/ios_arm64
             .git/modules/lib/ios_arm64
-          key: ${{ runner.os }}-ios-arm64-libs-${{ steps.ios-libs-cache-key.outputs.sha }}-bootstrap-v3
+          key: ${{ runner.os }}-ios-arm64-libs-${{ steps.ios-libs-cache-key.outputs.sha }}-bootstrap-v4
 
       - name: Fetch prebuilt iOS libraries
         if: steps.ios-libs-cache.outputs.cache-hit != 'true'
@@ -83,21 +83,28 @@ jobs:
 
       - name: Bootstrap missing iOS prebuilts
         run: |
-          if [ ! -f lib/ios_arm64/fmt/include/fmt/core.h ]; then
+          if [ ! -f lib/ios_arm64/fmt/include/fmt/core.h ] || ! grep -q '#define FMT_VERSION 120100' lib/ios_arm64/fmt/include/fmt/core.h; then
             bash ./build_files/utils/bootstrap_ios_fmt.sh
           fi
           if [ ! -f lib/ios_arm64/eigen/share/eigen3/cmake/Eigen3Config.cmake ]; then
             bash ./build_files/utils/bootstrap_ios_eigen.sh
           fi
+          if [ -d lib/ios_arm64/openimageio/include/OpenImageIO/detail/fmt ]; then
+            bash ./build_files/utils/repair_ios_openimageio_fmt.sh
+          fi
 
       - name: Verify bootstrapped iOS prebuilts
         run: |
-          if [ ! -f lib/ios_arm64/fmt/include/fmt/core.h ]; then
+          if [ ! -f lib/ios_arm64/fmt/include/fmt/core.h ] || ! grep -q '#define FMT_VERSION 120100' lib/ios_arm64/fmt/include/fmt/core.h; then
             echo "ERROR: fmt not found in lib/ios_arm64 after bootstrap." >&2
             exit 1
           fi
           if [ ! -f lib/ios_arm64/eigen/share/eigen3/cmake/Eigen3Config.cmake ]; then
             echo "ERROR: Eigen3 config not found in lib/ios_arm64 after bootstrap." >&2
+            exit 1
+          fi
+          if [ -f lib/ios_arm64/openimageio/include/OpenImageIO/detail/fmt/format.h ] && ! grep -q '^#include <fmt/format.h>$' lib/ios_arm64/openimageio/include/OpenImageIO/detail/fmt/format.h; then
+            echo "ERROR: OpenImageIO fmt detail headers were not repaired." >&2
             exit 1
           fi
 
@@ -108,7 +115,7 @@ jobs:
           path: |
             lib/ios_arm64
             .git/modules/lib/ios_arm64
-          key: ${{ runner.os }}-ios-arm64-libs-${{ steps.ios-libs-cache-key.outputs.sha }}-bootstrap-v3
+          key: ${{ runner.os }}-ios-arm64-libs-${{ steps.ios-libs-cache-key.outputs.sha }}-bootstrap-v4
 
       - name: Generate Xcode project
         run: cmake -G Xcode -S . -B build_ios
