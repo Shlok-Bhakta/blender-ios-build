@@ -127,20 +127,17 @@ jobs:
 
       - name: Build cross-compilation tools
         run: |
-          xcodebuild \
-            -project build_ios/Blender.xcodeproj \
-            -target blender_cross_tools_compile \
-            -configuration Release \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+          mkdir -p build_ios/build_darwin_tools/Release
+          cmake -S . -B build_ios/build_darwin_tools/Release \
+            -G Ninja \
+            -DWITH_CROSSCOMPILED_TOOLS=ON \
+            -DAPPLE_TARGET_DEVICE=macos \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build build_ios/build_darwin_tools/Release --target makesdna makesrna msgfmt datatoc shader_tool glsl_preprocess
           echo "=== Checking cross-compile tools ==="
-          ls -la build_ios/build_darwin_tools/ 2>&1 || echo "build_darwin_tools not found"
-          ls -la build_ios/build_darwin_tools/*/bin/ 2>&1 || echo "bin dirs not found"
-          find build_ios/build_darwin_tools -name "makesdna" -o -name "shader_tool" 2>&1 || echo "tools not found"
-          echo "=== Checking if blender_cross_tools actually built ==="
-          ls -la build_ios/build_darwin_tools/Release/bin/ 2>&1 || echo "Release/bin not found"
-          ls -la ../build_ios/build_darwin_tools/Release/bin/ 2>&1 || echo "Parent build_darwin_tools/Release/bin not found"
+          ls -la build_ios/build_darwin_tools/Release/bin/ 2>&1 || echo "bin dir not found"
+          ls -la build_ios/build_darwin_tools/Release/bin/makesdna 2>&1 || echo "makesdna not found"
+          ls -la build_ios/build_darwin_tools/Release/bin/shader_tool 2>&1 || echo "shader_tool not found"
 
       - name: Build Blender.app for iOS
         run: |
