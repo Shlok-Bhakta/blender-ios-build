@@ -100,25 +100,6 @@ jobs:
             .git/modules/lib/ios_arm64
           key: ${{ runner.os }}-ios-arm64-libs-${{ steps.ios-libs-cache-key.outputs.sha }}-bootstrap-v3
 
-      - name: Build cross-compilation tools
-        run: |
-          rm -rf build_ios/build_darwin_tools
-          mkdir -p build_ios/build_darwin_tools/Release
-          cmake -S . -B build_ios/build_darwin_tools/Release \
-            -G "Unix Makefiles" \
-            -UCMAKE_APPLE_CROSSPLATFORM \
-            -DWITH_APPLE_CROSSPLATFORM=ON \
-            -DWITH_PYTHON=OFF \
-            -DAPPLE_TARGET_DEVICE=macos \
-            -DCMAKE_OSX_ARCHITECTURES=arm64 \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DLIBDIR=${PWD}/lib/ios_arm64
-          cmake --build build_ios/build_darwin_tools/Release --target makesdna makesrna msgfmt datatoc shader_tool glsl_preprocess
-          echo "=== Checking cross-compile tools ==="
-          ls -la build_ios/build_darwin_tools/Release/bin/ 2>&1 || echo "bin dir not found"
-          ls -la build_ios/build_darwin_tools/Release/bin/makesdna 2>&1 || echo "makesdna not found"
-          ls -la build_ios/build_darwin_tools/Release/bin/shader_tool 2>&1 || echo "shader_tool not found"
-
       - name: Verify bootstrapped iOS prebuilts
         run: |
           if [ ! -f lib/ios_arm64/fmt/include/fmt/core.h ]; then
@@ -143,6 +124,13 @@ jobs:
 
       - name: List Xcode targets
         run: xcodebuild -project build_ios/Blender.xcodeproj -list
+
+      - name: Build cross-compilation tools
+        run: |
+          cmake --build build_ios/build_darwin_tools/Release --target makesdna makesrna msgfmt datatoc shader_tool glsl_preprocess || cmake --build build_ios/build_darwin_tools --target makesdna makesrna msgfmt datatoc shader_tool glsl_preprocess
+          echo "=== Checking cross-compile tools ==="
+          ls -la build_ios/build_darwin_tools/*/bin/ 2>&1 || echo "bin dir not found"
+          ls -la build_ios/build_darwin_tools/*/bin/makesdna 2>&1 || echo "makesdna not found"
 
       - name: Build Blender.app for iOS
         run: |
