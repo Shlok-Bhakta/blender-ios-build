@@ -229,8 +229,7 @@ jobs:
             -DWITH_TBB=OFF \
             -DWITH_TBB_MALLOC_PROXY=OFF \
             -DWITH_ASSERT_RELEASE=OFF \
-            -DWITH_ASSERT_ABORT=ON \
-            -DLIBDIR=${PWD}/lib/ios_arm64
+            -DWITH_ASSERT_ABORT=ON
           
           cmake --build build_ios/build_darwin_tools --target makesdna makesrna datatoc shader_tool
           
