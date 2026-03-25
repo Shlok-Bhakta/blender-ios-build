@@ -79,7 +79,8 @@ jobs:
 
       - name: Fetch prebuilt iOS libraries
         if: steps.ios-libs-cache.outputs.cache-hit != 'true'
-        run: python3 ./build_files/utils/make_update.py --use-ios-libraries
+        run: |
+          python3 ./build_files/utils/make_update.py --use-ios-libraries || true
 
       - name: Bootstrap missing iOS prebuilts
         run: |
