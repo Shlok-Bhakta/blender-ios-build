@@ -21,9 +21,7 @@ Some type annotations are quoted to avoid errors in older Python versions.
 These can be unquoted eventually.
 """
 
-__all__ = (
-    "main",
-)
+__all__ = ("main",)
 
 
 import argparse
@@ -55,26 +53,50 @@ def parse_arguments() -> argparse.Namespace:
     underscore.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--no-libraries", action="store_true",
-                        help="Don't fetch precompiled libraries for this system")
-    parser.add_argument("--no-blender", action="store_true", help="Don't update the Blender code repository")
+    parser.add_argument(
+        "--no-libraries",
+        action="store_true",
+        help="Don't fetch precompiled libraries for this system",
+    )
+    parser.add_argument(
+        "--no-blender",
+        action="store_true",
+        help="Don't update the Blender code repository",
+    )
     parser.add_argument(
         "--no-lfs-fallback",
         action="store_true",
-        help="Don't set up fallback URLs for fetching LFS files from projects.blender.org. These are only used when cloning repositories hosted elsewhere.")
+        help="Don't set up fallback URLs for fetching LFS files from projects.blender.org. These are only used when cloning repositories hosted elsewhere.",
+    )
     parser.add_argument(
         "--git-command",
         default="git",
-        help="Path to the git binary. (Only useful if it is not in your PATH)")
-    parser.add_argument("--architecture", type=str,
-                        choices=("x86_64", "amd64", "arm64",))
-    parser.add_argument("--prune-destructive", action="store_true",
-                        help="Destructive! Detect and remove stale files from older checkouts")
+        help="Path to the git binary. (Only useful if it is not in your PATH)",
+    )
+    parser.add_argument(
+        "--architecture",
+        type=str,
+        choices=(
+            "x86_64",
+            "amd64",
+            "arm64",
+        ),
+    )
+    parser.add_argument(
+        "--prune-destructive",
+        action="store_true",
+        help="Destructive! Detect and remove stale files from older checkouts",
+    )
 
     # Deprecated options, kept for compatibility with old configurations.
     parser.add_argument("--use-tests", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--no-submodules", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--use-linux-libraries", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--use-linux-libraries", action="store_true", help=argparse.SUPPRESS
+    )
+    parser.add_argument(
+        "--use-ios-libraries", action="store_true", help=argparse.SUPPRESS
+    )
 
     return parser.parse_args()
 
@@ -83,8 +105,7 @@ def get_blender_git_root(args: argparse.Namespace) -> Path:
     """
     Get root directory of the current Git directory.
     """
-    return Path(
-        check_output([args.git_command, "rev-parse", "--show-toplevel"]))
+    return Path(check_output([args.git_command, "rev-parse", "--show-toplevel"]))
 
 
 def get_effective_platform(args: argparse.Namespace) -> str:
@@ -102,7 +123,7 @@ def get_effective_platform(args: argparse.Namespace) -> str:
     else:
         platform = sys.platform
 
-    assert (platform in ("linux", "macos", "windows"))
+    assert platform in ("linux", "macos", "windows")
 
     return platform
 
@@ -149,8 +170,14 @@ def get_submodule_directories(args: argparse.Namespace) -> "tuple[Path, ...]":
         return ()
 
     submodule_directories_output = check_output(
-        [args.git_command, "config", "--file", str(dot_modules), "--get-regexp", "path"])
-    return tuple([Path(line.split(' ', 1)[1]) for line in submodule_directories_output.strip().splitlines()])
+        [args.git_command, "config", "--file", str(dot_modules), "--get-regexp", "path"]
+    )
+    return tuple(
+        [
+            Path(line.split(" ", 1)[1])
+            for line in submodule_directories_output.strip().splitlines()
+        ]
+    )
 
 
 def ensure_git_lfs(args: argparse.Namespace) -> None:
@@ -203,6 +230,34 @@ def prune_stale_files(args: argparse.Namespace) -> None:
         print("Checkout looks pristine")
 
 
+def initialize_precompiled_libraries_for_platform(
+    args: argparse.Namespace, platform: str, arch: str
+) -> str:
+    """
+    Configure submodule for precompiled libraries of the given platform and arcitecture
+    """
+
+    submodule_dir = f"lib/{platform}_{arch}"
+
+    submodule_directories = get_submodule_directories(args)
+
+    if platform == "macos" and arch == "x64":
+        return (
+            "WARNING: macOS x64/Intel support was dropped in Blender 5.0.\n"
+            "         As such, pre-compiled dependencies are no longer provided.\n"
+            "         You may build the dependencies yourself, or downgrade to Blender 4.5.\n"
+            "         For more details, please see: https://devtalk.blender.org/t/38835"
+        )
+
+    if Path(submodule_dir) not in submodule_directories:
+        return "Skipping libraries update: no configured submodule\n"
+
+    print(f"* Enabling precompiled libraries at {submodule_dir}")
+    make_utils.git_enable_submodule(args.git_command, Path(submodule_dir))
+
+    return ""
+
+
 def initialize_precompiled_libraries(args: argparse.Namespace) -> str:
     """
     Configure submodule for precompiled libraries
@@ -223,23 +278,12 @@ def initialize_precompiled_libraries(args: argparse.Namespace) -> str:
     print(f"Detected architecture : {arch}")
     print()
 
-    submodule_dir = f"lib/{platform}_{arch}"
+    msg = initialize_precompiled_libraries_for_platform(args, platform, arch)
 
-    submodule_directories = get_submodule_directories(args)
+    if platform == "macos" and args.use_ios_libraries:
+        msg += initialize_precompiled_libraries_for_platform(args, "ios", arch)
 
-    if platform == "macos" and arch == "x64":
-        return ("WARNING: macOS x64/Intel support was dropped in Blender 5.0.\n"
-                "         As such, pre-compiled dependencies are no longer provided.\n"
-                "         You may build the dependencies yourself, or downgrade to Blender 4.5.\n"
-                "         For more details, please see: https://devtalk.blender.org/t/38835")
-
-    if Path(submodule_dir) not in submodule_directories:
-        return "Skipping libraries update: no configured submodule\n"
-
-    print(f"* Enabling precompiled libraries at {submodule_dir}")
-    make_utils.git_enable_submodule(args.git_command, Path(submodule_dir))
-
-    return ""
+    return msg
 
 
 def git_update_skip(args: argparse.Namespace, check_remote_exists: bool = True) -> str:
@@ -250,25 +294,44 @@ def git_update_skip(args: argparse.Namespace, check_remote_exists: bool = True) 
         sys.exit(1)
 
     # Abort if a rebase is still progress.
-    rebase_merge = check_output([args.git_command, 'rev-parse', '--git-path', 'rebase-merge'], exit_on_error=False)
-    rebase_apply = check_output([args.git_command, 'rev-parse', '--git-path', 'rebase-apply'], exit_on_error=False)
-    merge_head = check_output([args.git_command, 'rev-parse', '--git-path', 'MERGE_HEAD'], exit_on_error=False)
+    rebase_merge = check_output(
+        [args.git_command, "rev-parse", "--git-path", "rebase-merge"],
+        exit_on_error=False,
+    )
+    rebase_apply = check_output(
+        [args.git_command, "rev-parse", "--git-path", "rebase-apply"],
+        exit_on_error=False,
+    )
+    merge_head = check_output(
+        [args.git_command, "rev-parse", "--git-path", "MERGE_HEAD"], exit_on_error=False
+    )
     if (
-            os.path.exists(rebase_merge) or
-            os.path.exists(rebase_apply) or
-            os.path.exists(merge_head)
+        os.path.exists(rebase_merge)
+        or os.path.exists(rebase_apply)
+        or os.path.exists(merge_head)
     ):
         return "rebase or merge in progress, complete it first"
 
     # Abort if uncommitted changes.
-    changes = check_output([args.git_command, 'status', '--porcelain', '--untracked-files=no', '--ignore-submodules'])
+    changes = check_output(
+        [
+            args.git_command,
+            "status",
+            "--porcelain",
+            "--untracked-files=no",
+            "--ignore-submodules",
+        ]
+    )
     if len(changes) != 0:
         return "you have unstaged changes"
 
     # Test if there is an upstream branch configured
     if check_remote_exists:
         branch = check_output([args.git_command, "rev-parse", "--abbrev-ref", "HEAD"])
-        remote = check_output([args.git_command, "config", "branch." + branch + ".remote"], exit_on_error=False)
+        remote = check_output(
+            [args.git_command, "config", "branch." + branch + ".remote"],
+            exit_on_error=False,
+        )
         if len(remote) == 0:
             return "no remote branch to pull from"
 
@@ -279,7 +342,9 @@ def use_upstream_workflow(args: argparse.Namespace) -> bool:
     return make_utils.git_remote_exist(args.git_command, "upstream")
 
 
-def work_tree_update_upstream_workflow(args: argparse.Namespace, use_fetch: bool = True) -> str:
+def work_tree_update_upstream_workflow(
+    args: argparse.Namespace, use_fetch: bool = True
+) -> str:
     """
     Update the Blender repository using the GitHub style of fork organization
 
@@ -296,7 +361,9 @@ def work_tree_update_upstream_workflow(args: argparse.Namespace, use_fetch: bool
     if not make_utils.git_branch_exists(args.git_command, upstream_branch):
         return "no_branch"
 
-    retcode = call((args.git_command, "merge", "--ff-only", upstream_branch), exit_on_error=False)
+    retcode = call(
+        (args.git_command, "merge", "--ff-only", upstream_branch), exit_on_error=False
+    )
     if retcode != 0:
         return "Unable to fast forward\n"
 
@@ -349,9 +416,9 @@ def resolve_external_url(blender_url: str, repo_name: str) -> str:
 
 
 def external_script_copy_old_submodule_over(
-        args: argparse.Namespace,
-        directory: Path,
-        old_submodules_dir: Path,
+    args: argparse.Namespace,
+    directory: Path,
+    old_submodules_dir: Path,
 ) -> None:
     blender_git_root = get_blender_git_root(args)
     external_dir = blender_git_root / directory
@@ -369,14 +436,23 @@ def external_script_copy_old_submodule_over(
     shutil.copytree(bare_repo_dir, external_dir / ".git")
 
     git_config = external_dir / ".git" / "config"
-    call((args.git_command, "config", "--file", str(git_config), "--unset", "core.worktree"))
+    call(
+        (
+            args.git_command,
+            "config",
+            "--file",
+            str(git_config),
+            "--unset",
+            "core.worktree",
+        )
+    )
 
 
 def floating_checkout_initialize_if_needed(
-        args: argparse.Namespace,
-        repo_name: str,
-        directory: Path,
-        old_submodules_dir: "Path | None" = None,
+    args: argparse.Namespace,
+    repo_name: str,
+    directory: Path,
+    old_submodules_dir: "Path | None" = None,
 ) -> None:
     """Initialize checkout of an external repository"""
 
@@ -401,16 +477,29 @@ def floating_checkout_initialize_if_needed(
 
     # When running `make update` from a freshly cloned fork check whether the fork of the submodule is
     # available, If not, switch to the submodule relative to the main blender repository.
-    if origin_name == "origin" and not make_utils.git_is_remote_repository(args.git_command, external_url):
-        external_url = resolve_external_url("https://projects.blender.org/blender/blender", repo_name)
+    if origin_name == "origin" and not make_utils.git_is_remote_repository(
+        args.git_command, external_url
+    ):
+        external_url = resolve_external_url(
+            "https://projects.blender.org/blender/blender", repo_name
+        )
 
-    call((args.git_command, "clone", "--origin", origin_name, external_url, str(external_dir)))
+    call(
+        (
+            args.git_command,
+            "clone",
+            "--origin",
+            origin_name,
+            external_url,
+            str(external_dir),
+        )
+    )
 
 
 def floating_checkout_add_origin_if_needed(
-        args: argparse.Namespace,
-        repo_name: str,
-        directory: Path,
+    args: argparse.Namespace,
+    repo_name: str,
+    directory: Path,
 ) -> None:
     """
     Add remote called 'origin' if there is a fork of the external repository available
@@ -432,11 +521,14 @@ def floating_checkout_add_origin_if_needed(
     try:
         os.chdir(external_dir)
 
-        if (make_utils.git_remote_exist(args.git_command, "origin") or
-                not make_utils.git_remote_exist(args.git_command, "upstream")):
+        if make_utils.git_remote_exist(
+            args.git_command, "origin"
+        ) or not make_utils.git_remote_exist(args.git_command, "upstream"):
             return
 
-        if not make_utils.git_is_remote_repository(args.git_command, origin_external_url):
+        if not make_utils.git_is_remote_repository(
+            args.git_command, origin_external_url
+        ):
             return
 
         print(f"Adding origin remote to {directory} pointing to fork ...")
@@ -459,7 +551,9 @@ def floating_checkout_add_origin_if_needed(
         upstream_url = make_utils.git_get_remote_url(args.git_command, "upstream")
 
         call((args.git_command, "remote", "rename", "upstream", "origin"))
-        make_utils.git_set_config(args.git_command, "remote.origin.url", origin_external_url)
+        make_utils.git_set_config(
+            args.git_command, "remote.origin.url", origin_external_url
+        )
 
         call((args.git_command, "remote", "add", "upstream", upstream_url))
     finally:
@@ -469,12 +563,12 @@ def floating_checkout_add_origin_if_needed(
 
 
 def floating_checkout_update(
-        args: argparse.Namespace,
-        repo_name: str,
-        directory: Path,
-        branch: "str | None",
-        old_submodules_dir: "Path | None" = None,
-        only_update: bool = False,
+    args: argparse.Namespace,
+    repo_name: str,
+    directory: Path,
+    branch: "str | None",
+    old_submodules_dir: "Path | None" = None,
+    only_update: bool = False,
 ) -> str:
     """Update a single external checkout with the given name in the scripts folder"""
 
@@ -484,7 +578,9 @@ def floating_checkout_update(
     if only_update and not external_dir.exists():
         return ""
 
-    floating_checkout_initialize_if_needed(args, repo_name, directory, old_submodules_dir)
+    floating_checkout_initialize_if_needed(
+        args, repo_name, directory, old_submodules_dir
+    )
     floating_checkout_add_origin_if_needed(args, repo_name, directory)
 
     blender_git_root = get_blender_git_root(args)
@@ -530,18 +626,37 @@ def floating_checkout_update(
                     # If there is no local branch but only remote specify an explicit remote.
                     # Without this explicit specification Git attempts to set-up tracking
                     # automatically and fails when the branch is available in multiple remotes.
-                    if make_utils.git_local_branch_exists(args.git_command, submodule_branch):
+                    if make_utils.git_local_branch_exists(
+                        args.git_command, submodule_branch
+                    ):
                         call([args.git_command, "checkout", submodule_branch])
                     else:
-                        if make_utils.git_remote_branch_exists(args.git_command, "origin", submodule_branch):
-                            call([args.git_command, "checkout", "-t", f"origin/{submodule_branch}"])
+                        if make_utils.git_remote_branch_exists(
+                            args.git_command, "origin", submodule_branch
+                        ):
+                            call(
+                                [
+                                    args.git_command,
+                                    "checkout",
+                                    "-t",
+                                    f"origin/{submodule_branch}",
+                                ]
+                            )
                         elif make_utils.git_remote_exist(args.git_command, "upstream"):
                             # For the Github style of upstream workflow create a local branch from
                             # the upstream, but do not track it, so that we stick to the paradigm
                             # that no local branches are tracking upstream, preventing possible
                             # accidental commit to upstream.
-                            call([args.git_command, "checkout", "-b", submodule_branch,
-                                 f"upstream/{submodule_branch}", "--no-track"])
+                            call(
+                                [
+                                    args.git_command,
+                                    "checkout",
+                                    "-b",
+                                    submodule_branch,
+                                    f"upstream/{submodule_branch}",
+                                    "--no-track",
+                                ]
+                            )
 
                 # Don't use extra fetch since all remotes of interest have been already fetched
                 # some lines above.
@@ -585,8 +700,17 @@ def add_submodule_push_url(args: argparse.Namespace) -> None:
             # Ignore modules which are not initialized
             continue
 
-        push_url = check_output((args.git_command, "config", "--file", str(config),
-                                "--get", "remote.origin.pushURL"), exit_on_error=False)
+        push_url = check_output(
+            (
+                args.git_command,
+                "config",
+                "--file",
+                str(config),
+                "--get",
+                "remote.origin.pushURL",
+            ),
+            exit_on_error=False,
+        )
 
         # Don't modify PushURL if it is set.
         if push_url:
@@ -596,7 +720,9 @@ def add_submodule_push_url(args: argparse.Namespace) -> None:
             else:
                 continue
 
-        url = make_utils.git_get_config(args.git_command, "remote.origin.url", str(config))
+        url = make_utils.git_get_config(
+            args.git_command, "remote.origin.url", str(config)
+        )
         if not url.startswith("https:"):
             # Ignore non-URL URLs.
             continue
@@ -610,7 +736,9 @@ def add_submodule_push_url(args: argparse.Namespace) -> None:
         push_url = f"git@{host}:{url_parts.path[1:]}"
 
         print(f"Setting pushURL to {push_url} for {submodule_path}")
-        make_utils.git_set_config(args.git_command, "remote.origin.pushURL", push_url, str(config))
+        make_utils.git_set_config(
+            args.git_command, "remote.origin.pushURL", push_url, str(config)
+        )
 
 
 def submodules_lib_update(args: argparse.Namespace, branch: "str | None") -> str:
@@ -651,7 +779,9 @@ def lfs_fallback_setup(args: argparse.Namespace) -> None:
         else:
             add_fallback_remote = False
 
-    if add_fallback_remote and not make_utils.git_remote_exist(args.git_command, fallback_remote):
+    if add_fallback_remote and not make_utils.git_remote_exist(
+        args.git_command, fallback_remote
+    ):
         print_stage("Adding Git LFS fallback remote")
         print("Used to fetch files from projects.blender.org if missing.")
 
@@ -669,13 +799,13 @@ def main() -> int:
     blender_skip_msg = ""
     libraries_skip_msg = ""
 
-    blender_version = make_utils. parse_blender_version()
-    if blender_version.cycle != 'alpha':
+    blender_version = make_utils.parse_blender_version()
+    if blender_version.cycle != "alpha":
         major = blender_version.version // 100
         minor = blender_version.version % 100
         branch = f"blender-v{major}.{minor}-release"
     else:
-        branch = 'main'
+        branch = "main"
 
     # Submodules and precompiled libraries require Git LFS.
     ensure_git_lfs(args)
@@ -708,15 +838,21 @@ def main() -> int:
 
     if args.use_tests:
         print()
-        print('NOTE: --use-tests is a deprecated command line argument, kept for compatibility purposes.')
+        print(
+            "NOTE: --use-tests is a deprecated command line argument, kept for compatibility purposes."
+        )
 
     if args.no_submodules:
         print()
-        print('NOTE: --no-submodules is a deprecated command line argument, kept for compatibility purposes.')
+        print(
+            "NOTE: --no-submodules is a deprecated command line argument, kept for compatibility purposes."
+        )
 
     if args.use_linux_libraries:
         print()
-        print('NOTE: --use-linux-libraries is a deprecated command line argument, kept for compatibility purposes.')
+        print(
+            "NOTE: --use-linux-libraries is a deprecated command line argument, kept for compatibility purposes."
+        )
 
     # For failed library update we throw an error, since not having correct
     # libraries can make Blender throw errors.
