@@ -102,9 +102,11 @@ jobs:
 
       - name: Build cross-compilation tools
         run: |
+          rm -rf build_ios/build_darwin_tools
           mkdir -p build_ios/build_darwin_tools/Release
           cmake -S . -B build_ios/build_darwin_tools/Release \
             -G "Unix Makefiles" \
+            -UCMAKE_APPLE_CROSSPLATFORM \
             -DWITH_APPLE_CROSSPLATFORM=ON \
             -DWITH_PYTHON=OFF \
             -DAPPLE_TARGET_DEVICE=macos \
