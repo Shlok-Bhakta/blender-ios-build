@@ -106,6 +106,7 @@ jobs:
           cmake -S . -B build_ios/build_darwin_tools/Release \
             -G Ninja \
             -DWITH_APPLE_CROSSPLATFORM=OFF \
+            -DWITH_PYTHON=OFF \
             -DAPPLE_TARGET_DEVICE=macos \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_BUILD_TYPE=Release \
