@@ -155,12 +155,13 @@ jobs:
           cmake -S . -B build_ios/build_darwin_tools \
             -G Ninja \
             -DCMAKE_SYSTEM_NAME=Darwin \
+            -DAPPLE_TARGET_DEVICE=macos \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_FLAGS="-DWITH_CROSSCOMPILED_TOOLS" \
             -DCMAKE_CXX_FLAGS="-DWITH_CROSSCOMPILED_TOOLS" \
             -DWITH_CROSSCOMPILED_TOOLS=ON \
-            -DWITH_BLENDER=OFF \
+            -DWITH_BLENDER=ON \
             -DWITH_PYTHON=OFF \
             -DWITH_GHOST=OFF \
             -DWITH_INPUT_NDOF=OFF \
