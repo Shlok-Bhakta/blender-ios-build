@@ -185,9 +185,8 @@ if(WITH_PYTHON)
     # When building for iOS we use the MacOS version of Python from the macos libs dir
     set(CROSSCOMPILE_HOST_LIBDIR "${CMAKE_SOURCE_DIR}/lib/macos_arm64")
     if(NOT PYTHON_VERSION)
-      # IOS_FIXME: This is not great why is PYTHON_VERSION not defined here?
-      message("WARNING Manually defining Python Version to 3.11 for iOS build")
-      set(PYTHON_EXECUTABLE "${CROSSCOMPILE_HOST_LIBDIR}/python/bin/python3.11")
+      message("WARNING Manually defining Python Version to 3.13 for iOS build")
+      set(PYTHON_EXECUTABLE "${CROSSCOMPILE_HOST_LIBDIR}/python/bin/python3.13")
     else()
       set(PYTHON_EXECUTABLE "${CROSSCOMPILE_HOST_LIBDIR}/python/bin/python${PYTHON_VERSION}")
     endif()
