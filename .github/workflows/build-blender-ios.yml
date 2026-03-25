@@ -147,10 +147,10 @@ jobs:
       - name: List Xcode targets
         run: xcodebuild -project build_ios/Blender.xcodeproj -list
 
-      - name: Skip cross-compilation tools (will fail later if needed)
+      - name: Build cross-compilation tools (built by Xcode via blender_cross_tools_compile)
         run: |
-          echo "=== Skipping cross-compilation tools step ==="
-          echo "Tools will fail if required during build, we will see what happens"
+          echo "=== Cross-compilation tools are built by the blender_cross_tools_compile target ==="
+          echo "=== This happens automatically during xcodebuild ==="
 
       - name: Build Blender.app for iOS
         run: |

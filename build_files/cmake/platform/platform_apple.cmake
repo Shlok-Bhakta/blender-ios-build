@@ -90,7 +90,85 @@ if(WITH_APPLE_CROSSPLATFORM)
   get_filename_component(CMAKE_BIN_DIRECTORY "${CMAKE_COMMAND}" DIRECTORY)
   add_custom_target(blender_cross_tools_compile
     COMMENT "\n---------------------------\n Building Cross Compile Tools\n"
-    COMMAND env -i PATH="${CMAKE_BIN_DIRECTORY}:$ENV{PATH}" BUILD_CMAKE_ARGS=${CMAKE_TOOLS_ARGS} BUILD_DIR=${CROSSCOMPILE_TOOLDIR} make tools
+    COMMAND ${CMAKE_COMMAND} -S ${CMAKE_SOURCE_DIR} -B ${CROSSCOMPILE_TOOLDIR}
+            -DWITH_CROSSCOMPILED_TOOLS=ON
+            -DWITH_APPLE_CROSSPLATFORM=OFF
+            -DWITH_PYTHON=OFF
+            -DWITH_GHOST=OFF
+            -DWITH_INPUT_NDOF=OFF
+            -DWITH_JACK=OFF
+            -DWITH_LLVM=OFF
+            -DWITH_OPENCOLMAP=OFF
+            -DWITH_OPENEXR=OFF
+            -DWITH_OPENGL_BACKEND=OFF
+            -DWITH_SDL=OFF
+            -DWITH_VULKAN=OFF
+            -DWITH_GPU=OFF
+            -DWITH_GPU_BACKEND_TESTS=OFF
+            -DWITH_GPU_COMPOSITOR_TESTS=OFF
+            -DWITH_GPU_DRAW_TESTS=OFF
+            -DWITH_GPU_MESH_PAINT_TESTS=OFF
+            -DWITH_GPU_RENDER_TESTS=OFF
+            -DWITH_GPU_RENDER_TESTS_HEADED=OFF
+            -DWITH_GPU_SHADER_ASSERT=OFF
+            -DWITH_GPU_SHADER_CPP_COMPILATION=OFF
+            -DWITH_USD=OFF
+            -DWITH_OPENCOLLADA=OFF
+            -DWITH_AUDASPACE=OFF
+            -DWITH_CYCLES=OFF
+            -DWITH_HYDRA=OFF
+            -DWITH_XR_OPENXR=OFF
+            -DWITH_RUBBERBAND=OFF
+            -DWITH_LIBMV=OFF
+            -DWITH_LIBMV_SCHUR_SPECIALIZATIONS=OFF
+            -DWITH_INSTALL_PORTAL=OFF
+            -DWITH_ALEMBIC=OFF
+            -DWITH_BOOST=OFF
+            -DWITH_DRACO=OFF
+            -DWITH_FFTW3=OFF
+            -DWITH_FREESTYLE=OFF
+            -DWITH_GMP=OFF
+            -DWITH_HARU=OFF
+            -DWITH_IMAGE_CINEON=OFF
+            -DWITH_IMAGE_OPENEXR=OFF
+            -DWITH_IMAGE_OPENJPEG=OFF
+            -DWITH_IMAGE_WEBP=OFF
+            -DWITH_INTERNATIONAL=OFF
+            -DWITH_IO_FBX=OFF
+            -DWITH_IO_GREASE_PENCIL=OFF
+            -DWITH_IO_PLY=OFF
+            -DWITH_IO_STL=OFF
+            -DWITH_IO_WAVEFRONT_OBJ=OFF
+            -DWITH_MOD_FLUID=OFF
+            -DWITH_MOD_OCEANSIM=OFF
+            -DWITH_MOD_REMESH=OFF
+            -DWITH_NANOVDB=OFF
+            -DWITH_OPENVDB=OFF
+            -DWITH_QUADRIFLOW=OFF
+            -DWITH_UV_SLIM=OFF
+            -DWITH_POTRACE=OFF
+            -DWITH_PUGIXML=OFF
+            -DWITH_OPENSUBDIV=OFF
+            -DWITH_OPENVDB=OFF
+            -DWITH_OPENVDB_3_ABI_COMPATIBLE=OFF
+            -DWITH_OPENVDB_BLOSC=OFF
+            -DWITH_MANIFOLD=OFF
+            -DWITH_MATERIALX=OFF
+            -DWITH_OPENIMAGEDENOISE=OFF
+            -DWITH_OPENCOLORIO=OFF
+            -DWITH_OPENAL=OFF
+            -DWITH_BULLET=OFF
+            -DWITH_TBB=OFF
+            -DWITH_TBB_MALLOC_PROXY=OFF
+            -DWITH_ALEMBIC=OFF
+            -DWITH_ASSERT_RELEASE=OFF
+            -DWITH_ASSERT_ABORT=ON
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_OSX_ARCHITECTURES=arm64
+            -DCMAKE_SYSTEM_NAME=Darwin
+            -G Ninja
+            -DLIBDIR=${CMAKE_SOURCE_DIR}/lib/ios_arm64
+    COMMAND ${CMAKE_COMMAND} --build ${CROSSCOMPILE_TOOLDIR} --target makesdna makesrna msgfmt datatoc shader_tool glsl_preprocess
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   )
 
