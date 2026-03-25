@@ -112,7 +112,7 @@ jobs:
           key: ${{ runner.os }}-ios-arm64-libs-${{ steps.ios-libs-cache-key.outputs.sha }}-bootstrap-v3
 
       - name: Generate Xcode project
-        run: cmake -G Xcode -S . -B build_ios -DAPPLE_TARGET_DEVICE=ios -DWITH_XR_OPENXR=OFF
+        run: cmake -G Xcode -S . -B build_ios -DAPPLE_TARGET_DEVICE=ios -DWITH_XR_OPENXR=OFF -DWITH_RUBBERBAND=OFF
 
       - name: List Xcode targets
         run: xcodebuild -project build_ios/Blender.xcodeproj -list
