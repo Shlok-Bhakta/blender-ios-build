@@ -91,17 +91,6 @@ jobs:
             bash ./build_files/utils/bootstrap_ios_eigen.sh
           fi
 
-      - name: Verify bootstrapped iOS prebuilts
-        run: |
-          if [ ! -f lib/ios_arm64/fmt/include/fmt/core.h ]; then
-            echo "ERROR: fmt not found in lib/ios_arm64 after bootstrap." >&2
-            exit 1
-          fi
-          if [ ! -f lib/ios_arm64/eigen/share/eigen3/cmake/Eigen3Config.cmake ]; then
-            echo "ERROR: Eigen3 config not found in lib/ios_arm64 after bootstrap." >&2
-            exit 1
-          fi
-
       - name: Save iOS prebuilt libraries cache
         if: steps.ios-libs-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
@@ -110,20 +99,6 @@ jobs:
             lib/ios_arm64
             .git/modules/lib/ios_arm64
           key: ${{ runner.os }}-ios-arm64-libs-${{ steps.ios-libs-cache-key.outputs.sha }}-bootstrap-v3
-
-      - name: Generate Xcode project
-        run: |
-          PYTHON_INC=$(python3 -c "import sysconfig; print(sysconfig.get_path('include'))")
-          cmake -G Xcode -S . -B build_ios \
-            -DAPPLE_TARGET_DEVICE=ios \
-            -DWITH_XR_OPENXR=OFF \
-            -DWITH_RUBBERBAND=OFF \
-            -DWITH_LIBMV=OFF \
-            -DWITH_LIBMV_SCHUR_SPECIALIZATIONS=OFF \
-            -DPYTHON_INCLUDE_DIR="$PYTHON_INC"
-
-      - name: List Xcode targets
-        run: xcodebuild -project build_ios/Blender.xcodeproj -list
 
       - name: Build cross-compilation tools
         run: |
@@ -140,6 +115,31 @@ jobs:
           ls -la build_ios/build_darwin_tools/Release/bin/ 2>&1 || echo "bin dir not found"
           ls -la build_ios/build_darwin_tools/Release/bin/makesdna 2>&1 || echo "makesdna not found"
           ls -la build_ios/build_darwin_tools/Release/bin/shader_tool 2>&1 || echo "shader_tool not found"
+
+      - name: Verify bootstrapped iOS prebuilts
+        run: |
+          if [ ! -f lib/ios_arm64/fmt/include/fmt/core.h ]; then
+            echo "ERROR: fmt not found in lib/ios_arm64 after bootstrap." >&2
+            exit 1
+          fi
+          if [ ! -f lib/ios_arm64/eigen/share/eigen3/cmake/Eigen3Config.cmake ]; then
+            echo "ERROR: Eigen3 config not found in lib/ios_arm64 after bootstrap." >&2
+            exit 1
+          fi
+
+      - name: Generate Xcode project
+        run: |
+          PYTHON_INC=$(python3 -c "import sysconfig; print(sysconfig.get_path('include'))")
+          cmake -G Xcode -S . -B build_ios \
+            -DAPPLE_TARGET_DEVICE=ios \
+            -DWITH_XR_OPENXR=OFF \
+            -DWITH_RUBBERBAND=OFF \
+            -DWITH_LIBMV=OFF \
+            -DWITH_LIBMV_SCHUR_SPECIALIZATIONS=OFF \
+            -DPYTHON_INCLUDE_DIR="$PYTHON_INC"
+
+      - name: List Xcode targets
+        run: xcodebuild -project build_ios/Blender.xcodeproj -list
 
       - name: Build Blender.app for iOS
         run: |
