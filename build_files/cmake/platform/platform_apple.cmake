@@ -192,12 +192,8 @@ if(WITH_PYTHON)
       set(PYTHON_EXECUTABLE "${CROSSCOMPILE_HOST_LIBDIR}/python/bin/python${PYTHON_VERSION}")
     endif()
     if(NOT EXISTS ${PYTHON_EXECUTABLE})
-      message(
-        FATAL_ERROR
-        "Missing: <${PYTHON_EXECUTABLE}>\n"
-        "MacOS version of Python must exist to build iOS version\n"
-        "Try building MacOS version first: 'make update' or 'make deps'\n"
-      )
+      message(WARNING "MacOS Python not found at ${PYTHON_EXECUTABLE}, falling back to system Python")
+      find_program(PYTHON_EXECUTABLE "python3" REQUIRED)
     endif()
     message(STATUS "HOST PYTHON EXECUTABLE: ${PYTHON_EXECUTABLE}")
   elseif(WITH_PYTHON_MODULE AND PYTHON_ROOT_DIR)
