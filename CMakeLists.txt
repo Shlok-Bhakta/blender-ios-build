@@ -117,6 +117,35 @@ project(Blender)
 
 blender_project_hack_post()
 
+# -----------------------------------------------------------------------------
+# Cross-platform build support for Apple platforms.
+if(APPLE)
+  # IOS_FIXME: TODO: Set to ios by default for this branch, but should be macos.
+  set(APPLE_TARGET_DEVICE ios CACHE STRING "Target build device for Apple platforms ('macos' or 'ios'). Default: macos")
+  #set(APPLE_TARGET_DEVICE macos CACHE STRING "Target build device for Apple platforms ('macos' or 'ios'). Default: macos")
+  mark_as_advanced(APPLE_TARGET_DEVICE)
+
+  if(APPLE_TARGET_DEVICE STREQUAL "ios" OR APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
+    set(WITH_APPLE_CROSSPLATFORM ON CACHE BOOL "Build for iOS devices. WARNING: CMake Cache must be manually cleared when toggling this setting as find_package will not update paths to host dependencies." FORCE)
+    set(CMAKE_SYSTEM_NAME "iOS" CACHE INTERNAL "" FORCE)
+  elseif (APPLE_TARGET_DEVICE STREQUAL "macos")
+    set(WITH_APPLE_CROSSPLATFORM OFF CACHE BOOL "" FORCE)
+    set(CMAKE_SYSTEM_NAME "Darwin" CACHE INTERNAL "" FORCE)
+  else()
+    message(FATAL_ERROR "Valid values for APPLE_TARGET_DEVICE are 'macos' or 'ios'")
+  endif()
+
+  if(WITH_APPLE_CROSSPLATFORM)
+    message(STATUS "Building for cross-compilation platform target: ${APPLE_TARGET_DEVICE}, CMAKE_SYSTEM_NAME:${CMAKE_SYSTEM_NAME}")
+    if (NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+       message(FATAL_ERROR "CMAKE_SYSTEM_NAME should be 'iOS' if WITH_APPLE_CROSSPLATFORM set. CMAKE_SYSTEM_NAME='${CMAKE_SYSTEM_NAME}'")
+    endif()
+    add_definitions(-DWITH_APPLE_CROSSPLATFORM)
+  else()
+    message(STATUS "Building for native platform target: ${APPLE_TARGET_DEVICE}, CMAKE_SYSTEM_NAME:${CMAKE_SYSTEM_NAME}")
+  endif()
+endif()
+
 enable_testing()
 
 # There are some circumstances where the git checkout doesn't grab

@@ -25,6 +25,109 @@ endfunction()
 # ------------------------------------------------------------------------
 # Find system provided libraries.
 
+# -------------------------------------------------------------------------------
+# Apple cross-platform device build config
+if(WITH_APPLE_CROSSPLATFORM)
+  # Disable modules with no planned/required support on iOS.
+  set(WITH_USD OFF CACHE BOOL "Disable until we fix issue with release build" FORCE)
+  set(NO_PLATFORM_SUPPORT_MSG "Auto disabled as APPLE_TARGET_DEVICE=ios")
+  set(WITH_VULKAN_BACKEND  OFF CACHE BOOL ${NO_PLATFORM_SUPPORT_MSG} FORCE)
+  set(WITH_OPENGL_BACKEND  OFF CACHE BOOL ${NO_PLATFORM_SUPPORT_MSG} FORCE)
+  set(WITH_SDL OFF CACHE BOOL ${NO_PLATFORM_SUPPORT_MSG} FORCE)
+  set(WITH_INPUT_NDOF OFF CACHE BOOL ${NO_PLATFORM_SUPPORT_MSG} FORCE)
+  set(WITH_PYTHON_MODULE OFF CACHE BOOL ${NO_PLATFORM_SUPPORT_MSG} FORCE)
+  # Disable these modules for now
+  set(WITH_PYTHON_INSTALL_ZSTANDARD OFF CACHE BOOL "Disable until iOS build supports SSL" FORCE)
+  # Disable Audaspace as it had dependencies on CoreAudio components which do not exist on iOS
+  # (like AudioToolbox/CoreAudioClock.h)
+  set(WITH_AUDASPACE OFF CACHE BOOL "Auto disabled due to lack of specific CoreAudio support on iOS" FORCE)
+  # Temp: Disabled pending compilation of HgI/Hydra Storm for Metal on iOS.
+  #       (Set DPXR_ENABLE_METAL_SUPPORT=ON in usd.cmake for WITH_APPLE_CROSSPLATFORM platform)
+  set(WITH_HYDRA  OFF CACHE BOOL "Auto disabled due to lack of HgI/Hydra Storm for Metal on iOS" FORCE)
+  set(WITH_CYCLES_OSL OFF CACHE BOOL "Support for build time compilation of OSL Shaders not supported yet on iOS" FORCE)
+
+  # --- Cross compile host tools ----
+
+  # Enable cross-compiled tools (glsl_preprocess, makesdna, makesrna etc.)
+  set(WITH_CROSSCOMPILED_TOOLS ON CACHE BOOL "" FORCE)
+
+  # Fetch Cmake arguments for host build process, ensuring these are consistent with what is
+  # locally disabled, but toggling APPLE_TARGET_DEVICE to macos.
+  get_cmake_property(CACHE_VARS CACHE_VARIABLES)
+  foreach(CACHE_VAR ${CACHE_VARS})
+    get_property(CACHE_VAR_TYPE CACHE ${CACHE_VAR} PROPERTY TYPE)
+    if(CACHE_VAR_TYPE STREQUAL "UNINITIALIZED")
+      set(CACHE_VAR_TYPE)
+    else()
+      if(CACHE_VAR_TYPE STREQUAL "BOOL")
+        # Remove IPAD arg
+        if(NOT CACHE_VAR STREQUAL "APPLE_TARGET_DEVICE" AND NOT CACHE_VAR STREQUAL "WITH_CROSSCOMPILED_TOOLS")
+          set(CMAKE_ARGS "${CMAKE_ARGS} -D${CACHE_VAR}=${${CACHE_VAR}}")
+        else()
+          # Disable iPad for tools compilation
+          set(CMAKE_ARGS "${CMAKE_ARGS} -D${CACHE_VAR}=OFF")
+        endif()
+      endif()
+    endif()
+  endforeach()
+
+  message(STATUS " \n---------------------------\n CROSS COMPILE TOOLS:\n\nDetect CMake configuration for host-tools-build (datatoc, datatoc_icon, makesdna, makesrna, msgformat, glsl_preprocess) \n\nInheriting CMAKE_ARGS:\n${CMAKE_ARGS}\n")
+
+
+  # Run host build process to ensure host tools are up to date. (creating build_darwin_tools folder)
+  # NOTE: ENV command used to isolate environment, as running inside Xcode otherhwise causes Cflags to be inherited.
+  set(CROSSCOMPILE_TOOLDIR "${CMAKE_SOURCE_DIR}/../build_ios/build_darwin_tools/${CMAKE_BUILD_TYPE}")
+  # Override the defines that are used for building Blender (make sure they come after CMAKE_ARGS)
+  set(CMAKE_TOOLS_ARGS "${CMAKE_ARGS} -DWITH_CROSSCOMPILED_TOOLS=ON -DAPPLE_TARGET_DEVICE=macos ${CROSSCOMPILE_C_FLAGS} ${CROSSCOMPILE_CXX_FLAGS}")
+  # IOS_FIXME - Add Cross-Compile defines to the C-Flags
+  # This is a bit of a fudge to make sure that the cross-compiled tools know that we're building
+  # in a cross-compile environment in order that all class and struct definitions match (specificially for RNA).
+  # Ideally we'd build the tools to the same build-type but DEBUG tools would slow the compile process down.
+  # That might still be a better option though. See "debug_size_" in BLI_vector.hh for an example of this.
+  set(CMAKE_TOOLS_ARGS "${CMAKE_TOOLS_ARGS} -DCMAKE_C_FLAGS=\"-DWITH_CROSSCOMPILED_TOOLS -DWITH_APPLE_CROSSPLATFORM\"")
+  set(CMAKE_TOOLS_ARGS "${CMAKE_TOOLS_ARGS} -DCMAKE_CXX_FLAGS=\"-DWITH_CROSSCOMPILED_TOOLS -DWITH_APPLE_CROSSPLATFORM\"")
+
+  get_filename_component(CMAKE_BIN_DIRECTORY "${CMAKE_COMMAND}" DIRECTORY)
+  add_custom_target(blender_cross_tools_compile
+    COMMENT "\n---------------------------\n Building Cross Compile Tools\n"
+    COMMAND env -i PATH="${CMAKE_BIN_DIRECTORY}:$ENV{PATH}" BUILD_CMAKE_ARGS=${CMAKE_TOOLS_ARGS} BUILD_DIR=${CROSSCOMPILE_TOOLDIR} make tools
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  )
+
+  # Configure executable dependencies and paths for cross-compiled tools.
+  # NOTE: Local dependency creation e.g. makesdna should check WITH_CROSSCOMPILED_TOOLS before creating local target.
+  #       We instead run a full build to generate the targets in a host-side build on macOS.
+  add_executable(makesdna IMPORTED GLOBAL)
+  add_executable(makesrna IMPORTED GLOBAL)
+  add_executable(msgfmt IMPORTED GLOBAL)
+  add_executable(datatoc IMPORTED GLOBAL)
+  #add_executable(datatoc_icon IMPORTED GLOBAL)
+  add_executable(glsl_preprocess IMPORTED GLOBAL)
+  add_dependencies(makesdna blender_cross_tools_compile)
+  add_dependencies(makesrna blender_cross_tools_compile)
+  add_dependencies(msgfmt blender_cross_tools_compile)
+  add_dependencies(datatoc blender_cross_tools_compile)
+  #add_dependencies(datatoc_icon blender_cross_tools_compile)
+  add_dependencies(glsl_preprocess blender_cross_tools_compile)
+  message(STATUS "Host tools will be generated in: ${CROSSCOMPILE_TOOLDIR}")
+  set_property(TARGET makesdna PROPERTY IMPORTED_LOCATION "${CROSSCOMPILE_TOOLDIR}/bin/makesdna")
+  set_property(TARGET makesrna PROPERTY IMPORTED_LOCATION "${CROSSCOMPILE_TOOLDIR}/bin/makesrna")
+  set_property(TARGET msgfmt PROPERTY IMPORTED_LOCATION "${CROSSCOMPILE_TOOLDIR}/bin/msgfmt")
+  set_property(TARGET datatoc PROPERTY IMPORTED_LOCATION "${CROSSCOMPILE_TOOLDIR}/bin/datatoc")
+  #set_property(TARGET datatoc_icon PROPERTY IMPORTED_LOCATION "${CROSSCOMPILE_TOOLDIR}/bin/datatoc_icon")
+  set_property(TARGET glsl_preprocess PROPERTY IMPORTED_LOCATION "${CROSSCOMPILE_TOOLDIR}/bin/glsl_preprocess")
+  message(STATUS "makesdna: ${CROSSCOMPILE_TOOLDIR}/bin/makesdna")
+  message(STATUS "makesrna: ${CROSSCOMPILE_TOOLDIR}/bin/makesrna")
+  message(STATUS "msgfmt: ${CROSSCOMPILE_TOOLDIR}/bin/msgfmt")
+  message(STATUS "datatoc: ${CROSSCOMPILE_TOOLDIR}/bin/datatoc")
+  #message(STATUS "datatoc_icon: ${CROSSCOMPILE_TOOLDIR}/bin/datatoc_icon")
+  message(STATUS "shader_tool: ${CROSSCOMPILE_TOOLDIR}/bin/shader_tool")
+  message(STATUS "\n---------------------------\n")
+else()
+  # Disable cross-compiled tools (shader_tool, makesdna, makesrna etc.) if building on host.
+  set(WITH_CROSSCOMPILED_TOOLS OFF CACHE BOOL "" FORCE)
+endif()
+
 # Find system ZLIB
 set(ZLIB_ROOT /usr)
 find_package(ZLIB REQUIRED)
