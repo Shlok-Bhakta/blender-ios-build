@@ -105,11 +105,12 @@ jobs:
           mkdir -p build_ios/build_darwin_tools/Release
           cmake -S . -B build_ios/build_darwin_tools/Release \
             -G Ninja \
-            -DWITH_APPLE_CROSSPLATFORM=OFF \
+            -DWITH_APPLE_CROSSPLATFORM=ON \
             -DWITH_PYTHON=OFF \
             -DAPPLE_TARGET_DEVICE=macos \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
-            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLIBDIR=${PWD}/lib/ios_arm64
           cmake --build build_ios/build_darwin_tools/Release --target makesdna makesrna msgfmt datatoc shader_tool glsl_preprocess
           echo "=== Checking cross-compile tools ==="
           ls -la build_ios/build_darwin_tools/Release/bin/ 2>&1 || echo "bin dir not found"
