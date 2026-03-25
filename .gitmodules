@@ -18,3 +18,6 @@
 	path = lib/windows_arm64
 	url = https://projects.blender.org/blender/lib-windows_arm64.git
 	branch = blender-v5.1-release
+[submodule "lib/ios_arm64"]
+	path = lib/ios_arm64
+	url = https://github.com/Shlok-Bhakta/blender-lib-ios_arm64.git
