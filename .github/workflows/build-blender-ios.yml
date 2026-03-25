@@ -1,0 +1,168 @@
+name: Build Blender iOS IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          lfs: false
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf ~/Library/Android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/.ghcup
+          sudo rm -rf /Library/Developer/CoreSimulator/Profiles
+          sudo xcrun simctl delete all 2>/dev/null || true
+          df -h
+
+      - name: Install dependencies
+        run: brew install git-lfs cmake eigen fmt openimageio zstd
+
+      - name: Initialize Git LFS
+        run: git lfs install
+
+      - name: Compute required LFS cache key
+        id: required-lfs-cache-key
+        run: printf 'sha=%s\n' "$(git rev-parse HEAD:release/datafiles/startup.blend)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore required LFS assets cache
+        id: required-lfs-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .git/lfs/objects
+            release/datafiles/startup.blend
+          key: ${{ runner.os }}-required-lfs-${{ steps.required-lfs-cache-key.outputs.sha }}-v1
+
+      - name: Fetch required LFS source assets
+        run: |
+          if [ "${{ steps.required-lfs-cache.outputs.cache-hit }}" != "true" ]; then
+            git config lfs.remote.searchall true
+            git remote add lfs-fallback https://projects.blender.org/blender/blender.git 2>/dev/null || true
+            git remote set-url --push lfs-fallback no_push
+            git lfs fetch lfs-fallback --include="release/datafiles/startup.blend"
+          fi
+          git lfs pull --include="release/datafiles/startup.blend"
+
+      - name: Save required LFS assets cache
+        if: steps.required-lfs-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .git/lfs/objects
+            release/datafiles/startup.blend
+          key: ${{ runner.os }}-required-lfs-${{ steps.required-lfs-cache-key.outputs.sha }}-v1
+
+      - name: Compute iOS libs cache key
+        id: ios-libs-cache-key
+        run: printf 'sha=%s\n' "$(git rev-parse HEAD:lib/ios_arm64)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore iOS prebuilt libraries cache
+        id: ios-libs-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            lib/ios_arm64
+            .git/modules/lib/ios_arm64
+          key: ${{ runner.os }}-ios-arm64-libs-${{ steps.ios-libs-cache-key.outputs.sha }}-bootstrap-v3
+
+      - name: Fetch prebuilt iOS libraries
+        if: steps.ios-libs-cache.outputs.cache-hit != 'true'
+        run: python3 ./build_files/utils/make_update.py --use-ios-libraries
+
+      - name: Bootstrap missing iOS prebuilts
+        run: |
+          if [ ! -f lib/ios_arm64/fmt/include/fmt/core.h ]; then
+            bash ./build_files/utils/bootstrap_ios_fmt.sh
+          fi
+          if [ ! -f lib/ios_arm64/eigen/share/eigen3/cmake/Eigen3Config.cmake ]; then
+            bash ./build_files/utils/bootstrap_ios_eigen.sh
+          fi
+
+      - name: Verify bootstrapped iOS prebuilts
+        run: |
+          if [ ! -f lib/ios_arm64/fmt/include/fmt/core.h ]; then
+            echo "ERROR: fmt not found in lib/ios_arm64 after bootstrap." >&2
+            exit 1
+          fi
+          if [ ! -f lib/ios_arm64/eigen/share/eigen3/cmake/Eigen3Config.cmake ]; then
+            echo "ERROR: Eigen3 config not found in lib/ios_arm64 after bootstrap." >&2
+            exit 1
+          fi
+
+      - name: Save iOS prebuilt libraries cache
+        if: steps.ios-libs-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            lib/ios_arm64
+            .git/modules/lib/ios_arm64
+          key: ${{ runner.os }}-ios-arm64-libs-${{ steps.ios-libs-cache-key.outputs.sha }}-bootstrap-v3
+
+      - name: Generate Xcode project
+        run: cmake -G Xcode -S . -B build_ios
+
+      - name: List Xcode targets
+        run: xcodebuild -project build_ios/Blender.xcodeproj -list
+
+      - name: Build cross-compilation tools
+        run: |
+          xcodebuild \
+            -project build_ios/Blender.xcodeproj \
+            -target blender_cross_tools_compile \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Build Blender.app for iOS
+        run: |
+          xcodebuild \
+            -project build_ios/Blender.xcodeproj \
+            -target install \
+            -sdk iphoneos \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            ARCHS=arm64
+
+      - name: Package unsigned IPA
+        run: |
+          APP="build_ios/bin/Release/Blender.app"
+          echo "Found app at: $APP"
+          ls -la "$APP" || (echo "App not found, searching..." && find build_ios -name "*.app" -type d)
+          du -sh "$APP"
+          rm -rf "$APP/Assets/5.0/python/lib/python3.11/config-3.11-darwin"
+          mkdir -p IPA/Payload
+          cp -r "$APP" IPA/Payload/
+          cd IPA && zip -r ../Blender.ipa Payload/
+          ls -lh ../Blender.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-ipad-unsigned
+          path: Blender.ipa
+          retention-days: 30
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            build_ios/**/*.log
+            build_ios/**/*.txt
+          retention-days: 7
