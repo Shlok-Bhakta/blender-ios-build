@@ -27,7 +27,7 @@ jobs:
           df -h
 
       - name: Install dependencies
-        run: brew install git-lfs cmake eigen fmt openimageio zstd
+        run: brew install git-lfs cmake eigen fmt openimageio zstd python@3.11
 
       - name: Initialize Git LFS
         run: git lfs install
@@ -112,7 +112,7 @@ jobs:
           key: ${{ runner.os }}-ios-arm64-libs-${{ steps.ios-libs-cache-key.outputs.sha }}-bootstrap-v3
 
       - name: Generate Xcode project
-        run: cmake -G Xcode -S . -B build_ios -DAPPLE_TARGET_DEVICE=ios
+        run: cmake -G Xcode -S . -B build_ios -DAPPLE_TARGET_DEVICE=ios -DPYTHON_VERSION=3.11
 
       - name: List Xcode targets
         run: xcodebuild -project build_ios/Blender.xcodeproj -list
