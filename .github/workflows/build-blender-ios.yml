@@ -138,6 +138,9 @@ jobs:
           ls -la build_ios/build_darwin_tools/ 2>&1 || echo "build_darwin_tools not found"
           ls -la build_ios/build_darwin_tools/*/bin/ 2>&1 || echo "bin dirs not found"
           find build_ios/build_darwin_tools -name "makesdna" -o -name "shader_tool" 2>&1 || echo "tools not found"
+          echo "=== Checking if blender_cross_tools actually built ==="
+          ls -la build_ios/build_darwin_tools/Release/bin/ 2>&1 || echo "Release/bin not found"
+          ls -la ../build_ios/build_darwin_tools/Release/bin/ 2>&1 || echo "Parent build_darwin_tools/Release/bin not found"
 
       - name: Build Blender.app for iOS
         run: |
