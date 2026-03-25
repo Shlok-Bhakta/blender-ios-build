@@ -83,33 +83,35 @@ endif()
 
 add_cc_flags_custom_test(makesdna)
 
-add_executable(makesdna ${SRC} ${SRC_DNA_INC})
-setup_platform_linker_flags(makesdna)
-setup_platform_linker_libs(makesdna)
-blender_target_include_dirs(makesdna ${INC})
-blender_target_include_dirs_sys(makesdna ${INC_SYS})
-target_link_libraries(makesdna ${LIB})
-target_link_libraries(makesdna PRIVATE bf::dependencies::pthreads)
+if(NOT WITH_CROSSCOMPILED_TOOLS)
+  add_executable(makesdna ${SRC} ${SRC_DNA_INC})
+  setup_platform_linker_flags(makesdna)
+  setup_platform_linker_libs(makesdna)
+  blender_target_include_dirs(makesdna ${INC})
+  blender_target_include_dirs_sys(makesdna ${INC_SYS})
+  target_link_libraries(makesdna ${LIB})
+  target_link_libraries(makesdna PRIVATE bf::dependencies::pthreads)
 
-# Output dna.cc
-add_custom_command(
-  OUTPUT
-    ${CMAKE_CURRENT_BINARY_DIR}/dna.cc
-    ${CMAKE_CURRENT_BINARY_DIR}/dna_defaults.cc
-    ${CMAKE_CURRENT_BINARY_DIR}/dna_struct_ids.cc
-    ${CMAKE_CURRENT_BINARY_DIR}/dna_type_offsets.h
-    ${CMAKE_CURRENT_BINARY_DIR}/dna_verify.cc
-  COMMAND
-    ${CMAKE_COMMAND} -E env ${PLATFORM_ENV_BUILD}
-    "$<TARGET_FILE:makesdna>"
-    ${CMAKE_CURRENT_BINARY_DIR}/dna.cc
-    ${CMAKE_CURRENT_BINARY_DIR}/dna_type_offsets.h
-    ${CMAKE_CURRENT_BINARY_DIR}/dna_verify.cc
-    ${CMAKE_CURRENT_BINARY_DIR}/dna_struct_ids.cc
-    ${CMAKE_CURRENT_BINARY_DIR}/dna_defaults.cc
-    ${CMAKE_SOURCE_DIR}/source/blender/makesdna/
-  DEPENDS makesdna
-)
+  # Output dna.cc
+  add_custom_command(
+    OUTPUT
+      ${CMAKE_CURRENT_BINARY_DIR}/dna.cc
+      ${CMAKE_CURRENT_BINARY_DIR}/dna_defaults.cc
+      ${CMAKE_CURRENT_BINARY_DIR}/dna_struct_ids.cc
+      ${CMAKE_CURRENT_BINARY_DIR}/dna_type_offsets.h
+      ${CMAKE_CURRENT_BINARY_DIR}/dna_verify.cc
+    COMMAND
+      ${CMAKE_COMMAND} -E env ${PLATFORM_ENV_BUILD}
+      "$<TARGET_FILE:makesdna>"
+      ${CMAKE_CURRENT_BINARY_DIR}/dna.cc
+      ${CMAKE_CURRENT_BINARY_DIR}/dna_type_offsets.h
+      ${CMAKE_CURRENT_BINARY_DIR}/dna_verify.cc
+      ${CMAKE_CURRENT_BINARY_DIR}/dna_struct_ids.cc
+      ${CMAKE_CURRENT_BINARY_DIR}/dna_defaults.cc
+      ${CMAKE_SOURCE_DIR}/source/blender/makesdna/
+    DEPENDS makesdna
+  )
+endif()
 
 
 # -----------------------------------------------------------------------------

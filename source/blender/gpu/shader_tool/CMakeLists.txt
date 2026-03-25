@@ -35,5 +35,7 @@ if(WITH_GPU_SHADER_ASSERT)
 endif()
 
 # `SRC_DNA_INC` is defined in the parent directory.
-add_executable(shader_tool ${SRC})
-optimize_debug_target(shader_tool)
+if(NOT WITH_CROSSCOMPILED_TOOLS)
+  add_executable(shader_tool ${SRC})
+  optimize_debug_target(shader_tool)
+endif()
