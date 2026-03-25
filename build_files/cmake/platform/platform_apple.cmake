@@ -151,14 +151,25 @@ if(WITH_JACK)
 endif()
 
 if(NOT DEFINED LIBDIR)
-  if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
-    set(LIBDIR ${CMAKE_SOURCE_DIR}/lib/macos_x64)
+  if(WITH_APPLE_CROSSPLATFORM)
+    set(LIBDIR ${CMAKE_SOURCE_DIR}/lib/${APPLE_TARGET_DEVICE}_${CMAKE_OSX_ARCHITECTURES})
   else()
-    set(LIBDIR ${CMAKE_SOURCE_DIR}/lib/macos_${CMAKE_OSX_ARCHITECTURES})
+    if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
+      set(LIBDIR ${CMAKE_SOURCE_DIR}/lib/macos_x64)
+    else()
+      set(LIBDIR ${CMAKE_SOURCE_DIR}/lib/macos_${CMAKE_OSX_ARCHITECTURES})
+    endif()
   endif()
 endif()
-if(NOT EXISTS "${LIBDIR}/.git")
-  message(FATAL_ERROR "Mac OSX requires pre-compiled libs at: '${LIBDIR}'")
+if(WITH_APPLE_CROSSPLATFORM)
+  # Check whether python lib exists as prebuilt IOS libs will not have their own repo.
+  if(NOT EXISTS "${LIBDIR}/python/")
+    message(FATAL_ERROR "IOS build requires pre-compiled libs at: '${LIBDIR}'")
+  endif()
+else()
+  if(NOT EXISTS "${LIBDIR}/.git")
+    message(FATAL_ERROR "Mac OSX requires pre-compiled libs at: '${LIBDIR}'")
+  endif()
 endif()
 if(FIRST_RUN)
   message(STATUS "Using pre-compiled LIBDIR: ${LIBDIR}")
@@ -170,7 +181,26 @@ set(CMAKE_FIND_FRAMEWORK NEVER)
 
 # Optionally use system Python if PYTHON_ROOT_DIR is specified.
 if(WITH_PYTHON)
-  if(WITH_PYTHON_MODULE AND PYTHON_ROOT_DIR)
+  if(WITH_APPLE_CROSSPLATFORM)
+    # When building for iOS we use the MacOS version of Python from the macos libs dir
+    set(CROSSCOMPILE_HOST_LIBDIR "${CMAKE_SOURCE_DIR}/lib/macos_arm64")
+    if(NOT PYTHON_VERSION)
+      # IOS_FIXME: This is not great why is PYTHON_VERSION not defined here?
+      message("WARNING Manually defining Python Version to 3.11 for iOS build")
+      set(PYTHON_EXECUTABLE "${CROSSCOMPILE_HOST_LIBDIR}/python/bin/python3.11")
+    else()
+      set(PYTHON_EXECUTABLE "${CROSSCOMPILE_HOST_LIBDIR}/python/bin/python${PYTHON_VERSION}")
+    endif()
+    if(NOT EXISTS ${PYTHON_EXECUTABLE})
+      message(
+        FATAL_ERROR
+        "Missing: <${PYTHON_EXECUTABLE}>\n"
+        "MacOS version of Python must exist to build iOS version\n"
+        "Try building MacOS version first: 'make update' or 'make deps'\n"
+      )
+    endif()
+    message(STATUS "HOST PYTHON EXECUTABLE: ${PYTHON_EXECUTABLE}")
+  elseif(WITH_PYTHON_MODULE AND PYTHON_ROOT_DIR)
     find_package(PythonLibsUnix REQUIRED)
   endif()
 else()
