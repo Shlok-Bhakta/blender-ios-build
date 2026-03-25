@@ -134,6 +134,10 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
+          echo "=== Checking cross-compile tools ==="
+          ls -la build_ios/build_darwin_tools/ 2>&1 || echo "build_darwin_tools not found"
+          ls -la build_ios/build_darwin_tools/*/bin/ 2>&1 || echo "bin dirs not found"
+          find build_ios/build_darwin_tools -name "makesdna" -o -name "shader_tool" 2>&1 || echo "tools not found"
 
       - name: Build Blender.app for iOS
         run: |
