@@ -104,7 +104,7 @@ jobs:
         run: |
           mkdir -p build_ios/build_darwin_tools/Release
           cmake -S . -B build_ios/build_darwin_tools/Release \
-            -G Ninja \
+            -G "Unix Makefiles" \
             -DWITH_APPLE_CROSSPLATFORM=ON \
             -DWITH_PYTHON=OFF \
             -DAPPLE_TARGET_DEVICE=macos \
