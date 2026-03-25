@@ -27,7 +27,7 @@ jobs:
           df -h
 
       - name: Install dependencies
-        run: brew install git-lfs cmake eigen fmt openimageio zstd python@3.13
+        run: brew install git-lfs cmake eigen fmt openimageio zstd python@3.13 libepoxy
 
       - name: Initialize Git LFS
         run: git lfs install
@@ -181,7 +181,6 @@ jobs:
             -DWITH_GPU_RENDER_TESTS_HEADED=OFF \
             -DWITH_GPU_SHADER_ASSERT=OFF \
             -DWITH_GPU_SHADER_CPP_COMPILATION=OFF \
-            -DCMAKE_DISABLE_FIND_PACKAGE_Epoxy=ON \
             -DWITH_USD=OFF \
             -DWITH_OPENCOLLADA=OFF \
             -DWITH_AUDASPACE=OFF \
