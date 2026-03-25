@@ -232,7 +232,7 @@ jobs:
             -DWITH_ASSERT_ABORT=ON \
             -DLIBDIR=${PWD}/lib/ios_arm64
           
-          cmake --build build_ios/build_darwin_tools --target makesdna makesrna datatoc shader_tool glsl_preprocess
+          cmake --build build_ios/build_darwin_tools --target makesdna makesrna datatoc shader_tool
           
           echo "=== Checking cross-compile tools ==="
           ls -la build_ios/build_darwin_tools/bin/ 2>&1 || echo "bin dir not found"
