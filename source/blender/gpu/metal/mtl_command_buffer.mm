@@ -636,7 +636,10 @@ bool MTLCommandBufferManager::insert_memory_barrier(GPUBarrier barrier_bits,
   MTLBarrierScope scope = 0;
   if (barrier_bits & GPU_BARRIER_SHADER_IMAGE_ACCESS || barrier_bits & GPU_BARRIER_TEXTURE_FETCH) {
     bool is_compute = (active_command_encoder_type_ != MTL_RENDER_COMMAND_ENCODER);
-    scope |= (is_compute ? 0 : MTLBarrierScopeRenderTargets) | MTLBarrierScopeTextures;
+    scope |= MTLBarrierScopeTextures;
+#ifndef WITH_APPLE_CROSSPLATFORM
+    scope |= is_compute ? 0 : MTLBarrierScopeRenderTargets;
+#endif
   }
   if (barrier_bits & GPU_BARRIER_SHADER_STORAGE ||
       barrier_bits & GPU_BARRIER_VERTEX_ATTRIB_ARRAY || barrier_bits & GPU_BARRIER_ELEMENT_ARRAY ||
