@@ -36,7 +36,11 @@ jobs:
         run: python3 ./build_files/utils/make_update.py --use-ios-libraries
 
       - name: Generate Xcode project
-        run: cmake -G Xcode -S . -B build_ios
+        run: |
+          cmake -G Xcode -S . -B build_ios \
+            -DWITH_APPLE_CROSSPLATFORM=ON \
+            -DAPPLE_TARGET_DEVICE=ios \
+            -DCMAKE_OSX_ARCHITECTURES=arm64
 
       - name: List Xcode targets
         run: xcodebuild -project build_ios/Blender.xcodeproj -list
@@ -49,7 +53,8 @@ jobs:
             -configuration Release \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            ARCHS=arm64
 
       - name: Build Blender.app for iOS
         run: |
