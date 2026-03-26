@@ -1,0 +1,354 @@
+/* SPDX-FileCopyrightText: 2001-2002 NaN Holding BV. All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later */
+
+/** \file
+ * \ingroup GHOST
+ * Declaration of GHOST_SystemIOS class.
+ */
+
+#pragma once
+
+#ifndef WITH_APPLE_CROSSPLATFORM
+#  error Apple IOS only!
+#endif  // __APPLE__
+
+// #define __CARBONSOUND__
+
+#include "GHOST_System.hh"
+
+class GHOST_EventCursor;
+class GHOST_EventKey;
+class GHOST_EventWindow;
+class GHOST_WindowIOS;
+
+#ifdef __OBJC__
+#  import <MetalKit/MTKView.h>
+
+@interface GHOST_IOSMetalRenderer : NSObject <MTKViewDelegate>
+
+- (nonnull instancetype)initWithMetalKitView:(nonnull MTKView *)mtkView;
+
+@end
+#endif
+
+GHOST_TKey convertKey(int rawCode, uint16_t recvChar, uint16_t /*keyAction*/);
+
+class GHOST_SystemIOS : public GHOST_System {
+ public:
+  /**
+   * Constructor.
+   */
+  GHOST_SystemIOS();
+
+  /**
+   * Destructor.
+   */
+  ~GHOST_SystemIOS() override;
+
+  /***************************************************************************************
+   * Time(r) functionality
+   ***************************************************************************************/
+
+  /**
+   * Returns the system time.
+   * Returns the number of milliseconds since the start of the system process.
+   * Based on ANSI clock() routine.
+   * \return The number of milliseconds.
+   */
+  uint64_t getMilliSeconds() const override;
+
+  /***************************************************************************************
+   * Display/window management functionality
+   ***************************************************************************************/
+
+  /**
+   * Returns the number of displays on this system.
+   * \return The number of displays.
+   */
+  uint8_t getNumDisplays() const override;
+
+  /**
+   * Returns the dimensions of the main display on this system.
+   * \return The dimension of the main display.
+   */
+  void getMainDisplayDimensions(uint32_t &width, uint32_t &height) const override;
+
+  /** Returns the combine dimensions of all monitors.
+   * \return The dimension of the workspace.
+   */
+  void getAllDisplayDimensions(uint32_t &width, uint32_t &height) const override;
+
+  /**
+   * Create a new window.
+   * The new window is added to the list of windows managed.
+   * Never explicitly delete the window, use #disposeWindow() instead.
+   * \param title: The name of the window.
+   * (displayed in the title bar of the window if the OS supports it).
+   * \param left: The coordinate of the left edge of the window.
+   * \param top: The coordinate of the top edge of the window.
+   * \param width: The width the window.
+   * \param height: The height the window.
+   * \param state: The state of the window when opened.
+   * \param gpu_settings: Misc OpenGL settings.
+   * \param exclusive: Use to show the window on top and ignore others (used full-screen).
+   * \param parent_window: Parent (embedder) window.
+   * \return The new window (or 0 if creation failed).
+   */
+  GHOST_IWindow *createWindow(const char *title,
+                              int32_t left,
+                              int32_t top,
+                              uint32_t width,
+                              uint32_t height,
+                              GHOST_TWindowState state,
+                              GHOST_GPUSettings gpu_settings,
+                              const bool exclusive = false,
+                              const bool is_dialog = false,
+                              const GHOST_IWindow *parent_window = NULL) override;
+
+  /**
+   * Create a new off-screen context.
+   * Never explicitly delete the context, use #disposeContext() instead.
+   * \return The new context (or 0 if creation failed).
+   */
+  GHOST_IContext *createOffscreenContext(GHOST_GPUSettings glSettings) override;
+
+  /**
+   * Dispose of a context.
+   * \param context: Pointer to the context to be disposed.
+   * \return Indication of success.
+   */
+  GHOST_TSuccess disposeContext(GHOST_IContext *context) override;
+
+  /**
+   * Get the Window under the cursor.
+   * \param x: The x-coordinate of the cursor.
+   * \param y: The y-coordinate of the cursor.
+   * \return The window under the cursor or nullptr if none.
+   */
+  GHOST_IWindow *getWindowUnderCursor(int32_t x, int32_t y) override;
+
+  /***************************************************************************************
+   * Event management functionality
+   ***************************************************************************************/
+
+  /**
+   * Gets events from the system and stores them in the queue.
+   * \param waitForEvent: Flag to wait for an event (or return immediately).
+   * \return Indication of the presence of events.
+   */
+  bool processEvents(bool waitForEvent) override;
+
+  /**
+   * Handle User request to quit, from Menu bar Quit, and Command+Q
+   * Display alert panel if changes performed since last save
+   */
+  void handleQuitRequest();
+
+  /**
+   * Handle Cocoa openFile event
+   * Display confirmation request panel if changes performed since last save
+   */
+  bool handleOpenDocumentRequest(void *filepathStr);
+
+  /**
+   * Handles a drag'n'drop destination event. Called by GHOST_WindowIOS window subclass
+   * \param eventType: The type of drag'n'drop event.
+   * \param draggedObjectType: The type object concerned.
+   * (currently array of file names, string, TIFF image).
+   * \param mouseX: x mouse coordinate (in cocoa base window coordinates).
+   * \param mouseY: y mouse coordinate.
+   * \param window: The window on which the event occurred.
+   * \return Indication whether the event was handled.
+   */
+  GHOST_TSuccess handleDraggingEvent(GHOST_TEventType eventType,
+                                     GHOST_TDragnDropTypes draggedObjectType,
+                                     GHOST_WindowIOS *window,
+                                     int mouseX,
+                                     int mouseY,
+                                     void *data);
+
+  /***************************************************************************************
+   * Cursor management functionality
+   ***************************************************************************************/
+
+  /**
+   * Returns the current location of the cursor (location in screen coordinates)
+   * \param x: The x-coordinate of the cursor.
+   * \param y: The y-coordinate of the cursor.
+   * \return Indication of success.
+   */
+  GHOST_TSuccess getCursorPosition(int32_t &x, int32_t &y) const override;
+
+  /**
+   * Updates the location of the cursor (location in screen coordinates).
+   * \param x: The x-coordinate of the cursor.
+   * \param y: The y-coordinate of the cursor.
+   * \return Indication of success.
+   */
+  GHOST_TSuccess setCursorPosition(int32_t x, int32_t y) override;
+
+  /***************************************************************************************
+   * Access to mouse button and keyboard states.
+   ***************************************************************************************/
+
+  /**
+   * Returns the state of all modifier keys.
+   * \param keys: The state of all modifier keys (true == pressed).
+   * \return Indication of success.
+   */
+  GHOST_TSuccess getModifierKeys(GHOST_ModifierKeys &keys) const override;
+
+  /**
+   * Returns the state of the mouse buttons (outside the message queue).
+   * \param buttons: The state of the buttons.
+   * \return Indication of success.
+   */
+  GHOST_TSuccess getButtons(GHOST_Buttons &buttons) const override;
+
+  GHOST_TCapabilityFlag getCapabilities() const override;
+
+  /**
+   * Returns Clipboard data
+   * \param selection: Indicate which buffer to return.
+   * \return Returns the selected buffer
+   */
+  char *getClipboard(bool selection) const override;
+
+  /**
+   * Puts buffer to system clipboard
+   * \param buffer: The buffer to be copied.
+   * \param selection: Indicates which buffer to copy too, only used on X11.
+   */
+  void putClipboard(const char *buffer, bool selection) const override;
+
+  /**
+   * Pops up a keybaord on screen. Called by GHOST_WindowIOS window subclass
+   * \param mouseX: x mouse coordinate (in cocoa base window coordinates).
+   * \param mouseY: y mouse coordinate.
+   * \param window: The window on which the event occurred.
+   * \return Indication whether the event was handled.
+   */
+  GHOST_TSuccess popupOnScreenKeyboard(
+      GHOST_IWindow *window, const GHOST_KeyboardProperties &keyboard_properties) override;
+
+  /**
+   * Hides a popup a keybaord. Called by GHOST_WindowIOS window subclass
+   * \param mouseX: x mouse coordinate (in cocoa base window coordinates).
+   * \param mouseY: y mouse coordinate.
+   * \param window: The window on which the event occurred.
+   * \return Indication whether the event was handled.
+   */
+  GHOST_TSuccess hideOnScreenKeyboard(GHOST_IWindow *window) override;
+
+  const char *getKeyboardInput(GHOST_IWindow *window) override;
+
+  GHOST_TSuccess startSecurityScopedFileAccess(const char *filepath);
+  GHOST_TSuccess stopSecurityScopedFileAccess(const char *filepath);
+
+  /**
+   * Handles a window event. Called by GHOST_WindowIOS window delegate
+   * \param eventType: The type of window event.
+   * \param window: The window on which the event occurred.
+   * \return Indication whether the event was handled.
+   */
+  GHOST_TSuccess handleWindowEvent(GHOST_TEventType eventType, GHOST_WindowIOS *window);
+
+  /**
+   * Handles the Cocoa event telling the application has become active (again)
+   * \return Indication whether the event was handled.
+   */
+  GHOST_TSuccess handleApplicationBecomeActiveEvent();
+
+  /**
+   * \return True if any dialog window is open.
+   */
+  bool hasDialogWindow();
+
+  /**
+   * External objects should call this when they send an event outside processEvents.
+   */
+  void notifyExternalEventProcessed();
+
+  /**
+   * \see GHOST_ISystem
+   */
+  bool setConsoleWindowState(GHOST_TConsoleWindowState /*action*/) override
+  {
+    return false;
+  }
+
+  /* None of this currently required for iOS */
+#if 0
+  /**
+   * Handles a tablet event.
+   * \param eventPtr: An #NSEvent pointer (cast to void* to enable compilation in standard C++).
+   * \param eventType: The type of the event.
+   * It needs to be passed separately as it can be either directly in the event type,
+   * or as a sub-type if combined with a mouse button event.
+   * \return Indication whether the event was handled.
+   */
+  GHOST_TSuccess handleTabletEvent(void *eventPtr, short eventType);
+  bool handleTabletEvent(void *eventPtr);
+
+  /**
+   * Handles a mouse event.
+   * \param eventPtr: An #NSEvent pointer (cast to `void *` to enable compilation in standard C++).
+   * \return Indication whether the event was handled.
+   */
+  GHOST_TSuccess handleMouseEvent(void *eventPtr);
+
+  /**
+   * Handles a key event.
+   * \param eventPtr: An #NSEvent pointer (cast to `void *` to enable compilation in standard C++).
+   * \return Indication whether the event was handled.
+   */
+  GHOST_TSuccess handleKeyEvent(void *eventPtr);
+
+#endif
+
+  /* Public global state vars that track the currently valid window from the iOS POV. */
+  GHOST_WindowIOS *current_active_window_ = nullptr;
+  GHOST_WindowIOS *next_active_window_ = nullptr;
+
+ protected:
+  /**
+   * Initializes the system.
+   * For now, it just registers the window class (WNDCLASS).
+   * \return A success value.
+   */
+  GHOST_TSuccess init() override;
+
+  /**
+   * Performs the actual cursor position update (location in screen coordinates).
+   * \param x: The x-coordinate of the cursor.
+   * \param y: The y-coordinate of the cursor.
+   * \return Indication of success.
+   */
+  GHOST_TSuccess setMouseCursorPosition(int32_t x, int32_t y);
+
+  /** Start time at initialization. */
+  uint64_t m_start_time;
+
+  /** Event has been processed directly by Cocoa (or NDOF manager)
+   * and has sent a ghost event to be dispatched */
+  bool outside_loop_event_processed_;
+
+  /** Raised window is not yet known by the window manager,
+   * so delay application become active event handling */
+  bool need_delayed_application_become_active_event_processing_;
+
+  /** State of the modifiers. */
+  uint32_t modifier_mask_;
+
+  /** Ignores window size messages (when window is dragged). */
+  bool ignore_window_sized_message_;
+
+  /** Temporarily ignore momentum scroll events */
+  bool ignore_momentum_scroll_;
+  /** Is the scroll wheel event generated by a multi-touch track-pad or mouse? */
+  bool multi_touch_scroll_;
+  /** To prevent multiple warp, we store the time of the last warp event
+   * and ignore mouse moved events generated before that. */
+  double last_warp_timestamp_;
+};

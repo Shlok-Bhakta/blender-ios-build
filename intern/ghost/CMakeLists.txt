@@ -151,21 +151,36 @@ elseif(WITH_GHOST_SDL)
     bf::dependencies::optional::sdl
   )
 elseif(APPLE AND NOT WITH_GHOST_X11)
-  list(APPEND SRC
-    intern/GHOST_SystemCocoa.mm
-    intern/GHOST_WindowCocoa.mm
-
-    intern/GHOST_SystemCocoa.hh
-    intern/GHOST_WindowCocoa.hh
-    intern/GHOST_WindowViewCocoa.hh
-  )
-
-  if(WITH_INPUT_NDOF)
+  if(WITH_APPLE_CROSSPLATFORM AND APPLE_TARGET_DEVICE STREQUAL "ios")
+    # iOS/iPadOS GHOST implementation
+    message(STATUS "Configuring GHOST for iOS")
     list(APPEND SRC
-      intern/GHOST_NDOFManagerCocoa.mm
+      intern/GHOST_SystemIOS.mm
+      intern/GHOST_WindowIOS.mm
+      intern/GHOST_ContextIOS.mm
 
-      intern/GHOST_NDOFManagerCocoa.hh
+      intern/GHOST_SystemIOS.hh
+      intern/GHOST_WindowIOS.hh
+      intern/GHOST_ContextIOS.hh
     )
+  else()
+    # macOS Cocoa GHOST implementation
+    list(APPEND SRC
+      intern/GHOST_SystemCocoa.mm
+      intern/GHOST_WindowCocoa.mm
+
+      intern/GHOST_SystemCocoa.hh
+      intern/GHOST_WindowCocoa.hh
+      intern/GHOST_WindowViewCocoa.hh
+    )
+
+    if(WITH_INPUT_NDOF)
+      list(APPEND SRC
+        intern/GHOST_NDOFManagerCocoa.mm
+
+        intern/GHOST_NDOFManagerCocoa.hh
+      )
+    endif()
   endif()
 
 elseif(WITH_GHOST_X11 OR WITH_GHOST_WAYLAND)
