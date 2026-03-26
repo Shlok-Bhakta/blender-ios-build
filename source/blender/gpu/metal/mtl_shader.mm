@@ -912,11 +912,16 @@ MTLRenderPipelineStateInstance *MTLShader::bake_graphic_pipeline_state(
   @autoreleasepool {
     MTLAutoreleasedRenderPipelineReflection reflection_data;
     NSError *error = nullptr;
+    MTLPipelineOption pipeline_options = 0;
+
+#ifndef WITH_APPLE_CROSSPLATFORM
+    pipeline_options = MTLPipelineOptionBufferTypeInfo;
+#endif
 
     /* Compile PSO */
     id<MTLRenderPipelineState> pso = [ctx->device
         newRenderPipelineStateWithDescriptor:desc
-                                     options:MTLPipelineOptionBufferTypeInfo
+                                     options:pipeline_options
                                   reflection:&reflection_data
                                        error:&error];
     if (error) {

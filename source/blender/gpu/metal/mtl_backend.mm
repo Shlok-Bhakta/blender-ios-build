@@ -271,7 +271,11 @@ void MTLBackend::platform_init(MTLContext *ctx)
   GPG.device_uuid.reinitialize(0);
 
   /* LUID is registryID on Metal, or at least this is what libraries like OIDN expects. */
+#ifdef WITH_APPLE_CROSSPLATFORM
+  const uint64_t luid = 0;
+#else
   const uint64_t luid = mtl_device.registryID;
+#endif
   GPG.device_luid.reinitialize(sizeof(luid));
   std::memcpy(GPG.device_luid.data(), &luid, sizeof(luid));
 
@@ -304,7 +308,11 @@ bool supports_barycentric_whitelist(id<MTLDevice> device)
   const char *vendor = [gpu_name UTF8String];
 
   /* Verify GPU support. */
+#ifdef WITH_APPLE_CROSSPLATFORM
+  bool supported_gpu = true;
+#else
   bool supported_gpu = [device supportsFamily:MTLGPUFamilyMac2];
+#endif
   bool should_support_barycentrics = false;
 
   /* Known good configs. */
@@ -380,6 +388,9 @@ bool MTLBackend::metal_is_supported()
   /* Device compatibility information using Metal Feature-set tables.
    * See: https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf */
 
+#ifdef WITH_APPLE_CROSSPLATFORM
+  bool supported_os_version = true;
+#else
   NSOperatingSystemVersion version = [[NSProcessInfo processInfo] operatingSystemVersion];
 
   /* Metal Viewport requires macOS Version 10.15 onward. */
@@ -393,9 +404,11 @@ bool MTLBackend::metal_is_supported()
         (long)version.minorVersion);
     return false;
   }
+#endif
 
   id<MTLDevice> device = MTLCreateSystemDefaultDevice();
 
+#ifndef WITH_APPLE_CROSSPLATFORM
   /* Debug: Enable low power GPU with Environment Var: METAL_FORCE_INTEL. */
   static const char *forceIntelStr = getenv("METAL_FORCE_INTEL");
   bool forceIntel = forceIntelStr ? (atoi(forceIntelStr) != 0) : false;
@@ -408,14 +421,20 @@ bool MTLBackend::metal_is_supported()
       }
     }
   }
+#endif
 
   /* Metal Viewport requires argument buffer tier-2 support and Barycentric Coordinates.
    * These are available on most hardware configurations supporting Metal 2.2. */
   bool supports_argument_buffers_tier2 = ([device argumentBuffersSupport] ==
                                           MTLArgumentBuffersTier2);
+#ifdef WITH_APPLE_CROSSPLATFORM
+  bool supports_barycentrics = supports_barycentric_whitelist(device);
+  bool supported_metal_version = true;
+#else
   bool supports_barycentrics = [device supportsShaderBarycentricCoordinates] ||
                                supports_barycentric_whitelist(device);
   bool supported_metal_version = [device supportsFamily:MTLGPUFamilyMac2];
+#endif
 
   bool result = supports_argument_buffers_tier2 && supports_barycentrics && supported_os_version &&
                 supported_metal_version;
@@ -449,12 +468,19 @@ void MTLBackend::capabilities_init(MTLContext *ctx)
   /* Initialize Capabilities. */
   MTLBackend::capabilities.supports_argument_buffers_tier2 = ([device argumentBuffersSupport] ==
                                                               MTLArgumentBuffersTier2);
+#ifdef WITH_APPLE_CROSSPLATFORM
+  MTLBackend::capabilities.supports_family_mac1 = false;
+  MTLBackend::capabilities.supports_family_mac2 = false;
+  MTLBackend::capabilities.supports_family_mac_catalyst1 = false;
+  MTLBackend::capabilities.supports_family_mac_catalyst2 = false;
+#else
   MTLBackend::capabilities.supports_family_mac1 = [device supportsFamily:MTLGPUFamilyMac1];
   MTLBackend::capabilities.supports_family_mac2 = [device supportsFamily:MTLGPUFamilyMac2];
   MTLBackend::capabilities.supports_family_mac_catalyst1 = [device
       supportsFamily:MTLGPUFamilyMacCatalyst1];
   MTLBackend::capabilities.supports_family_mac_catalyst2 = [device
       supportsFamily:MTLGPUFamilyMacCatalyst2];
+#endif
   /* NOTE(Metal): Texture gather is supported on AMD, but results are non consistent
    * with Apple Silicon GPUs. Disabling for now to avoid erroneous rendering. */
   MTLBackend::capabilities.supports_texture_gather = [device hasUnifiedMemory];

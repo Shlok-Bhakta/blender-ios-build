@@ -563,11 +563,11 @@ id<MTLBuffer> MTLContext::get_null_buffer()
    * UBOs to avoid any GPU memory issues. */
   static const int null_buffer_size = 20480;
   null_buffer_ = [this->device newBufferWithLength:null_buffer_size
-                                           options:MTLResourceStorageModeManaged];
+                                            options:mtl_resource_options_cpu_visible(this->device)];
   [null_buffer_ retain];
   uint32_t *null_data = (uint32_t *)calloc(1, null_buffer_size);
   memcpy([null_buffer_ contents], null_data, null_buffer_size);
-  [null_buffer_ didModifyRange:NSMakeRange(0, null_buffer_size)];
+  mtl_buffer_flush_range(null_buffer_, NSMakeRange(0, null_buffer_size));
   free(null_data);
 
   BLI_assert(null_buffer_ != nil);
@@ -583,13 +583,14 @@ id<MTLBuffer> MTLContext::get_null_attribute_buffer()
   /* Allocate Null buffer if it has not yet been created.
    * Min buffer size is 256 bytes -- though we only need 64 bytes of data. */
   static const int null_buffer_size = 256;
-  null_attribute_buffer_ = [this->device newBufferWithLength:null_buffer_size
-                                                     options:MTLResourceStorageModeManaged];
+  null_attribute_buffer_ = [this->device
+      newBufferWithLength:null_buffer_size
+                 options:mtl_resource_options_cpu_visible(this->device)];
   BLI_assert(null_attribute_buffer_ != nil);
   [null_attribute_buffer_ retain];
   float data[4] = {0.0f, 0.0f, 0.0f, 1.0f};
   memcpy([null_attribute_buffer_ contents], data, sizeof(float) * 4);
-  [null_attribute_buffer_ didModifyRange:NSMakeRange(0, null_buffer_size)];
+  mtl_buffer_flush_range(null_attribute_buffer_, NSMakeRange(0, null_buffer_size));
 
   return null_attribute_buffer_;
 }

@@ -374,9 +374,9 @@ void MTLStorageBuf::async_flush_to_host()
 
   /* For discrete memory systems, explicitly flush GPU-resident memory back to host. */
   id<MTLBuffer> storage_buf_mtl = this->metal_buffer_->get_metal_buffer();
-  if (storage_buf_mtl.storageMode == MTLStorageModeManaged) {
+  if (mtl_storage_mode_is_managed(storage_buf_mtl.storageMode)) {
     id<MTLBlitCommandEncoder> blit_encoder = ctx->main_command_buffer.ensure_begin_blit_encoder();
-    [blit_encoder synchronizeResource:storage_buf_mtl];
+    mtl_synchronize_resource(blit_encoder, storage_buf_mtl);
   }
 
   /* Encode event signal and flush command buffer to ensure GPU work is in the pipeline for future
@@ -420,8 +420,8 @@ void MTLStorageBuf::read(void *data)
                         toBuffer:staging_buf_mtl
                destinationOffset:0
                             size:size_in_bytes_];
-    if (staging_buf_mtl.storageMode == MTLStorageModeManaged) {
-      [blit_encoder synchronizeResource:staging_buf_mtl];
+    if (mtl_storage_mode_is_managed(staging_buf_mtl.storageMode)) {
+      mtl_synchronize_resource(blit_encoder, staging_buf_mtl);
     }
 
     /* Device-only reads will always stall the GPU pipe. */
@@ -450,7 +450,7 @@ void MTLStorageBuf::read(void *data)
     }
 
     /* Managed buffers need to be explicitly flushed back to host. */
-    if (metal_buffer_->get_resource_options() & MTLResourceStorageModeManaged) {
+    if (mtl_resource_options_is_managed(metal_buffer_->get_resource_options())) {
       /* Fetch active context. */
       MTLContext *ctx = MTLContext::get();
       BLI_assert(ctx);
@@ -458,7 +458,7 @@ void MTLStorageBuf::read(void *data)
       /* Ensure GPU updates are flushed back to CPU. */
       id<MTLBlitCommandEncoder> blit_encoder =
           ctx->main_command_buffer.ensure_begin_blit_encoder();
-      [blit_encoder synchronizeResource:metal_buffer_->get_metal_buffer()];
+      mtl_synchronize_resource(blit_encoder, metal_buffer_->get_metal_buffer());
 
       /* Wait for the blit to finish. */
       GPU_finish();

@@ -106,7 +106,7 @@ void MTLQueryPool::get_occlusion_result(MutableSpan<uint32_t> r_values)
     id<MTLBlitCommandEncoder> blit_encoder = ctx->main_command_buffer.ensure_begin_blit_encoder();
     BLI_assert(blit_encoder);
     for (gpu::MTLBuffer *buf : buffer_) {
-      [blit_encoder synchronizeResource:buf->get_metal_buffer()];
+      mtl_synchronize_resource(blit_encoder, buf->get_metal_buffer());
     }
     BLI_assert(ctx->get_inside_frame());
   }

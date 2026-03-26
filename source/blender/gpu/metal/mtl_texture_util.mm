@@ -105,7 +105,9 @@ size_t get_mtl_format_bytesize(MTLPixelFormat tex_format)
       return 8;
     case MTLPixelFormatRGBA8Unorm_sRGB:
     case MTLPixelFormatDepth32Float:
+#ifndef WITH_APPLE_CROSSPLATFORM
     case MTLPixelFormatDepth24Unorm_Stencil8:
+#endif
       return 4;
     case MTLPixelFormatDepth16Unorm:
       return 2;
@@ -182,7 +184,9 @@ int get_mtl_format_num_components(MTLPixelFormat tex_format)
     case MTLPixelFormatR16Snorm:
     case MTLPixelFormatDepth32Float:
     case MTLPixelFormatDepth16Unorm:
+#ifndef WITH_APPLE_CROSSPLATFORM
     case MTLPixelFormatDepth24Unorm_Stencil8:
+#endif
       /* Treating this format as single-channel for direct data copies -- Stencil component is not
        * addressable. */
       return 1;

@@ -129,8 +129,7 @@ gpu::MTLBuffer *MTLBufferPool::allocate_aligned(uint64_t size,
   /* Allocate new MTL Buffer */
   MTLResourceOptions options;
   if (cpu_visible) {
-    options = ([device_ hasUnifiedMemory]) ? MTLResourceStorageModeShared :
-                                             MTLResourceStorageModeManaged;
+    options = mtl_resource_options_cpu_visible(device_);
   }
   else {
     options = MTLResourceStorageModePrivate;
@@ -749,7 +748,7 @@ uint64_t gpu::MTLBuffer::get_size_used() const
 bool gpu::MTLBuffer::requires_flush()
 {
   /* We do not need to flush shared memory, as addressable buffer is shared. */
-  return options_ & MTLResourceStorageModeManaged;
+  return mtl_resource_options_is_managed(options_);
 }
 
 void gpu::MTLBuffer::set_label(NSString *str)
@@ -770,7 +769,7 @@ void gpu::MTLBuffer::flush()
 {
   this->debug_ensure_used();
   if (this->requires_flush()) {
-    [metal_buffer_ didModifyRange:NSMakeRange(0, size_)];
+    mtl_buffer_flush_range(metal_buffer_, NSMakeRange(0, size_));
   }
 }
 
@@ -779,7 +778,7 @@ void gpu::MTLBuffer::flush_range(uint64_t offset, uint64_t length)
   this->debug_ensure_used();
   if (this->requires_flush()) {
     BLI_assert((offset + length) <= size_);
-    [metal_buffer_ didModifyRange:NSMakeRange(offset, length)];
+    mtl_buffer_flush_range(metal_buffer_, NSMakeRange(offset, length));
   }
 }
 
@@ -812,7 +811,7 @@ uint64_t gpu::MTLBuffer::get_alignment()
 bool MTLBufferRange::requires_flush()
 {
   /* We do not need to flush shared memory. */
-  return this->options & MTLResourceStorageModeManaged;
+  return mtl_resource_options_is_managed(this->options);
 }
 
 void MTLBufferRange::flush()
@@ -821,8 +820,9 @@ void MTLBufferRange::flush()
     BLI_assert(this->metal_buffer);
     BLI_assert((this->buffer_offset + this->size) <= [this->metal_buffer length]);
     BLI_assert(this->buffer_offset >= 0);
-    [this->metal_buffer
-        didModifyRange:NSMakeRange(this->buffer_offset, this->size - this->buffer_offset)];
+    mtl_buffer_flush_range(this->metal_buffer,
+                           NSMakeRange(this->buffer_offset,
+                                       this->size - this->buffer_offset));
   }
 }
 

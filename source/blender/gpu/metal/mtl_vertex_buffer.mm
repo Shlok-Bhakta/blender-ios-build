@@ -181,8 +181,8 @@ void MTLVertBuf::bind()
 
       /* Flush newly copied data back to host-side buffer, if one exists.
        * Ensures data and cache coherency for managed MTLBuffers. */
-      if (copy_new_buffer.storageMode == MTLStorageModeManaged) {
-        [enc synchronizeResource:copy_new_buffer];
+      if (mtl_storage_mode_is_managed(copy_new_buffer.storageMode)) {
+        mtl_synchronize_resource(enc, copy_new_buffer);
       }
 
       /* For VBOs flagged as static, release host data as it will no longer be needed. */
@@ -223,9 +223,9 @@ void MTLVertBuf::update_sub(uint start, uint len, const void *data)
   MTLTemporaryBuffer scratch_allocation =
       ctx->get_scratch_buffer_manager().scratch_buffer_allocate_range_aligned(len, 256);
   memcpy(scratch_allocation.data, data, len);
-  if ([scratch_allocation.metal_buffer storageMode] == MTLStorageModeManaged) {
-    [scratch_allocation.metal_buffer
-        didModifyRange:NSMakeRange(scratch_allocation.buffer_offset, len)];
+  if (mtl_storage_mode_is_managed([scratch_allocation.metal_buffer storageMode])) {
+    mtl_buffer_flush_range(scratch_allocation.metal_buffer,
+                           NSMakeRange(scratch_allocation.buffer_offset, len));
   }
   id<MTLBuffer> data_buffer = scratch_allocation.metal_buffer;
   uint64_t data_buffer_offset = scratch_allocation.buffer_offset;
@@ -245,8 +245,8 @@ void MTLVertBuf::update_sub(uint start, uint len, const void *data)
                    size:len];
 
   /* Flush modified buffer back to host buffer, if one exists. */
-  if (dst_buffer.storageMode == MTLStorageModeManaged) {
-    [enc synchronizeResource:dst_buffer];
+  if (mtl_storage_mode_is_managed(dst_buffer.storageMode)) {
+    mtl_synchronize_resource(enc, dst_buffer);
   }
 }
 
@@ -303,9 +303,9 @@ void MTLVertBuf::read(void *data) const
 
     /* Ensure data is flushed for host caches. */
     id<MTLBuffer> source_buffer = vbo_->get_metal_buffer();
-    if (source_buffer.storageMode == MTLStorageModeManaged) {
+    if (mtl_storage_mode_is_managed(source_buffer.storageMode)) {
       id<MTLBlitCommandEncoder> enc = ctx->main_command_buffer.ensure_begin_blit_encoder();
-      [enc synchronizeResource:source_buffer];
+      mtl_synchronize_resource(enc, source_buffer);
     }
 
     /* Ensure GPU has finished operating on commands which may modify data. */
@@ -335,8 +335,8 @@ void MTLVertBuf::read(void *data) const
 
     /* Flush newly copied data back to host-side buffer, if one exists.
      * Ensures data and cache coherency for managed MTLBuffers. */
-    if (dest_buffer.storageMode == MTLStorageModeManaged) {
-      [enc synchronizeResource:dest_buffer];
+    if (mtl_storage_mode_is_managed(dest_buffer.storageMode)) {
+      mtl_synchronize_resource(enc, dest_buffer);
     }
 
     /* wait for GPU. */

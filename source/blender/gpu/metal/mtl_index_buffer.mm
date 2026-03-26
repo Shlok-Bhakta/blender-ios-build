@@ -71,9 +71,9 @@ void MTLIndexBuf::read(uint32_t *data) const
 
     /* Ensure data is flushed for host caches. */
     id<MTLBuffer> source_buffer = ibo_->get_metal_buffer();
-    if (source_buffer.storageMode == MTLStorageModeManaged) {
+    if (mtl_storage_mode_is_managed(source_buffer.storageMode)) {
       id<MTLBlitCommandEncoder> enc = ctx->main_command_buffer.ensure_begin_blit_encoder();
-      [enc synchronizeResource:source_buffer];
+      mtl_synchronize_resource(enc, source_buffer);
     }
 
     /* Ensure GPU has finished operating on commands which may modify data. */
@@ -199,8 +199,8 @@ void MTLIndexBuf::update_sub(uint32_t start, uint32_t len, const void *data)
 
   /* Synchronize changes back to host to ensure CPU-side data is up-to-date for non
    * Shared buffers. */
-  if (dest_buffer.storageMode == MTLStorageModeManaged) {
-    [enc synchronizeResource:dest_buffer];
+  if (mtl_storage_mode_is_managed(dest_buffer.storageMode)) {
+    mtl_synchronize_resource(enc, dest_buffer);
   }
 
   /* Invalidate patched/optimized buffers. */

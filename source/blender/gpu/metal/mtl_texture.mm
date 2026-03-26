@@ -171,9 +171,11 @@ void gpu::MTLTexture::bake_mip_swizzle_view()
     MTLPixelFormat texture_view_pixel_format = gpu_texture_format_to_metal(format_);
     if (texture_view_stencil_) {
       switch (texture_view_pixel_format) {
+#ifndef WITH_APPLE_CROSSPLATFORM
         case MTLPixelFormatDepth24Unorm_Stencil8:
           texture_view_pixel_format = MTLPixelFormatX24_Stencil8;
           break;
+#endif
         case MTLPixelFormatDepth32Float_Stencil8:
           texture_view_pixel_format = MTLPixelFormatX32_Stencil8;
           break;
@@ -1127,8 +1129,8 @@ void gpu::MTLTexture::update_sub(int mip,
     if (can_use_direct_blit) {
       /* Textures which use MTLStorageModeManaged need to have updated contents
        * synced back to CPU to avoid an automatic flush overwriting contents. */
-      if (texture_.storageMode == MTLStorageModeManaged) {
-        [blit_encoder synchronizeResource:texture_];
+      if (mtl_storage_mode_is_managed(texture_.storageMode)) {
+        mtl_synchronize_resource(blit_encoder, texture_);
       }
       [blit_encoder optimizeContentsForGPUAccess:texture_];
     }
@@ -1136,9 +1138,8 @@ void gpu::MTLTexture::update_sub(int mip,
       /* Textures which use MTLStorageModeManaged need to have updated contents
        * synced back to CPU to avoid an automatic flush overwriting contents. */
       blit_encoder = ctx->main_command_buffer.ensure_begin_blit_encoder();
-      if (texture_.storageMode == MTLStorageModeManaged) {
-
-        [blit_encoder synchronizeResource:texture_];
+      if (mtl_storage_mode_is_managed(texture_.storageMode)) {
+        mtl_synchronize_resource(blit_encoder, texture_);
       }
       [blit_encoder optimizeContentsForGPUAccess:texture_];
     }
@@ -1201,8 +1202,8 @@ void MTLTexture::update_sub(int offset[3],
                 destinationLevel:0
                destinationOrigin:MTLOriginMake(offset[0], offset[1], 0)];
 
-    if (texture_.storageMode == MTLStorageModeManaged) {
-      [blit_encoder synchronizeResource:texture_];
+    if (mtl_storage_mode_is_managed(texture_.storageMode)) {
+      mtl_synchronize_resource(blit_encoder, texture_);
     }
     [blit_encoder optimizeContentsForGPUAccess:texture_];
   }
@@ -1467,8 +1468,8 @@ void gpu::MTLTexture::clear(eGPUDataFormat data_format, const void *data)
     /* Textures which use MTLStorageModeManaged need to have updated contents
      * synced back to CPU to avoid an automatic flush overwriting contents. */
     id<MTLBlitCommandEncoder> blit_encoder = ctx->main_command_buffer.ensure_begin_blit_encoder();
-    if (texture_.storageMode == MTLStorageModeManaged) {
-      [blit_encoder synchronizeResource:texture_];
+    if (mtl_storage_mode_is_managed(texture_.storageMode)) {
+      mtl_synchronize_resource(blit_encoder, texture_);
     }
     [blit_encoder optimizeContentsForGPUAccess:texture_];
   }
@@ -2002,12 +2003,12 @@ void gpu::MTLTexture::read_internal(int mip,
     if (copy_successful) {
 
       /* Use Blit encoder to synchronize results back to CPU. */
-      if (dest_buf->get_resource_options() == MTLResourceStorageModeManaged) {
+      if (mtl_resource_options_is_managed(dest_buf->get_resource_options())) {
         id<MTLBlitCommandEncoder> enc = ctx->main_command_buffer.ensure_begin_blit_encoder();
         if (G.debug & G_DEBUG_GPU) {
           [enc insertDebugSignpost:@"GPUTextureRead-syncResource"];
         }
-        [enc synchronizeResource:destination_buffer];
+        mtl_synchronize_resource(enc, destination_buffer);
       }
 
       /* Ensure GPU copy commands have completed. */
@@ -2614,9 +2615,7 @@ void *MTLPixelBuffer::map()
    * in-flight on the GPU. */
   MTLContext *ctx = MTLContext::get();
   BLI_assert(ctx);
-  MTLResourceOptions resource_options = ([ctx->device hasUnifiedMemory]) ?
-                                            MTLResourceStorageModeShared :
-                                            MTLResourceStorageModeManaged;
+  MTLResourceOptions resource_options = mtl_resource_options_cpu_visible(ctx->device);
 
   if (buffer_ != nil) {
     id<MTLBuffer> new_buffer = [ctx->device newBufferWithBytes:[buffer_ contents]
@@ -2639,8 +2638,8 @@ void MTLPixelBuffer::unmap()
   }
 
   /* Ensure changes are synchronized. */
-  if (buffer_.resourceOptions & MTLResourceStorageModeManaged) {
-    [buffer_ didModifyRange:NSMakeRange(0, size_)];
+  if (mtl_resource_options_is_managed(buffer_.resourceOptions)) {
+    mtl_buffer_flush_range(buffer_, NSMakeRange(0, size_));
   }
 }
 

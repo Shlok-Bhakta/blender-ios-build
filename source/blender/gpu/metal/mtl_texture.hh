@@ -601,7 +601,9 @@ inline bool mtl_format_is_writable(MTLPixelFormat format)
     case MTLPixelFormatDepth32Float:
     case MTLPixelFormatDepth32Float_Stencil8:
     case MTLPixelFormatBGR10A2Unorm:
+#ifndef WITH_APPLE_CROSSPLATFORM
     case MTLPixelFormatDepth24Unorm_Stencil8:
+#endif
       return false;
     default:
       return true;
@@ -632,11 +634,13 @@ inline MTLPixelFormat mtl_format_get_writeable_view_format(MTLPixelFormat format
       /* No alternative mirror format. This should not be used for
        * manual data upload */
       return MTLPixelFormatInvalid;
+#ifndef WITH_APPLE_CROSSPLATFORM
     case MTLPixelFormatDepth24Unorm_Stencil8:
       /* No direct format, but we'll just mirror the bytes -- `Uint`
        * should ensure bytes are not re-normalized or manipulated */
       // return MTLPixelFormatR32Uint;
       return MTLPixelFormatInvalid;
+#endif
     default:
       return format;
   }
