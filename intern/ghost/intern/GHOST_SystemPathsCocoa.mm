@@ -129,8 +129,13 @@ const char *GHOST_SystemPathsCocoa::getBinaryDir() const
 
 void GHOST_SystemPathsCocoa::addToSystemRecentFiles(const char *filepath) const
 {
+#ifndef WITH_APPLE_CROSSPLATFORM
   @autoreleasepool {
     NSURL *file_url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:filepath]];
     [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:file_url];
   }
+#else
+  // Remove unused param warning
+  (void)(filepath);
+#endif
 }

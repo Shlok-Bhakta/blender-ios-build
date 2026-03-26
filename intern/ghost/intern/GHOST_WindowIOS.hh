@@ -205,12 +205,12 @@ class GHOST_WindowIOS : public GHOST_Window {
    * Sets the progress bar value displayed in the window/application icon
    * \param progress: The progress percentage (0.0 to 1.0).
    */
-  GHOST_TSuccess setProgressBar(float progress);
+  GHOST_TSuccess setProgressBar(float progress) override;
 
   /**
    * Hides the progress bar icon
    */
-  GHOST_TSuccess endProgressBar();
+  GHOST_TSuccess endProgressBar() override;
 
   void setNativePixelSize(void);
 
