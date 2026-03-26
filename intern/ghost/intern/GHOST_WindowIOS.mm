@@ -459,7 +459,7 @@ typedef struct UserInputEvent {
       switch (event_type) {
         case UserInputEvent::EventTypes::CURSOR_MOVE:
           system->pushEvent(
-              new GHOST_EventCursor(system->getMilliSeconds(),
+              std::make_unique<GHOST_EventCursor>(system->getMilliSeconds(),
                                     GHOST_kEventCursorMove,
                                     window,
                                     event_info.location.x,
@@ -468,31 +468,29 @@ typedef struct UserInputEvent {
           break;
         case UserInputEvent::EventTypes::PAN_GESTURE:
           system->pushEvent(
-              new GHOST_EventTrackpad(system->getMilliSeconds(),
+              std::make_unique<GHOST_EventTrackpad>(system->getMilliSeconds(),
                                       window,
                                       GHOST_kTrackpadEventScroll,
                                       event_info.location.x,
                                       event_info.location.y,
                                       event_info.translation.x,
                                       event_info.translation.y,
-                                      false,
-                                      1));
+                                      false));
           break;
         case UserInputEvent::EventTypes::PAN_GESTURE_TWO_FINGERS:
           system->pushEvent(
-              new GHOST_EventTrackpad(system->getMilliSeconds(),
+              std::make_unique<GHOST_EventTrackpad>(system->getMilliSeconds(),
                                       window,
                                       GHOST_kTrackpadEventScroll,
                                       event_info.location.x,
                                       event_info.location.y,
                                       event_info.translation.x,
                                       event_info.translation.y,
-                                      true,
-                                      2));
+                                      true));
           break;
         case UserInputEvent::EventTypes::LEFT_BUTTON_DOWN:
           system->pushEvent(
-              new GHOST_EventButton(system->getMilliSeconds(),
+              std::make_unique<GHOST_EventButton>(system->getMilliSeconds(),
                                     GHOST_kEventButtonDown,
                                     window,
                                     GHOST_kButtonMaskLeft,
@@ -500,7 +498,7 @@ typedef struct UserInputEvent {
           break;
         case UserInputEvent::EventTypes::LEFT_BUTTON_UP:
           system->pushEvent(
-              new GHOST_EventButton(system->getMilliSeconds(),
+              std::make_unique<GHOST_EventButton>(system->getMilliSeconds(),
                                     GHOST_kEventButtonUp,
                                     window,
                                     GHOST_kButtonMaskLeft,
@@ -508,20 +506,19 @@ typedef struct UserInputEvent {
           break;
         case UserInputEvent::EventTypes::PINCH_GESTURE:
           system->pushEvent(
-              new GHOST_EventTrackpad(system->getMilliSeconds(),
+              std::make_unique<GHOST_EventTrackpad>(system->getMilliSeconds(),
                                       window,
                                       GHOST_kTrackpadEventMagnify,
                                       event_info.location.x,
                                       event_info.location.y,
                                       event_info.distance,
                                       0,
-                                      false,
-                                      2));
+                                      false));
           break;
         case UserInputEvent::EventTypes::PENCIL_TAP:
           /* Simulate clicking with the right mouse button. */
           system->pushEvent(
-              new GHOST_EventButton(system->getMilliSeconds(),
+              std::make_unique<GHOST_EventButton>(system->getMilliSeconds(),
                                     GHOST_kEventButtonDown,
                                     window,
                                     GHOST_kButtonMaskRight,
