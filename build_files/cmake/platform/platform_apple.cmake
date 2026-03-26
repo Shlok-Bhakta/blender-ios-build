@@ -36,6 +36,7 @@ if(WITH_APPLE_CROSSPLATFORM)
   set(WITH_SDL OFF CACHE BOOL ${NO_PLATFORM_SUPPORT_MSG} FORCE)
   set(WITH_INPUT_NDOF OFF CACHE BOOL ${NO_PLATFORM_SUPPORT_MSG} FORCE)
   set(WITH_PYTHON_MODULE OFF CACHE BOOL ${NO_PLATFORM_SUPPORT_MSG} FORCE)
+  set(WITH_BLENDER_THUMBNAILER OFF CACHE BOOL "Auto disabled because Quick Look thumbnailing is macOS-only" FORCE)
   set(WITH_OPENSUBDIV OFF CACHE BOOL "Auto disabled because OpenSubdiv GPU evaluator depends on OpenGL/Epoxy" FORCE)
   # Disable these modules for now
   set(WITH_PYTHON_INSTALL_ZSTANDARD OFF CACHE BOOL "Disable until iOS build supports SSL" FORCE)
