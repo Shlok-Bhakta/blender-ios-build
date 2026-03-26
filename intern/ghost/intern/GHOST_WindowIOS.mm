@@ -643,7 +643,7 @@ typedef struct UserInputEvent {
   touch_point.x *= scale;
   touch_point.y *= scale;
 
-  system->pushEvent(new GHOST_Event(
+  system->pushEvent(std::make_unique<GHOST_Event>(
       system->getMilliSeconds(), GHOST_kEventTwoFingerTap, window));
 }
 
@@ -658,7 +658,7 @@ typedef struct UserInputEvent {
   touch_point.x *= scale;
   touch_point.y *= scale;
 
-  system->pushEvent(new GHOST_Event(
+  system->pushEvent(std::make_unique<GHOST_Event>(
       system->getMilliSeconds(), GHOST_kEventThreeFingerTap, window));
 }
 
@@ -673,7 +673,7 @@ typedef struct UserInputEvent {
   touch_point.x *= scale;
   touch_point.y *= scale;
 
-  system->pushEvent(new GHOST_Event(
+  system->pushEvent(std::make_unique<GHOST_Event>(
       system->getMilliSeconds(), GHOST_kEventFourFingerTap, window));
 }
 
@@ -777,7 +777,7 @@ typedef struct UserInputEvent {
     return;
   }
 
-  system->pushEvent(new GHOST_EventTouch(
+  system->pushEvent(std::make_unique<GHOST_EventTouch>(
       system->getMilliSeconds(), window, ghostEventType, location.x, location.y));
 }
 
