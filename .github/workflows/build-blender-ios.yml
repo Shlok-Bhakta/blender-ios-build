@@ -241,18 +241,14 @@ jobs:
           ls -la build_ios/build_darwin_tools/bin/ 2>&1 || echo "bin dir not found"
           
           echo "=== Copying tools to expected location for iOS build ==="
-          # The iOS build expects tools at ../build_ios/build_darwin_tools/Release/bin/
-          # relative to CMAKE_SOURCE_DIR (repo root)
-          # Since CMAKE_SOURCE_DIR is the repo, ../build_ios means going up and back into build_ios
-          # We need to create the path at the parent level
+          # The iOS build expects tools at ../build_ios/build_darwin_tools/${CMAKE_BUILD_TYPE}/bin/
+          # CMAKE_BUILD_TYPE might be empty or "Release", so copy to both locations
           mkdir -p ../build_ios/build_darwin_tools/Release/bin/
-          cp -v build_ios/build_darwin_tools/bin/* ../build_ios/build_darwin_tools/Release/bin/ || echo "No tools to copy"
+          mkdir -p ../build_ios/build_darwin_tools/bin/
+          cp -v build_ios/build_darwin_tools/bin/* ../build_ios/build_darwin_tools/Release/bin/ || echo "No tools"
+          cp -v build_ios/build_darwin_tools/bin/* ../build_ios/build_darwin_tools/bin/ || echo "No tools"
+          ls -la ../build_ios/build_darwin_tools/bin/
           ls -la ../build_ios/build_darwin_tools/Release/bin/
-          
-          # Also keep the local copy for good measure
-          mkdir -p build_ios/build_darwin_tools/Release/bin/
-          cp -v build_ios/build_darwin_tools/bin/* build_ios/build_darwin_tools/Release/bin/ || echo "No tools to copy"
-          ls -la build_ios/build_darwin_tools/Release/bin/
           
           echo "=== Creating dummy GNUmakefile for iOS build ==="
           # The blender_cross_tools_compile target runs 'make tools'
