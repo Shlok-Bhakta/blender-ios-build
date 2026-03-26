@@ -2,7 +2,9 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later */
 
-#import <AppKit/NSDocumentController.h>
+#ifndef WITH_APPLE_CROSSPLATFORM
+#  import <AppKit/NSDocumentController.h>
+#endif
 #import <Foundation/Foundation.h>
 
 #include <optional>

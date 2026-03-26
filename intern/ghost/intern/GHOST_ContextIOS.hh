@@ -60,10 +60,19 @@ class GHOST_ContextIOS : public GHOST_Context {
   ~GHOST_ContextIOS();
 
   /**
+   * Acquires swap buffer (no-op for iOS Metal).
+   * \return A boolean success indicator.
+   */
+  GHOST_TSuccess swapBufferAcquire() override
+  {
+    return GHOST_kSuccess;
+  }
+
+  /**
    * Swaps front and back buffers of a window.
    * \return A boolean success indicator.
    */
-  GHOST_TSuccess swapBuffers() override;
+  GHOST_TSuccess swapBufferRelease() override;
 
   /**
    * Activates the drawing context of this window.

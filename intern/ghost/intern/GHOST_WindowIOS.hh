@@ -256,8 +256,8 @@ class GHOST_WindowIOS : public GHOST_Window {
   void resignKeyWindow();
 
 #ifdef WITH_INPUT_IME
-  void beginIME(int32_t x, int32_t y, int32_t w, int32_t h, bool completed);
-  void endIME();
+  void beginIME(int32_t x, int32_t y, int32_t w, int32_t h, bool completed) override;
+  void endIME() override;
 #endif /* WITH_INPUT_IME */
 
  protected:
@@ -265,32 +265,32 @@ class GHOST_WindowIOS : public GHOST_Window {
    * \param type: The type of rendering context create.
    * \return Indication of success.
    */
-  GHOST_Context *newDrawingContext(GHOST_TDrawingContextType type);
+  GHOST_Context *newDrawingContext(GHOST_TDrawingContextType type) override;
 
   /**
    * Invalidates the contents of this window.
    * \return Indication of success.
    */
-  GHOST_TSuccess invalidate();
+  GHOST_TSuccess invalidate() override;
 
   /**
    * Sets the cursor visibility on the window using
    * native window system calls.
    */
-  GHOST_TSuccess setWindowCursorVisibility(bool visible);
+  GHOST_TSuccess setWindowCursorVisibility(bool visible) override;
 
   /**
    * Sets the cursor grab on the window using
    * native window system calls.
    */
-  GHOST_TSuccess setWindowCursorGrab(GHOST_TGrabCursorMode mode);
+  GHOST_TSuccess setWindowCursorGrab(GHOST_TGrabCursorMode mode) override;
 
   /**
    * Sets the cursor shape on the window using
    * native window system calls.
    */
-  GHOST_TSuccess setWindowCursorShape(GHOST_TStandardCursor shape);
-  GHOST_TSuccess hasCursorShape(GHOST_TStandardCursor shape);
+  GHOST_TSuccess setWindowCursorShape(GHOST_TStandardCursor shape) override;
+  GHOST_TSuccess hasCursorShape(GHOST_TStandardCursor shape) override;
 
   /**
    * Sets the cursor shape on the window using
@@ -300,10 +300,10 @@ class GHOST_WindowIOS : public GHOST_Window {
                                             const uint8_t *mask,
                                             const int size[2],
                                             const int hot_size[2],
-                                            bool canInvertColor);
+                                            bool canInvertColor) override;
 
   /** \copydoc #GHOST_IWindow::getDPIHint */
-  uint16_t getDPIHint();
+  uint16_t getDPIHint() override;
 
   /** The mother SystemCocoa class to send events */
   GHOST_SystemIOS *system_ios_;
