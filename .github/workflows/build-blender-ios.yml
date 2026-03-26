@@ -214,7 +214,6 @@ jobs:
             -DWITH_IMAGE_OPENEXR=OFF \
             -DWITH_IMAGE_OPENJPEG=OFF \
             -DWITH_IMAGE_WEBP=OFF \
-            -DWITH_INTERNATIONAL=OFF \
             -DWITH_IO_FBX=OFF \
             -DWITH_IO_GREASE_PENCIL=OFF \
             -DWITH_IO_PLY=OFF \
@@ -244,7 +243,7 @@ jobs:
             -DWITH_ASSERT_ABORT=ON \
             -Dsse2neon_ROOT=${PWD}/lib/ios_arm64/sse2neon
           
-          cmake --build build_ios/build_darwin_tools --target makesdna makesrna datatoc shader_tool
+          cmake --build build_ios/build_darwin_tools --target makesdna makesrna msgfmt datatoc shader_tool
           
           echo "=== Checking cross-compile tools ==="
           ls -la build_ios/build_darwin_tools/bin/ 2>&1 || echo "bin dir not found"
