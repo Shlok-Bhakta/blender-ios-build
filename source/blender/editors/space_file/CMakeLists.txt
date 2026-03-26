@@ -41,6 +41,10 @@ if(WIN32)
   list(APPEND SRC
     fsmenu_system_win32.cc
   )
+elseif(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  list(APPEND SRC
+    fsmenu_system_unix.cc
+  )
 elseif(APPLE)
   list(APPEND SRC
     fsmenu_system_macos.mm
