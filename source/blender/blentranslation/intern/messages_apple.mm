@@ -8,7 +8,7 @@
 
 #include "messages.hh"
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 
 #include <cstdlib>
 #include <string>
