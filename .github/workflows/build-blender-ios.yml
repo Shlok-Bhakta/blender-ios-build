@@ -152,6 +152,9 @@ jobs:
           echo "=== Building cross-compilation tools natively on macOS ==="
           rm -rf build_ios/build_darwin_tools
           
+          # Create fake lib/macos_arm64/.git to satisfy platform_apple.cmake check
+          mkdir -p lib/macos_arm64/.git
+          
           cmake -S . -B build_ios/build_darwin_tools \
             -G Ninja \
             -DCMAKE_SYSTEM_NAME=Darwin \
