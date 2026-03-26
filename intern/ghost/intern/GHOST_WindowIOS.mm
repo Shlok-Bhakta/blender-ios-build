@@ -922,12 +922,12 @@ typedef struct UserInputEvent {
      This event should cause ui_textedit_end() to be called which will
      hide the keyboard.
      */
-    system->pushEvent(new GHOST_EventKey(system->getMilliSeconds(),
-                                         GHOST_kEventKeyDown,
-                                         window,
-                                         GHOST_kKeyEnter,
-                                         false,
-                                         nullptr));
+    system->pushEvent(std::make_unique<GHOST_EventKey>(system->getMilliSeconds(),
+                                                       GHOST_kEventKeyDown,
+                                                       window,
+                                                       GHOST_kKeyEnter,
+                                                       false,
+                                                       nullptr));
   }
   else {
     IOS_INPUT_LOG(@"Ignoring handleKeyboardReturn %@", text_field.text);
@@ -962,12 +962,12 @@ typedef struct UserInputEvent {
     bool push_edits_back_to_blender = false;
 
     if (push_edits_back_to_blender) {
-      system->pushEvent(new GHOST_EventKey(system->getMilliSeconds(),
-                                           GHOST_kEventKeyDown,
-                                           window,
-                                           GHOST_kKeyTextEdit,
-                                           false,
-                                           nullptr));
+      system->pushEvent(std::make_unique<GHOST_EventKey>(system->getMilliSeconds(),
+                                                         GHOST_kEventKeyDown,
+                                                         window,
+                                                         GHOST_kKeyTextEdit,
+                                                         false,
+                                                         nullptr));
     }
   }
 }
@@ -1557,7 +1557,8 @@ void GHOST_WindowIOS::flushDeferredSwapBuffers()
                    deferred_swap_buffers_count);
 
     GHOST_ContextIOS *context = reinterpret_cast<GHOST_ContextIOS *>(getContext());
-    context->swapBuffers();
+    context->swapBufferAcquire();
+    context->swapBufferRelease();
     deferred_swap_buffers_count = 0;
   }
 }

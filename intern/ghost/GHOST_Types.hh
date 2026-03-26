@@ -575,6 +575,10 @@ enum GHOST_TKey {
   GHOST_kKeyF23,
   GHOST_kKeyF24,
 
+#ifdef WITH_APPLE_CROSSPLATFORM
+  GHOST_kKeyTextEdit,
+#endif
+
   /* Multimedia keypad buttons. */
   GHOST_kKeyMediaPlay,
   GHOST_kKeyMediaStop,
