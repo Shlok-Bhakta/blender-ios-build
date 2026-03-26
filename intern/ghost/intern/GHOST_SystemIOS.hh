@@ -239,9 +239,9 @@ class GHOST_SystemIOS : public GHOST_System {
    * \param window: The window on which the event occurred.
    * \return Indication whether the event was handled.
    */
-  GHOST_TSuccess hideOnScreenKeyboard(GHOST_IWindow *window) override;
+  GHOST_TSuccess hideOnScreenKeyboard(GHOST_IWindow *window);
 
-  const char *getKeyboardInput(GHOST_IWindow *window) override;
+  const char *getKeyboardInput(GHOST_IWindow *window);
 
   GHOST_TSuccess startSecurityScopedFileAccess(const char *filepath);
   GHOST_TSuccess stopSecurityScopedFileAccess(const char *filepath);

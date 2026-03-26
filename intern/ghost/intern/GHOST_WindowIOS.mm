@@ -7,7 +7,7 @@
 #include "GHOST_ContextIOS.hh"
 #include "GHOST_SystemIOS.hh"
 
-#include "GHOST_C-api.h"
+
 #include "GHOST_Debug.hh"
 #include "GHOST_EventButton.hh"
 #include "GHOST_EventCursor.hh"
@@ -459,7 +459,7 @@ typedef struct UserInputEvent {
       switch (event_type) {
         case UserInputEvent::EventTypes::CURSOR_MOVE:
           system->pushEvent(
-              new GHOST_EventCursor(GHOST_GetMilliSeconds((GHOST_SystemHandle)system),
+              new GHOST_EventCursor(system->getMilliSeconds(),
                                     GHOST_kEventCursorMove,
                                     window,
                                     event_info.location.x,
@@ -468,7 +468,7 @@ typedef struct UserInputEvent {
           break;
         case UserInputEvent::EventTypes::PAN_GESTURE:
           system->pushEvent(
-              new GHOST_EventTrackpad(GHOST_GetMilliSeconds((GHOST_SystemHandle)system),
+              new GHOST_EventTrackpad(system->getMilliSeconds(),
                                       window,
                                       GHOST_kTrackpadEventScroll,
                                       event_info.location.x,
@@ -480,7 +480,7 @@ typedef struct UserInputEvent {
           break;
         case UserInputEvent::EventTypes::PAN_GESTURE_TWO_FINGERS:
           system->pushEvent(
-              new GHOST_EventTrackpad(GHOST_GetMilliSeconds((GHOST_SystemHandle)system),
+              new GHOST_EventTrackpad(system->getMilliSeconds(),
                                       window,
                                       GHOST_kTrackpadEventScroll,
                                       event_info.location.x,
@@ -492,7 +492,7 @@ typedef struct UserInputEvent {
           break;
         case UserInputEvent::EventTypes::LEFT_BUTTON_DOWN:
           system->pushEvent(
-              new GHOST_EventButton(GHOST_GetMilliSeconds((GHOST_SystemHandle)system),
+              new GHOST_EventButton(system->getMilliSeconds(),
                                     GHOST_kEventButtonDown,
                                     window,
                                     GHOST_kButtonMaskLeft,
@@ -500,7 +500,7 @@ typedef struct UserInputEvent {
           break;
         case UserInputEvent::EventTypes::LEFT_BUTTON_UP:
           system->pushEvent(
-              new GHOST_EventButton(GHOST_GetMilliSeconds((GHOST_SystemHandle)system),
+              new GHOST_EventButton(system->getMilliSeconds(),
                                     GHOST_kEventButtonUp,
                                     window,
                                     GHOST_kButtonMaskLeft,
@@ -508,7 +508,7 @@ typedef struct UserInputEvent {
           break;
         case UserInputEvent::EventTypes::PINCH_GESTURE:
           system->pushEvent(
-              new GHOST_EventTrackpad(GHOST_GetMilliSeconds((GHOST_SystemHandle)system),
+              new GHOST_EventTrackpad(system->getMilliSeconds(),
                                       window,
                                       GHOST_kTrackpadEventMagnify,
                                       event_info.location.x,
@@ -521,7 +521,7 @@ typedef struct UserInputEvent {
         case UserInputEvent::EventTypes::PENCIL_TAP:
           /* Simulate clicking with the right mouse button. */
           system->pushEvent(
-              new GHOST_EventButton(GHOST_GetMilliSeconds((GHOST_SystemHandle)system),
+              new GHOST_EventButton(system->getMilliSeconds(),
                                     GHOST_kEventButtonDown,
                                     window,
                                     GHOST_kButtonMaskRight,
@@ -644,7 +644,7 @@ typedef struct UserInputEvent {
   touch_point.y *= scale;
 
   system->pushEvent(new GHOST_Event(
-      GHOST_GetMilliSeconds((GHOST_SystemHandle)system), GHOST_kEventTwoFingerTap, window));
+      system->getMilliSeconds(), GHOST_kEventTwoFingerTap, window));
 }
 
 - (void)handleTap3F:(GHOSTUITapGestureRecognizer *)sender
@@ -659,7 +659,7 @@ typedef struct UserInputEvent {
   touch_point.y *= scale;
 
   system->pushEvent(new GHOST_Event(
-      GHOST_GetMilliSeconds((GHOST_SystemHandle)system), GHOST_kEventThreeFingerTap, window));
+      system->getMilliSeconds(), GHOST_kEventThreeFingerTap, window));
 }
 
 - (void)handleTap4F:(GHOSTUITapGestureRecognizer *)sender
@@ -674,7 +674,7 @@ typedef struct UserInputEvent {
   touch_point.y *= scale;
 
   system->pushEvent(new GHOST_Event(
-      GHOST_GetMilliSeconds((GHOST_SystemHandle)system), GHOST_kEventFourFingerTap, window));
+      system->getMilliSeconds(), GHOST_kEventFourFingerTap, window));
 }
 
 - (void)handlePan:(GHOSTUIPanGestureRecognizer *)sender
@@ -922,7 +922,7 @@ typedef struct UserInputEvent {
      This event should cause ui_textedit_end() to be called which will
      hide the keyboard.
      */
-    system->pushEvent(new GHOST_EventKey(GHOST_GetMilliSeconds((GHOST_SystemHandle)system),
+    system->pushEvent(new GHOST_EventKey(system->getMilliSeconds(),
                                          GHOST_kEventKeyDown,
                                          window,
                                          GHOST_kKeyEnter,
@@ -962,7 +962,7 @@ typedef struct UserInputEvent {
     bool push_edits_back_to_blender = false;
 
     if (push_edits_back_to_blender) {
-      system->pushEvent(new GHOST_EventKey(GHOST_GetMilliSeconds((GHOST_SystemHandle)system),
+      system->pushEvent(new GHOST_EventKey(system->getMilliSeconds(),
                                            GHOST_kEventKeyDown,
                                            window,
                                            GHOST_kKeyTextEdit,
