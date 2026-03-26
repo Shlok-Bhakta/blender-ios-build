@@ -417,17 +417,18 @@ if(NOT WITH_CROSSCOMPILED_TOOLS)
   target_link_libraries(makesrna PRIVATE bf::dependencies::pthreads)
   target_link_libraries(makesrna PRIVATE bf::dependencies::fmt)
 
-  # Output `rna_*_gen.cc`.
-  # NOTE: (Linux only): with crashes try add this after COMMAND:
-  # `valgrind --leak-check=full --track-origins=yes`
-  add_custom_command(
-    OUTPUT ${GENSRC}
-    COMMAND
-      ${CMAKE_COMMAND} -E env ${PLATFORM_ENV_BUILD}
-      "$<TARGET_FILE:makesrna>" ${CMAKE_CURRENT_BINARY_DIR}/ ${CMAKE_CURRENT_BINARY_DIR}/../
-    DEPENDS makesrna
-  )
 endif()
+
+# Output `rna_*_gen.cc`.
+# NOTE: (Linux only): with crashes try add this after COMMAND:
+# `valgrind --leak-check=full --track-origins=yes`
+add_custom_command(
+  OUTPUT ${GENSRC}
+  COMMAND
+    ${CMAKE_COMMAND} -E env ${PLATFORM_ENV_BUILD}
+    "$<TARGET_FILE:makesrna>" ${CMAKE_CURRENT_BINARY_DIR}/ ${CMAKE_CURRENT_BINARY_DIR}/../
+  DEPENDS makesrna
+)
 
 # Build bf_rna
 set(SRC
