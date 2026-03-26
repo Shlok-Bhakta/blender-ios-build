@@ -56,6 +56,8 @@ if(WIN32)
   set_target_properties(BlendThumb PROPERTIES LINK_FLAGS_DEBUG "/NODEFAULTLIB:msvcrt")
   set_target_properties(BlendThumb PROPERTIES VS_GLOBAL_VcpkgEnabled "false")
 
+elseif(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  # `blender-thumbnailer` is a macOS Quick Look extension and is not built for iOS.
 elseif(APPLE)
   # -----------------------------------------------------------------------------
   # Build `blender-thumbnailer.appex` app extension.
@@ -91,7 +93,7 @@ elseif(APPLE)
       --entitlements "${CMAKE_SOURCE_DIR}/release/darwin/thumbnailer_entitlements.plist"
       --timestamp=none $<TARGET_BUNDLE_DIR:blender-thumbnailer>
   )
-elseif(UNIX)
+elseif(UNIX AND NOT APPLE)
   # -----------------------------------------------------------------------------
   # Build `blender-thumbnailer` executable
 
