@@ -248,6 +248,11 @@ jobs:
           mkdir -p build_ios/build_darwin_tools/Release/bin/
           cp -v build_ios/build_darwin_tools/bin/* build_ios/build_darwin_tools/Release/bin/ || echo "No tools to copy"
           ls -la build_ios/build_darwin_tools/Release/bin/
+          
+          echo "=== Creating dummy GNUmakefile for iOS build ==="
+          # The blender_cross_tools_compile target runs 'make tools'
+          # We already built the tools, so create a dummy makefile that does nothing
+          printf '.PHONY: tools\ntools:\n\t@echo "Tools already built, skipping"\n' > GNUmakefile
 
       - name: Build Blender.app for iOS
         run: |
