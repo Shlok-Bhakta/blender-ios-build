@@ -242,9 +242,14 @@ jobs:
           
           echo "=== Copying tools to expected location for iOS build ==="
           # The iOS build expects tools at ../build_ios/build_darwin_tools/Release/bin/
-          # relative to CMAKE_SOURCE_DIR, which is the repo root
-          # So from the repo root, that's ../build_ios/build_darwin_tools/Release/bin/
-          # But we're already in the repo, so we need to create the structure
+          # relative to CMAKE_SOURCE_DIR (repo root)
+          # Since CMAKE_SOURCE_DIR is the repo, ../build_ios means going up and back into build_ios
+          # We need to create the path at the parent level
+          mkdir -p ../build_ios/build_darwin_tools/Release/bin/
+          cp -v build_ios/build_darwin_tools/bin/* ../build_ios/build_darwin_tools/Release/bin/ || echo "No tools to copy"
+          ls -la ../build_ios/build_darwin_tools/Release/bin/
+          
+          # Also keep the local copy for good measure
           mkdir -p build_ios/build_darwin_tools/Release/bin/
           cp -v build_ios/build_darwin_tools/bin/* build_ios/build_darwin_tools/Release/bin/ || echo "No tools to copy"
           ls -la build_ios/build_darwin_tools/Release/bin/
