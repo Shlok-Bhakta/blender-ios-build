@@ -305,6 +305,20 @@ enum GHOST_TEventType {
    */
   GHOST_kEventTrackpad,
 
+#ifdef WITH_APPLE_CROSSPLATFORM
+  /**
+   * Touch event.
+   *
+   * \note #GHOST_GetEventData returns #GHOST_TEventTouchData.
+   */
+  GHOST_kEventTouch,
+
+  /** Multi touch event. */
+  GHOST_kEventTwoFingerTap,
+  GHOST_kEventThreeFingerTap,
+  GHOST_kEventFourFingerTap,
+#endif /* WITH_APPLE_CROSSPLATFORM */
+
 #ifdef WITH_INPUT_NDOF
   /**
    * N degree of freedom device motion event.
@@ -650,6 +664,27 @@ struct GHOST_TEventTrackpadData {
   /** The delta is inverted from the device due to system preferences. */
   char isDirectionInverted;
 };
+
+#ifdef WITH_APPLE_CROSSPLATFORM
+enum GHOST_TTouchEventSubTypes {
+  GHOST_kTouchEventUnknown = 0,
+  GHOST_kTouchEventEdgeSwipeInLeft,
+  GHOST_kTouchEventEdgeSwipeOutLeft,
+  GHOST_kTouchEventEdgeSwipeInRight,
+  GHOST_kTouchEventEdgeSwipeOutRight,
+};
+
+struct GHOST_TEventTouchData {
+  /** The event subtype */
+  GHOST_TTouchEventSubTypes subtype;
+  /** The x-location of the touch event */
+  int32_t x;
+  /** The y-location of the touch event */
+  int32_t y;
+  /** Number of fingers triggering touch or touch event. */
+  uint numFingers;
+};
+#endif /* WITH_APPLE_CROSSPLATFORM */
 
 enum GHOST_TDragnDropTypes {
   GHOST_kDragnDropTypeUnknown = 0,
@@ -1072,6 +1107,47 @@ struct GHOST_CSD_Params {
   int cursor_drag_threshold;
   int cursor_double_click_ms;
 };
+
+#ifdef WITH_APPLE_CROSSPLATFORM
+/**
+ * Keyboard properties for iOS on-screen keyboard.
+ */
+struct GHOST_KeyboardProperties {
+
+  /* Initial starting state of text box. */
+  enum text_field_state {
+    move_cursor_to_start,
+    move_cursor_to_end,
+    select_all_text,
+    select_text_range
+  };
+  text_field_state inital_text_state;
+  int text_select_range[2];
+
+  /* Type of keyboard to display. */
+  enum keyboard_type_desc {
+    ascii_keyboard_type,
+    decimal_numpad_keyboard_type,
+    numpad_keyboard_type
+  };
+  keyboard_type_desc keyboard_type;
+
+  /* Size is in points. */
+  float font_size;
+  /* Format is RGBA. */
+  float font_color[4];
+
+  /* On-screen location of text box. */
+  float text_box_origin[2];
+  float text_box_size[2];
+
+  /* Any tips to display next to keyboard input. */
+  const char *tip_text;
+
+  /* Initial string. */
+  const char *text_string;
+};
+#endif /* WITH_APPLE_CROSSPLATFORM */
 
 #ifdef WITH_XR_OPENXR
 
