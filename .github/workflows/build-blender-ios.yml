@@ -155,6 +155,15 @@ jobs:
           # Create fake lib/macos_arm64/.git to satisfy platform_apple.cmake check
           mkdir -p lib/macos_arm64/.git
           
+          # Create Python symlink structure for node discovery scripts
+          # The iOS build expects Python at lib/macos_arm64/python/bin/python3.13
+          # but we don't have prebuilt macOS libs, so symlink to system Python
+          mkdir -p lib/macos_arm64/python/bin
+          SYSTEM_PYTHON=$(which python3)
+          ln -sf "$SYSTEM_PYTHON" lib/macos_arm64/python/bin/python3.13
+          ln -sf "$SYSTEM_PYTHON" lib/macos_arm64/python/bin/python3
+          echo "Created Python symlinks pointing to system Python: $SYSTEM_PYTHON"
+          
           cmake -S . -B build_ios/build_darwin_tools \
             -G Ninja \
             -DCMAKE_SYSTEM_NAME=Darwin \
