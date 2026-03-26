@@ -230,7 +230,7 @@ class GHOST_SystemIOS : public GHOST_System {
    * \return Indication whether the event was handled.
    */
   GHOST_TSuccess popupOnScreenKeyboard(
-      GHOST_IWindow *window, const GHOST_KeyboardProperties &keyboard_properties) override;
+      GHOST_IWindow *window, const GHOST_KeyboardProperties &keyboard_properties);
 
   /**
    * Hides a popup a keybaord. Called by GHOST_WindowIOS window subclass
