@@ -40,7 +40,8 @@ jobs:
           cmake -G Xcode -S . -B build_ios \
             -DWITH_APPLE_CROSSPLATFORM=ON \
             -DAPPLE_TARGET_DEVICE=ios \
-            -DCMAKE_OSX_ARCHITECTURES=arm64
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DWITH_OPENSUBDIV=OFF
 
       - name: Build cross-compilation tools
         run: |
