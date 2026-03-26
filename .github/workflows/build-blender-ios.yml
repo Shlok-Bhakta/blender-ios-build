@@ -42,14 +42,15 @@ jobs:
             -DAPPLE_TARGET_DEVICE=ios \
             -DCMAKE_OSX_ARCHITECTURES=arm64
 
-      - name: List Xcode targets
-        run: xcodebuild -project build_ios/Blender.xcodeproj -list
-
       - name: Build cross-compilation tools
         run: |
           xcodebuild \
             -project build_ios/Blender.xcodeproj \
-            -target blender_cross_tools_compile \
+            -target makesdna \
+            -target makesrna \
+            -target msgfmt \
+            -target datatoc \
+            -target glsl_preprocess \
             -configuration Release \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
