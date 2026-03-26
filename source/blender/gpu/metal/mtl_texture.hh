@@ -19,7 +19,7 @@
 #include <string>
 #include <thread>
 
-#include <Cocoa/Cocoa.h>
+#include <Foundation/Foundation.h>
 #include <Metal/Metal.h>
 #include <QuartzCore/QuartzCore.h>
 

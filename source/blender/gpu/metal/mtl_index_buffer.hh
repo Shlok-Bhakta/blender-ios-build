@@ -13,7 +13,7 @@
 
 #include "mtl_context.hh"
 
-#include <Cocoa/Cocoa.h>
+#include <Foundation/Foundation.h>
 #include <Metal/Metal.h>
 #include <QuartzCore/QuartzCore.h>
 

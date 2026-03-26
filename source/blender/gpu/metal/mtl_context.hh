@@ -19,8 +19,15 @@
 
 #include "GHOST_Types.hh"
 #include "intern/GHOST_Context.hh"
-#include "intern/GHOST_ContextMTL.hh"
 #include "intern/GHOST_Window.hh"
+
+#ifdef WITH_APPLE_CROSSPLATFORM
+#  include "intern/GHOST_ContextIOS.hh"
+using GHOST_ContextMetal = GHOST_ContextIOS;
+#else
+#  include "intern/GHOST_ContextMTL.hh"
+using GHOST_ContextMetal = GHOST_ContextMTL;
+#endif
 
 #include "mtl_backend.hh"
 #include "mtl_capabilities.hh"
@@ -33,7 +40,7 @@
 #include "mtl_shader_interface.hh"
 #include "mtl_texture.hh"
 
-#include <Cocoa/Cocoa.h>
+#include <Foundation/Foundation.h>
 #include <Metal/Metal.h>
 #include <QuartzCore/QuartzCore.h>
 #include <chrono>
@@ -638,7 +645,7 @@ class MTLContext : public Context {
 
  private:
   /* Parent Context. */
-  GHOST_ContextMTL *ghost_context_;
+  GHOST_ContextMetal *ghost_context_;
 
   /* Render Passes and Frame-buffers. */
   id<MTLTexture> default_fbo_mtltexture_ = nil;

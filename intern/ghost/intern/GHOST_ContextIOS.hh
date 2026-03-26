@@ -145,6 +145,8 @@ class GHOST_ContextIOS : public GHOST_Context {
   void metalRegisterPresentCallback(void (*callback)(
       MTLRenderPassDescriptor *, id<MTLRenderPipelineState>, id<MTLTexture>, id<CAMetalDrawable>));
 
+  void metalRegisterXrBlitCallback(void (* /*callback*/)(id<MTLTexture>, int, int, int, int)) {}
+
   void metalSwapBuffers();
 
   const MTKView *getMTKView()

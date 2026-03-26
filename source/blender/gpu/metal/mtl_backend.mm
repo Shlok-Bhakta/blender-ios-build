@@ -29,7 +29,7 @@
 #include "gpu_capabilities_private.hh"
 #include "gpu_platform_private.hh"
 
-#include <Cocoa/Cocoa.h>
+#include <Foundation/Foundation.h>
 #include <Metal/Metal.h>
 #include <QuartzCore/QuartzCore.h>
 #include <sys/sysctl.h>

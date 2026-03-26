@@ -6,8 +6,6 @@
 
 #include "GPU_debug.hh"
 
-#include "intern/GHOST_ContextMTL.hh"
-
 #include "mtl_backend.hh"
 #include "mtl_command_buffer.hh"
 #include "mtl_common.hh"
@@ -53,7 +51,7 @@ id<MTLCommandBuffer> MTLCommandBufferManager::ensure_begin()
      * NOTE: We currently stall until completion of GPU work upon ::submit if we have reached the
      * in-flight command buffer limit. */
     BLI_assert(MTLCommandBufferManager::num_active_cmd_bufs_in_system <
-               GHOST_ContextMTL::max_command_buffer_count);
+               GHOST_ContextMetal::max_command_buffer_count);
 
     if (G.debug & G_DEBUG_GPU) {
       /* Debug: Enable Advanced Errors for GPU work execution. */
@@ -144,12 +142,12 @@ bool MTLCommandBufferManager::submit(bool wait)
   /* If we have too many active command buffers in flight, wait until completed to avoid running
    * out. We can increase */
   if (MTLCommandBufferManager::num_active_cmd_bufs_in_system >=
-      (GHOST_ContextMTL::max_command_buffer_count - 1))
+      (GHOST_ContextMetal::max_command_buffer_count - 1))
   {
     wait = true;
     MTL_LOG_WARNING(
         "Maximum number of command buffers in flight. Host will wait until GPU work has "
-        "completed. Consider increasing GHOST_ContextMTL::max_command_buffer_count or reducing "
+        "completed. Consider increasing GHOST_ContextMetal::max_command_buffer_count or reducing "
         "work fragmentation to better utilize system hardware. Command buffers are flushed upon "
         "GPUContext switches, this is the most common cause of excessive command buffer "
         "generation.");
