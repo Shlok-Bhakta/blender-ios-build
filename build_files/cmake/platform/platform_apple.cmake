@@ -294,28 +294,41 @@ add_bundled_libraries(openexr/lib)
 add_bundled_libraries(imath/lib)
 
 string(APPEND PLATFORM_CFLAGS " -pipe -funsigned-char -fno-strict-aliasing -ffp-contract=off")
-set(PLATFORM_LINKFLAGS "\
+
+if(WITH_APPLE_CROSSPLATFORM)
+  set(PLATFORM_LINKFLAGS
+    "-fexceptions -framework CoreServices -framework Foundation -framework IOKit -framework UIKit -framework AudioToolbox -framework CoreAudio -framework Metal -framework MetalKit -framework QuartzCore -framework ImageIO -framework GameController -framework CoreGraphics"
+  )
+  if(EXISTS ${LIBDIR}/libb2/lib/libb2.a)
+    list(APPEND PLATFORM_LINKLIBS "${LIBDIR}/libb2/lib/libb2.a")
+  endif()
+else()
+  set(PLATFORM_LINKFLAGS "\
 -fexceptions -framework CoreServices -framework Foundation -framework IOKit -framework AppKit -framework Cocoa \
 -framework Carbon -framework AudioUnit -framework AudioToolbox -framework CoreAudio -framework Metal \
 -framework QuartzCore"
-)
+  )
+endif()
 
 if(WITH_CODEC_FFMPEG)
   set(FFMPEG_ROOT_DIR ${LIBDIR}/ffmpeg)
   set(FFMPEG_FIND_COMPONENTS
-    avcodec avdevice avfilter avformat avutil
+    avcodec avdevice avformat avutil
     mp3lame ogg opus swresample swscale
     theora theoradec theoraenc vorbis vorbisenc
     vorbisfile vpx x264)
-  # Frameworks required by libavfilter, using legacy macOS CGL
-  string(APPEND PLATFORM_LINKFLAGS " -framework CoreImage -framework OpenGL")
+  if(NOT WITH_APPLE_CROSSPLATFORM)
+    list(APPEND FFMPEG_FIND_COMPONENTS avfilter)
+    # Frameworks required by libavfilter, using legacy macOS CGL.
+    string(APPEND PLATFORM_LINKFLAGS " -framework CoreImage -framework OpenGL")
+  endif()
   if(EXISTS ${LIBDIR}/ffmpeg/lib/libaom.a)
     list(APPEND FFMPEG_FIND_COMPONENTS aom)
   endif()
   if(EXISTS ${LIBDIR}/ffmpeg/lib/libx265.a)
     list(APPEND FFMPEG_FIND_COMPONENTS x265)
   endif()
-  if(EXISTS ${LIBDIR}/ffmpeg/lib/libxvidcore.a)
+  if(NOT WITH_APPLE_CROSSPLATFORM AND EXISTS ${LIBDIR}/ffmpeg/lib/libxvidcore.a)
     list(APPEND FFMPEG_FIND_COMPONENTS xvidcore)
   endif()
   find_package(FFmpeg)
