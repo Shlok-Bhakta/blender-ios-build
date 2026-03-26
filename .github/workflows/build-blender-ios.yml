@@ -114,7 +114,7 @@ jobs:
       - name: Compute Xcode project cache key
         id: xcode-cache-key
         run: |
-          CMAKE_FLAGS="APPLE_TARGET_DEVICE=ios,WITH_XR_OPENXR=OFF,WITH_RUBBERBAND=OFF,WITH_LIBMV=OFF,WITH_LIBMV_SCHUR_SPECIALIZATIONS=OFF,WITH_CYCLES=OFF"
+          CMAKE_FLAGS="APPLE_TARGET_DEVICE=ios,WITH_XR_OPENXR=OFF,WITH_RUBBERBAND=OFF,WITH_LIBMV=OFF,WITH_LIBMV_SCHUR_SPECIALIZATIONS=OFF,WITH_CYCLES=OFF,WITH_MOD_REMESH=OFF,WITH_QUADRIFLOW=OFF"
           KEY="${{ runner.os }}-xcode-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-$(echo $CMAKE_FLAGS | sha256sum | cut -c1-8)"
           echo "key=$KEY" >> "$GITHUB_OUTPUT"
 
@@ -136,6 +136,8 @@ jobs:
             -DWITH_LIBMV=OFF \
             -DWITH_LIBMV_SCHUR_SPECIALIZATIONS=OFF \
             -DWITH_CYCLES=OFF \
+            -DWITH_MOD_REMESH=OFF \
+            -DWITH_QUADRIFLOW=OFF \
             -DPYTHON_INCLUDE_DIR="$PYTHON_INC"
 
       - name: Save Xcode project cache
