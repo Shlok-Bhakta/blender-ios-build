@@ -490,7 +490,7 @@ if(UNIX AND NOT APPLE)
   endif()
 endif()
 
-if(APPLE)
+if(APPLE AND NOT WITH_APPLE_CROSSPLATFORM)
   if(WITH_METAL_BACKEND)
     list(APPEND SRC
       intern/GHOST_ContextMTL.mm
@@ -554,7 +554,7 @@ if(WITH_XR_OPENXR)
     # Header only library.
     ../../extern/tinygltf/tiny_gltf.h
   )
-  if(APPLE)
+  if(APPLE AND NOT WITH_APPLE_CROSSPLATFORM)
     list(APPEND SRC
       intern/GHOST_XrGraphicsBindingMetal.mm
 
