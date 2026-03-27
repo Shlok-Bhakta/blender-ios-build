@@ -449,7 +449,7 @@ static std::optional<ProcessedPythonCompatibleFormat> preprocess_python_compatib
   return result;
 }
 
-static void format_with_fmt(const fmt::runtime_format_string<> format,
+static void format_with_fmt(const fmt::string_view format,
                             const GVArray &input,
                             const GVArray *widths,
                             const GVArray *precisions,
@@ -465,19 +465,20 @@ static void format_with_fmt(const fmt::runtime_format_string<> format,
           const int precision = std::max(0, precisions->get<int>(i));
           if (widths) {
             const int width = std::max(0, widths->get<int>(i));
-            fmt::format_to(output_inserter, format, varray[i], width, precision);
+            fmt::format_to(
+                output_inserter, fmt::runtime(format), varray[i], width, precision);
           }
           else {
-            fmt::format_to(output_inserter, format, varray[i], precision);
+            fmt::format_to(output_inserter, fmt::runtime(format), varray[i], precision);
           }
         }
         else {
           if (widths) {
             const int width = std::max(0, widths->get<int>(i));
-            fmt::format_to(output_inserter, format, varray[i], width);
+            fmt::format_to(output_inserter, fmt::runtime(format), varray[i], width);
           }
           else {
-            fmt::format_to(output_inserter, format, varray[i]);
+            fmt::format_to(output_inserter, fmt::runtime(format), varray[i]);
           }
         }
       }
