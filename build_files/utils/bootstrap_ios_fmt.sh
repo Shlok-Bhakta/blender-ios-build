@@ -10,7 +10,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"
 target_dir="${1:-${repo_root}/lib/ios_arm64/fmt}"
 
-fmt_version="${FMT_VERSION:-12.1.0}"
+fmt_version="${FMT_VERSION:-9.1.0}"
 ios_deployment_target="${IOS_DEPLOYMENT_TARGET:-16.0}"
 work_dir="${FMT_BOOTSTRAP_WORK_DIR:-${repo_root}/build_fmt_ios_bootstrap}"
 source_dir="${work_dir}/fmt-${fmt_version}"
