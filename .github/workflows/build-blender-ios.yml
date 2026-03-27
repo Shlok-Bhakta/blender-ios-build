@@ -79,7 +79,7 @@ jobs:
 
       - name: Fetch prebuilt iOS libraries
         run: |
-          git submodule update --init --progress lib/ios_arm64
+          GIT_LFS_SKIP_SMUDGE=1 git submodule update --init --progress lib/ios_arm64
           git -C lib/ios_arm64 remote add lfs-fallback https://projects.blender.org/blender/lib-ios_arm64.git 2>/dev/null || true
           git -C lib/ios_arm64 remote set-url --push lfs-fallback no_push
           git -C lib/ios_arm64 lfs pull lfs-fallback main
