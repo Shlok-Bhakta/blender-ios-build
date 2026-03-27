@@ -522,7 +522,7 @@ static void format_with_python_compatible_syntax(const StringRef format_pattern,
     BLI_assert(r_error);
     return;
   }
-  format_with_fmt(fmt::runtime(processed_format->fmt_format_str),
+  format_with_fmt(processed_format->fmt_format_str,
                   input,
                   processed_format->widths,
                   processed_format->precisions,
