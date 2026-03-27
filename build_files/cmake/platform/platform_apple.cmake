@@ -214,6 +214,13 @@ endif()
 # Prefer lib directory paths
 file(GLOB LIB_SUBDIRS ${LIBDIR}/*)
 set(CMAKE_PREFIX_PATH ${LIB_SUBDIRS})
+set(MaterialX_DIR ${LIBDIR}/materialx/lib/cmake/MaterialX)
+set(OpenColorIO_ROOT ${LIBDIR}/opencolorio)
+set(OpenImageDenoise_ROOT ${LIBDIR}/openimagedenoise)
+set(OpenImageIO_ROOT ${LIBDIR}/openimageio)
+set(OpenEXR_ROOT ${LIBDIR}/openexr)
+set(OpenVDB_ROOT ${LIBDIR}/openvdb)
+set(Imath_ROOT ${LIBDIR}/imath)
 
 # -------------------------------------------------------------------------
 # Find precompiled libraries, and avoid system or user-installed ones.
