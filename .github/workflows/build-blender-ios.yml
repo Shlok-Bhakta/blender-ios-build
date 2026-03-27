@@ -75,12 +75,14 @@ jobs:
           path: |
             lib/ios_arm64
             .git/modules/lib/ios_arm64
-          key: ${{ runner.os }}-ios-arm64-libs-${{ steps.ios-libs-cache-key.outputs.sha }}-bootstrap-v3
+          key: ${{ runner.os }}-ios-arm64-libs-${{ steps.ios-libs-cache-key.outputs.sha }}-bootstrap-v4
 
       - name: Fetch prebuilt iOS libraries
         run: |
           git submodule update --init --progress lib/ios_arm64
-          git -C lib/ios_arm64 lfs pull
+          git -C lib/ios_arm64 remote add lfs-fallback https://projects.blender.org/blender/lib-ios_arm64.git 2>/dev/null || true
+          git -C lib/ios_arm64 remote set-url --push lfs-fallback no_push
+          git -C lib/ios_arm64 lfs pull lfs-fallback main
 
       - name: Bootstrap missing iOS prebuilts
         run: |
@@ -98,7 +100,7 @@ jobs:
           path: |
             lib/ios_arm64
             .git/modules/lib/ios_arm64
-          key: ${{ runner.os }}-ios-arm64-libs-${{ steps.ios-libs-cache-key.outputs.sha }}-bootstrap-v3
+          key: ${{ runner.os }}-ios-arm64-libs-${{ steps.ios-libs-cache-key.outputs.sha }}-bootstrap-v4
 
       - name: Verify bootstrapped iOS prebuilts
         run: |
