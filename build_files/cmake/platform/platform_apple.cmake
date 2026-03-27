@@ -419,7 +419,29 @@ if(WITH_PUGIXML)
   find_package(PugiXML REQUIRED)
 endif()
 
-find_package(OpenImageIO REQUIRED)
+if(WITH_APPLE_CROSSPLATFORM)
+  add_library(OpenImageIO::OpenImageIO_Util SHARED IMPORTED GLOBAL)
+  set_target_properties(OpenImageIO::OpenImageIO_Util PROPERTIES
+    IMPORTED_LOCATION "${LIBDIR}/openimageio/lib/libOpenImageIO_Util.dylib"
+    INTERFACE_INCLUDE_DIRECTORIES "${LIBDIR}/openimageio/include"
+  )
+
+  add_library(OpenImageIO::OpenImageIO SHARED IMPORTED GLOBAL)
+  set_target_properties(OpenImageIO::OpenImageIO PROPERTIES
+    IMPORTED_LOCATION "${LIBDIR}/openimageio/lib/libOpenImageIO.dylib"
+    INTERFACE_INCLUDE_DIRECTORIES "${LIBDIR}/openimageio/include"
+    INTERFACE_LINK_LIBRARIES OpenImageIO::OpenImageIO_Util
+  )
+
+  add_executable(OpenImageIO::oiiotool IMPORTED GLOBAL)
+  set_target_properties(OpenImageIO::oiiotool PROPERTIES
+    IMPORTED_LOCATION "${LIBDIR}/openimageio/bin/oiiotool.app/oiiotool"
+  )
+
+  set(OpenImageIO_FOUND TRUE)
+else()
+  find_package(OpenImageIO REQUIRED)
+endif()
 add_bundled_libraries(openimageio/lib)
 
 if(WITH_OPENCOLORIO)
