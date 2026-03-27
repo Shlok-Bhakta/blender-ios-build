@@ -214,6 +214,11 @@ endif()
 # Prefer lib directory paths
 file(GLOB LIB_SUBDIRS ${LIBDIR}/*)
 set(CMAKE_PREFIX_PATH ${LIB_SUBDIRS})
+
+if(WITH_APPLE_CROSSPLATFORM)
+  list(APPEND CMAKE_IGNORE_PREFIX_PATH "/opt/homebrew" "/usr/local")
+endif()
+
 set(MaterialX_DIR ${LIBDIR}/materialx/lib/cmake/MaterialX)
 set(OpenColorIO_ROOT ${LIBDIR}/opencolorio)
 set(OpenImageDenoise_ROOT ${LIBDIR}/openimagedenoise)
