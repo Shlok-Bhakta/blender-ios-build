@@ -258,37 +258,37 @@ void AbstractHierarchyIterator::debug_print_export_graph(const ExportGraph &grap
     const Object *const duplicator = parent_info.duplicated_by;
 
     if (duplicator != nullptr) {
-      fmt::println("    DU {} (as dupped by {}):",
-                   export_parent == nullptr ? "-null-" : (export_parent->id.name + 2),
-                   duplicator->id.name + 2);
+      fmt::print("    DU {} (as dupped by {}):\n",
+                 export_parent == nullptr ? "-null-" : (export_parent->id.name + 2),
+                 duplicator->id.name + 2);
     }
     else {
-      fmt::println("    OB {}:",
-                   export_parent == nullptr ? "-null-" : (export_parent->id.name + 2));
+      fmt::print("    OB {}:\n",
+                 export_parent == nullptr ? "-null-" : (export_parent->id.name + 2));
     }
 
     total_graph_size += item.value.size();
     for (HierarchyContext *child_ctx : item.value) {
       if (child_ctx->duplicator == nullptr) {
-        fmt::println("       - {}{}{}",
-                     child_ctx->export_name.c_str(),
-                     child_ctx->weak_export ? " (weak)" : "",
-                     child_ctx->original_export_path.empty() ?
-                         "" :
-                         (std::string("ref ") + child_ctx->original_export_path).c_str());
+        fmt::print("       - {}{}{}\n",
+                   child_ctx->export_name.c_str(),
+                   child_ctx->weak_export ? " (weak)" : "",
+                   child_ctx->original_export_path.empty() ?
+                       "" :
+                       (std::string("ref ") + child_ctx->original_export_path).c_str());
       }
       else {
-        fmt::println("       - {} (dup by {}{}) {}",
-                     child_ctx->export_name.c_str(),
-                     child_ctx->duplicator->id.name + 2,
-                     child_ctx->weak_export ? ", weak" : "",
-                     child_ctx->original_export_path.empty() ?
-                         "" :
-                         (std::string("ref ") + child_ctx->original_export_path).c_str());
+        fmt::print("       - {} (dup by {}{}) {}\n",
+                   child_ctx->export_name.c_str(),
+                   child_ctx->duplicator->id.name + 2,
+                   child_ctx->weak_export ? ", weak" : "",
+                   child_ctx->original_export_path.empty() ?
+                       "" :
+                       (std::string("ref ") + child_ctx->original_export_path).c_str());
       }
     }
   }
-  fmt::println("    (Total graph size: {} objects)", total_graph_size);
+  fmt::print("    (Total graph size: {} objects)\n", total_graph_size);
 }
 
 void AbstractHierarchyIterator::export_graph_construct()

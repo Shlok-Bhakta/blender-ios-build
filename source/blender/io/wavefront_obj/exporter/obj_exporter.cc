@@ -395,7 +395,7 @@ void exporter_main(bContext *C, const OBJExportParams &export_params)
 
   /* Single frame export, i.e. no animation. */
   if (!export_params.export_animation) {
-    fmt::println("Writing to {}", filepath);
+    fmt::print("Writing to {}\n", filepath);
     export_frame(obj_depsgraph.get(), export_params, filepath);
     return;
   }
@@ -413,7 +413,7 @@ void exporter_main(bContext *C, const OBJExportParams &export_params)
 
     scene->r.cfra = frame;
     obj_depsgraph.update_for_newframe();
-    fmt::println("Writing to {}", filepath_with_frames);
+    fmt::print("Writing to {}\n", filepath_with_frames);
     export_frame(obj_depsgraph.get(), export_params, filepath_with_frames);
   }
   scene->r.cfra = original_frame;
