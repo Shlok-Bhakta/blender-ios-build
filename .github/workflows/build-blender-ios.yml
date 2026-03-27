@@ -78,9 +78,9 @@ jobs:
           key: ${{ runner.os }}-ios-arm64-libs-${{ steps.ios-libs-cache-key.outputs.sha }}-bootstrap-v3
 
       - name: Fetch prebuilt iOS libraries
-        if: steps.ios-libs-cache.outputs.cache-hit != 'true'
         run: |
-          python3 ./build_files/utils/make_update.py --use-ios-libraries || true
+          git submodule update --init --progress lib/ios_arm64
+          git -C lib/ios_arm64 lfs pull
 
       - name: Bootstrap missing iOS prebuilts
         run: |
@@ -110,6 +110,21 @@ jobs:
             echo "ERROR: Eigen3 config not found in lib/ios_arm64 after bootstrap." >&2
             exit 1
           fi
+          python3 - <<'PY'
+          from pathlib import Path
+
+          for rel_path in (
+              "lib/ios_arm64/libb2/lib/libb2.a",
+              "lib/ios_arm64/tbb/lib/libtbb.dylib",
+          ):
+              path = Path(rel_path)
+              if not path.is_file():
+                  raise SystemExit(f"ERROR: {rel_path} missing after iOS library fetch.")
+              with path.open("rb") as handle:
+                  prefix = handle.read(128)
+              if prefix.startswith(b"version https://git-lfs.github.com/spec/v1"):
+                  raise SystemExit(f"ERROR: {rel_path} is still a Git LFS pointer.")
+          PY
 
       - name: Compute Xcode project cache key
         id: xcode-cache-key
