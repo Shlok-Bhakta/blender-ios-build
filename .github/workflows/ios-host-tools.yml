@@ -1,0 +1,184 @@
+name: iOS Host Tools
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-tools:
+    runs-on: macos-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          lfs: false
+
+      - name: Install host tool prerequisites
+        shell: bash
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+        run: |
+          set -euo pipefail
+          packages=(
+            autoconf
+            automake
+            bison
+            dos2unix
+            flex
+            libtool
+            yasm
+          )
+          missing=()
+          for package in "${packages[@]}"; do
+            if ! brew list --versions "${package}" >/dev/null 2>&1; then
+              missing+=("${package}")
+            fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            brew install "${missing[@]}"
+          fi
+          echo "$(brew --prefix bison)/bin" >> "${GITHUB_PATH}"
+          echo "$(brew --prefix flex)/bin" >> "${GITHUB_PATH}"
+          echo "$(brew --prefix libtool)/bin" >> "${GITHUB_PATH}"
+          echo "$(brew --prefix libtool)/libexec/gnubin" >> "${GITHUB_PATH}"
+
+      - name: Configure host dependency build
+        shell: bash
+        run: |
+          mkdir -p artifacts/ios-host-tools
+          python3 tools/ios/build_deps.py \
+            --mode host \
+            --configure-only \
+            --build-dir build/ios-deps/host \
+            --install-dir build/ios-deps/install/host \
+            --log-dir artifacts/ios-host-tools/configure-logs \
+            --manifest-path artifacts/ios-host-tools/configure-manifest.json \
+            2>&1 | tee artifacts/ios-host-tools/configure-console.log
+
+      - name: Build host Python and site packages
+        shell: bash
+        run: |
+          python3 tools/ios/build_deps.py \
+            --mode host \
+            --build-target external_python_site_packages \
+            --build-dir build/ios-deps/host \
+            --install-dir build/ios-deps/install/host \
+            --log-dir artifacts/ios-host-tools/python-logs \
+            --manifest-path artifacts/ios-host-tools/python-manifest.json \
+            2>&1 | tee artifacts/ios-host-tools/python-console.log
+
+      - name: Build host LLVM tools
+        shell: bash
+        run: |
+          python3 tools/ios/build_deps.py \
+            --mode host \
+            --build-target ll \
+            --build-dir build/ios-deps/host \
+            --install-dir build/ios-deps/install/host \
+            --log-dir artifacts/ios-host-tools/llvm-logs \
+            --manifest-path artifacts/ios-host-tools/llvm-manifest.json \
+            2>&1 | tee artifacts/ios-host-tools/llvm-console.log
+
+      - name: Build host ISPC
+        shell: bash
+        run: |
+          python3 tools/ios/build_deps.py \
+            --mode host \
+            --build-target external_ispc \
+            --build-dir build/ios-deps/host \
+            --install-dir build/ios-deps/install/host \
+            --log-dir artifacts/ios-host-tools/ispc-logs \
+            --manifest-path artifacts/ios-host-tools/ispc-manifest.json \
+            2>&1 | tee artifacts/ios-host-tools/ispc-console.log
+
+      - name: Build host Brotli
+        shell: bash
+        run: |
+          python3 tools/ios/build_deps.py \
+            --mode host \
+            --build-target external_brotli \
+            --build-dir build/ios-deps/host \
+            --install-dir build/ios-deps/install/host \
+            --log-dir artifacts/ios-host-tools/brotli-logs \
+            --manifest-path artifacts/ios-host-tools/brotli-manifest.json \
+            2>&1 | tee artifacts/ios-host-tools/brotli-console.log
+
+      - name: Collect host tool artifacts
+        if: always()
+        shell: bash
+        run: |
+          if [ -f build/ios-deps/host/CMakeCache.txt ]; then
+            cp build/ios-deps/host/CMakeCache.txt artifacts/ios-host-tools/CMakeCache.txt
+          fi
+          if [ -f build/ios-deps/host/CMakeFiles/CMakeOutput.log ]; then
+            cp build/ios-deps/host/CMakeFiles/CMakeOutput.log artifacts/ios-host-tools/CMakeOutput.log
+          fi
+          if [ -f build/ios-deps/host/CMakeFiles/CMakeError.log ]; then
+            cp build/ios-deps/host/CMakeFiles/CMakeError.log artifacts/ios-host-tools/CMakeError.log
+          fi
+          python3 - <<'PY'
+          import json
+          import shutil
+          from pathlib import Path
+
+          host_root = Path('build/ios-deps/host')
+          release_root = host_root / 'Release'
+          artifact_root = Path('artifacts/ios-host-tools')
+          probed_root = artifact_root / 'probed-tools'
+          probed_root.mkdir(parents=True, exist_ok=True)
+
+          def write_tree(root: Path, out: Path) -> None:
+            entries = []
+            if root.exists():
+              for path in sorted(root.rglob('*')):
+                entries.append(str(path))
+            out.write_text('\n'.join(entries) + ('\n' if entries else ''), encoding='ascii')
+
+          write_tree(host_root, artifact_root / 'build-tree.txt')
+          write_tree(release_root, artifact_root / 'release-tree.txt')
+
+          patterns = {
+            'python_bin': 'python/bin/python*',
+            'meson': 'python/bin/meson*',
+            'llvm_config': 'llvm/bin/llvm-config*',
+            'clang': 'llvm/bin/clang',
+            'clangxx': 'llvm/bin/clang++',
+            'llvm_as': 'llvm/bin/llvm-as*',
+            'llvm_dis': 'llvm/bin/llvm-dis*',
+            'llvm_tblgen': 'llvm/bin/llvm-tblgen*',
+            'ispc': 'ispc/bin/ispc*',
+            'brotli': 'brotli/bin/brotli*',
+          }
+
+          summary = {}
+          for key, pattern in patterns.items():
+            matches = []
+            if release_root.exists():
+              matches = sorted(str(path.relative_to(release_root)) for path in release_root.glob(pattern))
+            summary[key] = matches
+            for relative_path in matches:
+              src = release_root / relative_path
+              dest = probed_root / relative_path
+              dest.parent.mkdir(parents=True, exist_ok=True)
+              if src.is_file():
+                shutil.copy2(src, dest)
+
+          (artifact_root / 'expected-host-tools.json').write_text(
+            json.dumps(summary, indent=2, sort_keys=True) + '\n',
+            encoding='ascii',
+          )
+          PY
+
+      - name: Upload host tool artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-host-tools-${{ github.run_id }}
+          path: artifacts/ios-host-tools
+          retention-days: 14

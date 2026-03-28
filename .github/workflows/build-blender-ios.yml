@@ -11,6 +11,7 @@ on:
         options:
           - env-probe
           - host-configure
+          - host-tools
 
 permissions:
   contents: read
@@ -23,3 +24,7 @@ jobs:
   host-configure:
     if: ${{ inputs.mode == 'host-configure' }}
     uses: ./.github/workflows/ios-host-configure.yml
+
+  host-tools:
+    if: ${{ inputs.mode == 'host-tools' }}
+    uses: ./.github/workflows/ios-host-tools.yml
