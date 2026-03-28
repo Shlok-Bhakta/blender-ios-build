@@ -22,7 +22,7 @@ jobs:
       - name: Collect environment metadata
         shell: bash
         run: |
-          mkdir -p artifacts
+          mkdir -p artifacts/ios-env-probe
           bash tools/ios/collect_ci_env.sh artifacts/ios-env-probe 2>&1 | tee artifacts/ios-env-probe/env-probe-console.log
           cat artifacts/ios-env-probe/SUMMARY.md >> "$GITHUB_STEP_SUMMARY"
 
