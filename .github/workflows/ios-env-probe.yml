@@ -1,0 +1,34 @@
+name: iOS Env Probe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: macos-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          lfs: false
+
+      - name: Collect environment metadata
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          bash tools/ios/collect_ci_env.sh artifacts/ios-env-probe 2>&1 | tee artifacts/ios-env-probe/env-probe-console.log
+          cat artifacts/ios-env-probe/SUMMARY.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload environment metadata
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-env-probe-${{ github.run_id }}
+          path: artifacts/ios-env-probe
+          retention-days: 14

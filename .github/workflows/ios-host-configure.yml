@@ -1,0 +1,65 @@
+name: iOS Host Configure
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-configure:
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          lfs: false
+
+      - name: Configure host dependency build
+        shell: bash
+        run: |
+          mkdir -p artifacts/ios-host-configure
+          python3 tools/ios/build_deps.py \
+            --mode host \
+            --configure-only \
+            --build-dir build/ios-deps/host \
+            --install-dir build/ios-deps/install/host \
+            --log-dir artifacts/ios-host-configure/logs \
+            --manifest-path artifacts/ios-host-configure/manifest.json \
+            2>&1 | tee artifacts/ios-host-configure/host-configure-console.log
+
+      - name: Collect configure artifacts
+        if: always()
+        shell: bash
+        run: |
+          if [ -f build/ios-deps/host/CMakeCache.txt ]; then
+            cp build/ios-deps/host/CMakeCache.txt artifacts/ios-host-configure/CMakeCache.txt
+          fi
+          if [ -f build/ios-deps/host/CMakeFiles/CMakeOutput.log ]; then
+            cp build/ios-deps/host/CMakeFiles/CMakeOutput.log artifacts/ios-host-configure/CMakeOutput.log
+          fi
+          if [ -f build/ios-deps/host/CMakeFiles/CMakeError.log ]; then
+            cp build/ios-deps/host/CMakeFiles/CMakeError.log artifacts/ios-host-configure/CMakeError.log
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path('build/ios-deps/host')
+          out = Path('artifacts/ios-host-configure/build-tree.txt')
+          entries = []
+          if root.exists():
+              for path in sorted(root.rglob('*')):
+                  entries.append(str(path))
+          out.write_text('\n'.join(entries) + ('\n' if entries else ''), encoding='ascii')
+          PY
+
+      - name: Upload configure artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-host-configure-${{ github.run_id }}
+          path: artifacts/ios-host-configure
+          retention-days: 14
