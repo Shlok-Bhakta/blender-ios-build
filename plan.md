@@ -631,18 +631,18 @@ Checklist:
 - [x] Capture Xcode version
 - [x] Capture SDK list/version
 - [x] Capture runner image details
-- [ ] Capture relevant env vars
-- [ ] Upload a small artifact containing environment metadata
+- [x] Capture relevant env vars
+- [x] Upload a small artifact containing environment metadata
 - [x] Prove local `gh workflow run` / poll / log-inspection loop works
 - [x] Document the workflow name and output artifact names in `memory.md`
 
 Gate before moving on:
 
-- [ ] workflow can be manually triggered on `blender-v5.1-release-IOSPATCH-round2`
-- [ ] auth/permissions/runners are confirmed good enough for repeated CI iteration
-- [ ] polling works
-- [ ] failed log retrieval works
-- [ ] artifacts are visible and useful
+- [x] workflow can be manually triggered on `blender-v5.1-release-IOSPATCH-round2`
+- [x] auth/permissions/runners are confirmed good enough for repeated CI iteration
+- [x] polling works
+- [x] failed log retrieval works
+- [x] artifacts are visible and useful
 
 ### Phase 3 - Prototype The Dependency Build Entry Point
 
@@ -669,6 +669,12 @@ Gate before moving on:
 ### Phase 4 - Host Tools First, Not Full iOS Build First
 
 The old branch shows that some iOS builds rely on host-built tools and host-side Python/LLVM pieces.
+
+Latest execution note:
+
+- `host-configure` dispatch `23692720328` reached compiler detection and artifact upload successfully, so the driver workflow, checkout path, and dependency entrypoint wiring are already usable.
+- The current failure is still workflow-environment setup, not Apple target logic: `build_files/build_environment/cmake/check_software.cmake` stopped on missing Homebrew packages (`autoconf`, `automake`, `glibtoolize`, `yasm`, `dos2unix`, and Homebrew `bison`).
+- Keep fixing the runner environment until host configure passes before judging Blender-side dependency CMake behavior.
 
 Checklist:
 
@@ -927,7 +933,7 @@ Do these first because they improve velocity without committing to hard architec
 - [x] Add the progress ledger (`memory.md`) and parity tracker
 - [x] Add an environment-probe workflow with strong artifact output
 - [x] Add a script scaffold for iOS dependency build orchestration
-- [ ] Add manifest generation for dependency bundles
+- [x] Add manifest generation for dependency bundles
 - [ ] Add a narrow host-tools configure/build workflow
 - [ ] Add an iOS configure-only workflow
 
@@ -1130,10 +1136,10 @@ If starting fresh, do this exact sequence:
 - [x] verify working branch in the writable repo
 - [x] create/update `memory.md`
 - [x] add environment-probe workflow
-- [ ] run it with `gh workflow run ... --ref blender-v5.1-release-IOSPATCH-round2`
-- [ ] poll and inspect logs/artifacts
+- [x] run it with `gh workflow run ... --ref blender-v5.1-release-IOSPATCH-round2`
+- [x] poll and inspect logs/artifacts
 - [x] add host-tools configure workflow
-- [ ] run it and inspect artifacts
+- [x] run it and inspect artifacts
 - [x] add thin iOS dependency build script scaffold
 - [ ] add iOS deps configure workflow
 - [ ] only after that, start touching build-system files

@@ -25,22 +25,24 @@ Last updated: 2026-03-28
 
 ## Current Goals
 
-1. Complete phase 1 tracking and guardrails.
-2. Add an observable iOS environment probe workflow.
-3. Prove the local `gh workflow run` / poll / logs loop.
-4. Start a thin `tools/ios/` dependency orchestration scaffold only after phase 2 is usable.
+1. Get phase 4 host dependency configure green on GitHub Actions.
+2. Confirm the host configure artifact includes cache, logs, and a useful build-tree snapshot.
+3. After host configure is stable, add the narrow host-tools build workflow/job.
+4. Only then start porting deeper Apple target selection for real `ios` dependency configure.
 
 ## Workflow History
 
-- Last successful workflow: none yet in this session.
-- Last failed workflow: `Build Blender iOS IPA` run `23631466279` on fork branch `IOS5.1-round2`; failed at final iOS link because macOS `OpenEXR` dylibs were linked into an iOS target.
+- Last successful workflow: `Build Blender iOS IPA` run `23692682459` on `blender-v5.1-release-IOSPATCH-round2` in `env-probe` mode; uploaded environment metadata successfully.
+- Last failed workflow: `Build Blender iOS IPA` run `23692720328` on `blender-v5.1-release-IOSPATCH-round2` in `host-configure` mode; `build_files/build_environment/cmake/check_software.cmake` stopped configure because Homebrew packages `autoconf`, `automake`, `glibtoolize`, `yasm`, `dos2unix`, and Homebrew `bison` were missing from the runner environment.
 - Latest known workflow in repo before changes: `.github/workflows/close-prs.yml` only.
 - Exploratory dispatches in this session: `23691855752` and `23691861803`, both manually cancelled after confirming `gh workflow run` worked.
 - Mistake repaired: accidental merge/push from legacy branch was fully rewound; cancelled run `23692208885` is historical only and must be ignored.
+- Older relevant failure for IPA path: `23631466279` on legacy branch `IOS5.1-round2` failed at final iOS link because macOS `OpenEXR` dylibs were linked into an iOS target.
+- Historical env-probe failure still worth remembering: run `23692652257` failed because `artifacts/ios-env-probe/` was not created before piping through `tee`; that was fixed by creating the nested directory first.
 
 ## Next Hypothesis
 
-- Keep all real work on `blender-v5.1-release-IOSPATCH-round2`, add a compatibility driver at `.github/workflows/build-blender-ios.yml`, and use that driver to dispatch the branch's temporary workflows without relying on any legacy branch.
+- The host configure blocker is still workflow setup, not Blender CMake logic: install the missing Homebrew prerequisites in `.github/workflows/ios-host-configure.yml`, push the fresh-port branch, rerun `host-configure`, and only then move on to host-tool outputs or `APPLE_TARGET_DEVICE` porting.
 
 ## GitHub Actions Commands
 
@@ -78,6 +80,10 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 - `.github/poll-build-run.sh` now supports an optional repo argument or `GH_REPO` environment variable so polling can target the writable fork.
 - Existing fork workflow evidence confirms GitHub-hosted macOS ARM runners are available: `macos-15-arm64`, image `20260325.0234.1`, macOS `15.7.4`.
 - Existing failed run `23631466279` shows `Xcode 16.4`, `iPhoneOS18.5.sdk`, and multiple installed Apple runtimes; the failure point is device linking against macOS `OpenEXR` dylibs.
+- Fresh-port env probe success `23692682459` confirms branch-local dispatch works on `blender-v5.1-release-IOSPATCH-round2` using the compatibility driver workflow.
+- Env probe artifact `ios-env-probe-23692682459` contains summary, selected env JSON, Xcode/SDK outputs, tool versions, and filesystem listings.
+- Fresh-port host configure failure `23692720328` is narrow and actionable: CMake reached compiler detection successfully, then stopped in `check_software.cmake` before real dependency configuration because the runner did not have the expected Homebrew helper packages.
+- The host configure artifact `ios-host-configure-23692720328` contains `manifest.json`, `host-configure-console.log`, `logs/configure.log`, and a build-tree snapshot; the key failure is in `logs/configure.log` rather than the console log.
 
 ## Local Workflow Additions
 
@@ -90,6 +96,7 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 - Uploaded artifact name: `ios-host-configure-${github.run_id}`
 - Added compatibility driver: `.github/workflows/build-blender-ios.yml`
 - Dependency entrypoint: `tools/ios/build_deps.py`
+- Current local-only follow-up: `.github/workflows/ios-host-configure.yml` now installs the missing Homebrew configure prerequisites before invoking `tools/ios/build_deps.py`; this still needs a push before Actions can validate it.
 - Local validation: `bash -n tools/ios/collect_ci_env.sh`, local env-probe dry run, `bash -n .github/poll-build-run.sh`, `python3 -m py_compile tools/ios/build_deps.py`, host and iOS dry runs for `tools/ios/build_deps.py`, and YAML parse via `nix-shell -p python3Packages.pyyaml`.
 
 ## Dependency Entrypoint Notes
@@ -147,10 +154,18 @@ Gate status:
 - [x] Capture Xcode version.
 - [x] Capture SDK list/version.
 - [x] Capture runner image details.
-- [ ] Capture relevant env vars.
-- [ ] Upload a small artifact containing environment metadata.
+- [x] Capture relevant env vars.
+- [x] Upload a small artifact containing environment metadata.
 - [x] Prove local `gh workflow run` / poll / log-inspection loop works.
 - [x] Document the workflow name and output artifact names.
+
+Gate status:
+
+- [x] workflow can be manually triggered on `blender-v5.1-release-IOSPATCH-round2`.
+- [x] auth/permissions/runners are confirmed good enough for repeated CI iteration.
+- [x] polling works.
+- [x] failed log retrieval works.
+- [x] artifacts are visible and useful.
 
 ### Phase 3 - Prototype The Dependency Build Entry Point
 
@@ -177,6 +192,11 @@ Gate status:
 - [ ] Artifact-upload the host tool output layout.
 - [x] Document exact expected host output paths.
 
+Current note:
+
+- Run `23692720328` proved the workflow dispatch and artifact capture path, but host configure itself still fails at dependency-builder prerequisite discovery on the runner.
+- A local workflow fix is prepared to install the missing Homebrew packages before configure; rerun that on the fresh-port branch before judging Blender-side host configure viability.
+
 ## Parity Checklist
 
 ### Build / Toolchain
@@ -190,8 +210,8 @@ Gate status:
 
 ### Dependencies
 
-- [ ] dependency script exists
-- [ ] manifest generation exists
+- [x] dependency script exists
+- [x] manifest generation exists
 - [ ] host tools built in CI
 - [ ] device deps bundle strategy defined
 - [ ] LFS/submodule path deprecated or removed for iOS

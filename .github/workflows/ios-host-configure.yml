@@ -19,6 +19,32 @@ jobs:
           fetch-depth: 1
           lfs: false
 
+      - name: Install host configure prerequisites
+        shell: bash
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+        run: |
+          set -euo pipefail
+          packages=(
+            autoconf
+            automake
+            bison
+            dos2unix
+            libtool
+            yasm
+          )
+          missing=()
+          for package in "${packages[@]}"; do
+            if ! brew list --versions "${package}" >/dev/null 2>&1; then
+              missing+=("${package}")
+            fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            brew install "${missing[@]}"
+          fi
+          echo "$(brew --prefix bison)/bin" >> "${GITHUB_PATH}"
+          echo "$(brew --prefix libtool)/bin" >> "${GITHUB_PATH}"
+
       - name: Configure host dependency build
         shell: bash
         run: |
