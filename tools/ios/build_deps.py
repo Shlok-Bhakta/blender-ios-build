@@ -271,6 +271,7 @@ def main() -> int:
         "-G",
         args.generator,
         f"-DCMAKE_INSTALL_PREFIX={args.install_dir}",
+        "-DPACKAGE_USE_UPSTREAM_SOURCES=OFF",
         f"-DAPPLE_TARGET_DEVICE={mode_config['apple_target_device']}",
     ]
 
