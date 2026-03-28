@@ -18,6 +18,7 @@ Last updated: 2026-03-28
 - Work only on branch `blender-v5.1-release-IOSPATCH-round2`.
 - Do not create side branches unless absolutely unavoidable.
 - Do not touch `ios`, `blender-v5.1-release`, or other branches.
+- Treat fork branch `IOS5.1-round2` as nonexistent for this port; never merge from it, diff against it, or run workflows on it.
 - Prefer additive, isolated changes over invasive edits.
 - Prefer new files plus small shims over large rewrites of shared files.
 - Keep future `v5.2+` forward-ports in mind.
@@ -35,23 +36,24 @@ Last updated: 2026-03-28
 - Last failed workflow: `Build Blender iOS IPA` run `23631466279` on fork branch `IOS5.1-round2`; failed at final iOS link because macOS `OpenEXR` dylibs were linked into an iOS target.
 - Latest known workflow in repo before changes: `.github/workflows/close-prs.yml` only.
 - Exploratory dispatches in this session: `23691855752` and `23691861803`, both manually cancelled after confirming `gh workflow run` worked.
+- Mistake repaired: accidental merge/push from legacy branch was fully rewound; cancelled run `23692208885` is historical only and must be ignored.
 
 ## Next Hypothesis
 
-- Push the new `iOS Env Probe` workflow first, then the `iOS Host Configure` workflow, so the fork can capture environment metadata before attempting the first host-side dependency configure.
+- Keep all real work on `blender-v5.1-release-IOSPATCH-round2`, add a compatibility driver at `.github/workflows/build-blender-ios.yml`, and use that driver to dispatch the branch's temporary workflows without relying on any legacy branch.
 
 ## GitHub Actions Commands
 
 Run a workflow:
 
 ```bash
-nix-shell -p gh --run 'gh workflow run build-blender-ios.yml -R Shlok-Bhakta/blender-ios-build --ref IOS5.1-round2'
+nix-shell -p gh --run 'gh workflow run build-blender-ios.yml -R Shlok-Bhakta/blender-ios-build --ref blender-v5.1-release-IOSPATCH-round2'
 ```
 
 Poll a workflow:
 
 ```bash
-POLL_INTERVAL_SECONDS=60 nix-shell -p gh --run '.github/poll-build-run.sh build-blender-ios.yml IOS5.1-round2 Shlok-Bhakta/blender-ios-build'
+POLL_INTERVAL_SECONDS=60 nix-shell -p gh --run '.github/poll-build-run.sh build-blender-ios.yml blender-v5.1-release-IOSPATCH-round2 Shlok-Bhakta/blender-ios-build'
 ```
 
 Inspect failed logs:
@@ -63,7 +65,7 @@ nix-shell -p gh --run 'gh run view <run-id> -R Shlok-Bhakta/blender-ios-build --
 List recent runs:
 
 ```bash
-nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow build-blender-ios.yml --branch IOS5.1-round2 -L 5'
+nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow build-blender-ios.yml --branch blender-v5.1-release-IOSPATCH-round2 -L 5'
 ```
 
 ## CI Observations
@@ -71,10 +73,11 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 - `gh` is not installed directly in the shell; the documented `nix-shell -p gh --run ...` wrapper is required.
 - Local `origin` points at upstream `blender/blender`, where current GitHub permission is `READ` only.
 - Writable Actions live in fork repo `Shlok-Bhakta/blender-ios-build`, where current GitHub permission is `ADMIN`.
-- Current local branch `blender-v5.1-release-IOSPATCH-round2` is not present on the fork yet, so new local workflow changes cannot be remotely exercised without a later push.
+- Current working branch already exists on the fork as `blender-v5.1-release-IOSPATCH-round2` and is the only fork branch to use for this effort.
+- Legacy fork branch `IOS5.1-round2` is off-limits even if useful-looking data exists there; archaeology comes only from read-only `ios`.
 - `.github/poll-build-run.sh` now supports an optional repo argument or `GH_REPO` environment variable so polling can target the writable fork.
 - Existing fork workflow evidence confirms GitHub-hosted macOS ARM runners are available: `macos-15-arm64`, image `20260325.0234.1`, macOS `15.7.4`.
-- Existing failed run `23631466279` shows `Xcode 16.4`, `iPhoneOS18.5.sdk`, and multiple installed simulator runtimes; the failure point is device linking against macOS `OpenEXR` dylibs.
+- Existing failed run `23631466279` shows `Xcode 16.4`, `iPhoneOS18.5.sdk`, and multiple installed Apple runtimes; the failure point is device linking against macOS `OpenEXR` dylibs.
 
 ## Local Workflow Additions
 
@@ -85,15 +88,16 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 - Added workflow: `.github/workflows/ios-host-configure.yml`
 - Workflow display name: `iOS Host Configure`
 - Uploaded artifact name: `ios-host-configure-${github.run_id}`
+- Added compatibility driver: `.github/workflows/build-blender-ios.yml`
 - Dependency entrypoint: `tools/ios/build_deps.py`
-- Local validation: `bash -n tools/ios/collect_ci_env.sh`, local env-probe dry run, `bash -n .github/poll-build-run.sh`, `python3 -m py_compile tools/ios/build_deps.py`, host and simulator dry runs for `tools/ios/build_deps.py`, and YAML parse via `nix-shell -p python3Packages.pyyaml`.
+- Local validation: `bash -n tools/ios/collect_ci_env.sh`, local env-probe dry run, `bash -n .github/poll-build-run.sh`, `python3 -m py_compile tools/ios/build_deps.py`, host and iOS dry runs for `tools/ios/build_deps.py`, and YAML parse via `nix-shell -p python3Packages.pyyaml`.
 
 ## Dependency Entrypoint Notes
 
-- `tools/ios/build_deps.py` currently supports explicit `host`, `ios`, and `ios-simulator` modes.
+- `tools/ios/build_deps.py` currently supports explicit `host` and `ios` modes for the active plan, with fail-fast behavior for unsupported target-selection work.
 - It prints key input paths and tool availability, emits a manifest JSON, and writes configure/build logs to a caller-selected log directory.
 - `host` mode dry-run works locally.
-- `ios-simulator` mode currently fails fast with a clear manifest-backed blocker because `build_files/build_environment/CMakeLists.txt` does not yet expose `APPLE_TARGET_DEVICE` support on this branch.
+- `ios` mode beyond dry-run currently depends on first porting `APPLE_TARGET_DEVICE` support into `build_files/build_environment/CMakeLists.txt` on this branch.
 
 ## Old Branch Host-Tool Expectations
 
@@ -152,7 +156,7 @@ Gate status:
 
 - [x] Decide on script location, likely under `tools/ios/`.
 - [x] Make the script print every important input path and version.
-- [x] Add explicit modes for `host`, `ios`, and `ios-simulator`.
+- [x] Add explicit modes for `host` and `ios`.
 - [x] Make the script fail fast with clear messages.
 - [x] Keep the script small; let CMake orchestrate actual dependency order.
 - [x] Add manifest generation for the resulting artifact bundle.
@@ -179,7 +183,6 @@ Gate status:
 
 - [ ] Apple target selection
 - [ ] `ios` target handling
-- [ ] `ios-simulator` target handling
 - [ ] host/target split
 - [ ] host tools pathing
 - [ ] bundle layout routing
@@ -190,7 +193,6 @@ Gate status:
 - [ ] dependency script exists
 - [ ] manifest generation exists
 - [ ] host tools built in CI
-- [ ] simulator deps bundle built in CI
 - [ ] device deps bundle strategy defined
 - [ ] LFS/submodule path deprecated or removed for iOS
 
@@ -219,7 +221,6 @@ Gate status:
 
 - [ ] Metal guards and fixes
 - [ ] Cycles Metal fixes
-- [ ] simulator-specific Metal handling
 - [ ] HDR/EDR
 - [ ] ProMotion
 

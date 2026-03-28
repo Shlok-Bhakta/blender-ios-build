@@ -19,6 +19,7 @@ This spec is intentionally detailed and redundant. Assume context may compact. W
 - Do not create side branches unless absolutely unavoidable.
 - If a branch rewrite becomes absolutely necessary, only force-push `blender-v5.1-release-IOSPATCH-round2`.
 - Do not touch `ios`, `blender-v5.1-release`, or any other branch.
+- Treat fork branch `IOS5.1-round2` as nonexistent for this effort; do not read from it, diff against it, merge from it, or run workflows on it.
 - Prefer additive, isolated changes over invasive edits.
 - Prefer new files plus small shims over large rewrites of shared files.
 - Keep future `v5.2`, `v5.3`, and later forward-ports in mind at all times.
@@ -195,18 +196,20 @@ Important repo note discovered during execution:
 
 - local `origin` points at upstream `blender/blender` and is read-only for Actions interaction
 - writable Actions control currently lives in `Shlok-Bhakta/blender-ios-build`
+- the only writable branch to use for this port is `blender-v5.1-release-IOSPATCH-round2`
+- treat fork branch `IOS5.1-round2` as a broken legacy branch and ignore it completely
 - use `-R Shlok-Bhakta/blender-ios-build` for `gh` commands, or pass that repo as the optional third argument to `.github/poll-build-run.sh`
 
 ### 4.1 Run A Workflow
 
 ```bash
-nix-shell -p gh --run 'gh workflow run build-blender-ios.yml -R Shlok-Bhakta/blender-ios-build --ref IOS5.1-round2'
+nix-shell -p gh --run 'gh workflow run build-blender-ios.yml -R Shlok-Bhakta/blender-ios-build --ref blender-v5.1-release-IOSPATCH-round2'
 ```
 
 ### 4.2 Poll Every 60 Seconds
 
 ```bash
-POLL_INTERVAL_SECONDS=60 nix-shell -p gh --run '.github/poll-build-run.sh build-blender-ios.yml IOS5.1-round2 Shlok-Bhakta/blender-ios-build'
+POLL_INTERVAL_SECONDS=60 nix-shell -p gh --run '.github/poll-build-run.sh build-blender-ios.yml blender-v5.1-release-IOSPATCH-round2 Shlok-Bhakta/blender-ios-build'
 ```
 
 ### 4.3 Inspect Failure Logs
@@ -220,7 +223,7 @@ Replace the run id with the actual one.
 ### 4.4 If You Need The Latest Run ID First
 
 ```bash
-nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow build-blender-ios.yml --branch IOS5.1-round2 -L 5'
+nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow build-blender-ios.yml --branch blender-v5.1-release-IOSPATCH-round2 -L 5'
 ```
 
 ### 4.5 Workflow Discipline
@@ -229,6 +232,7 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 - Do not jump straight into a giant all-in-one workflow.
 - Prove one thing at a time.
 - Once a temporary workflow proves a concept, either fold it into the durable workflow or preserve it with a narrow purpose and clear name.
+- Because GitHub only dispatches workflows that exist on the fork default branch path, keep a compatibility driver at `.github/workflows/build-blender-ios.yml` on `blender-v5.1-release-IOSPATCH-round2` that can call the temporary workflows without using any legacy branch.
 
 ## 5. Strategic Principles For The Port
 
@@ -290,11 +294,11 @@ The `ios` branch is a full platform port across these buckets:
 
 ### 6.1 Build-System And Toolchain Enablement
 
-- Apple target selection for `macos`, `ios`, and `ios-simulator`
+- Apple target selection for `macos` and `ios`
 - cross-compile host/target split
 - iOS dependency selection and iOS-specific patches
 - support for `lib/ios_arm64`
-- partial simulator path handling
+- partial alternate Apple target path handling
 - bundle layout differences for iOS app packaging
 
 Key files:
@@ -365,7 +369,7 @@ Key files:
 
 - Metal backend fixes and platform checks
 - Cycles Metal fixes
-- simulator guards
+- platform guards for reduced Apple targets
 - HDR/EDR enablement
 - ProMotion handling
 
@@ -396,7 +400,6 @@ These are the first commits to deeply inspect before implementing anything major
 
 - `dff9c1c75ac` - initial build support for iOS/iPad; foundational branch shape
 - `ae62cddbf04` - screen update fixes and ProMotion; important runtime correctness
-- `40308c619a9` - iPad simulator support; essential for CI-first strategy
 - `cc08ff2b7c7` - refactors iOS entrypoint/app delegate from `WindowIOS` to `SystemIOS`; architectural cleanup
 - `4c6874685d1` - external file support; critical for sandbox/document behavior
 - `f3f86474a56` - Xcode archiving support; important for distribution path
@@ -409,7 +412,6 @@ These are the first commits to deeply inspect before implementing anything major
 - `bbd3bb5ce16` - inward edge swipe gestures
 - `9f8e5860bcb` - HDR/EDR
 - `4f40068f951` and `918ed1da796` - multi-finger scroll in file browser / asset shelf
-- `d2ccb21d086` - simulator Metal assert skip
 
 ## 8. Full Non-Merge Commit List (Chronological)
 
@@ -427,12 +429,10 @@ Study these in order if reconstructing the branch story:
 10. `ae62cddbf04` - Fix missing screen updates and add ProMotion support
 11. `9c63598baa4` - IOS: Add/fix missing copyright headers
 12. `91a7ab757c1` - Force USD to be off for iPad
-13. `40308c619a9` - iOS: Add iPad Simulator Support
 14. `0e9cfc0a554` - iOS: Fix cross compile project tweaks for cmake and sbin paths
 15. `bcce1e82520` - iOS: Initial support for Pencil tap
 16. `a8fc93e3b09` - iOS: fix touch offset in more space display mode
 17. `d4af12d11ac` - iOS: Adding missing switch case
-18. `d2ccb21d086` - iOS Simulator: Skip Metal feature assert to provide basic support
 19. `240edda8e55` - iOS: Fix `IOS_INPUT_LOG` macro compile issue
 20. `8065bd37548` - iOS: Fix View3D wrongly switching out of axis ortho view on dragging
 21. `6df62b1a5e5` - make format
@@ -482,7 +482,7 @@ Rule: when reproducing an old hack, label it in comments or commit messages as a
 Target architecture:
 
 - host-tool build stage for macOS arm64 where needed
-- target dependency build stage for `ios` and `ios-simulator`
+- target dependency build stage for `ios`
 - published dependency bundle artifact keyed by manifest
 - app build consumes artifact rather than `lib/ios_arm64` LFS/submodule
 
@@ -492,7 +492,7 @@ Manifest key should include at minimum:
 - iOS-specific patch files
 - Xcode version
 - SDK version
-- target kind: `ios` or `ios-simulator`
+- target kind: `ios`
 
 ### 10.2 Code Architecture
 
@@ -509,7 +509,7 @@ Separate workflows/jobs for:
 - host tools bootstrap
 - iOS dependency bundle build
 - Blender iOS configure/build
-- simulator smoke test if possible
+- package inspection / launch evidence collection if possible
 
 ## 11. Dependency Strategy
 
@@ -572,7 +572,7 @@ Very high pain:
 
 Strong recommendation:
 
-- get a minimal iOS/simulator dependency path green first
+- get a minimal iOS dependency path green first
 - defer heavy optional deps unless they block app build parity
 - use the current old branch behavior as a guide for what can remain disabled temporarily
 
@@ -656,7 +656,7 @@ Checklist:
 
 - [x] Decide on script location, likely under `tools/ios/`
 - [x] Make the script print every important input path and version
-- [x] Add explicit modes for `host`, `ios`, and `ios-simulator`
+- [x] Add explicit modes for `host` and `ios`
 - [x] Make the script fail fast with clear messages
 - [x] Keep the script small; let CMake orchestrate actual dependency order
 - [x] Add manifest generation for the resulting artifact bundle
@@ -686,13 +686,13 @@ Gate before moving on:
 - [ ] host configure passes
 - [ ] host tool outputs are discoverable and match the expectations of iOS helper logic
 
-### Phase 5 - iOS Simulator Dependency Bring-Up Before Full Device Build
+### Phase 5 - iOS Dependency Bring-Up Before Full Device Build
 
-Because no local Mac is available, CI-first simulator support is the best early proving ground.
+Because no local Mac is available, CI-first iOS dependency configure/build evidence is the best early proving ground.
 
 Checklist:
 
-- [ ] Create a temporary workflow that configures iOS simulator dependencies only
+- [ ] Create a temporary workflow that configures iOS dependencies only
 - [ ] Do not attempt full Blender app build yet
 - [ ] Upload config logs and `CMakeCache.txt`
 - [ ] Fix path issues, toolchain assumptions, and SDK detection first
@@ -701,7 +701,7 @@ Checklist:
 
 Gate before moving on:
 
-- [ ] simulator dependency configure is repeatable
+- [ ] iOS dependency configure is repeatable
 
 ### Phase 6 - Easy Dependency Wins Before Hard Dependencies
 
@@ -728,7 +728,7 @@ Suggested order:
 
 Gate before moving on:
 
-- [ ] several simple deps build reproducibly under simulator mode
+- [ ] several simple deps build reproducibly under iOS mode
 
 ### Phase 7 - Medium Dependencies
 
@@ -767,16 +767,16 @@ Once dependency path exists, start the Blender-side build-system port.
 Checklist:
 
 - [ ] Port Apple target selection logic in the least invasive way possible
-- [ ] Add or reintroduce `ios` / `ios-simulator` target handling carefully
+- [ ] Add or reintroduce `ios` target handling carefully
 - [ ] Keep shared platform file edits minimal
 - [ ] Where possible, route iOS special cases into new helper files
-- [ ] Add a temporary workflow that only configures Blender for `ios-simulator`
+- [ ] Add a temporary workflow that only configures Blender for `ios`
 - [ ] Upload configure logs and cache files
 - [ ] Fix CMake/Xcode integration before attempting full build
 
 Gate before moving on:
 
-- [ ] Blender configure for simulator works or fails in a narrow, understood area
+- [ ] Blender configure for iOS works or fails in a narrow, understood area
 
 ### Phase 10 - Runtime Bootstrap (Entry + GHOST)
 
@@ -794,7 +794,7 @@ Checklist:
 
 Gate before moving on:
 
-- [ ] simulator build reaches app binary/bundle creation or a narrow runtime compile blocker
+- [ ] iOS build reaches app binary/bundle creation or a narrow runtime compile blocker
 
 ### Phase 11 - Input, Windowmanager, And UI Parity
 
@@ -842,18 +842,18 @@ Gate before moving on:
 - [ ] package layout is correct enough for artifact inspection
 - [ ] signing scope and missing credentials are explicit
 
-### Phase 14 - Simulator Smoke Testing
+### Phase 14 - Bundle Inspection And Launch Evidence
 
 Checklist:
 
-- [ ] Once build exists, add a temporary workflow to run minimal simulator smoke steps
+- [ ] Once build exists, add a temporary workflow to inspect the unsigned app/IPA bundle and collect launch-related evidence where possible
 - [ ] Collect logs, crash reports, and bundle info
-- [ ] Keep expectations modest; simulator proves build/bootstrap, not final device correctness
+- [ ] Keep expectations modest; CI proves build/bootstrap and package shape, not final device correctness
 - [ ] Record all device-only unknowns explicitly
 
 Gate before moving on:
 
-- [ ] simulator can at least attempt launch or produce actionable failure info
+- [ ] CI artifacts can at least produce actionable package or launch failure info
 
 ### Phase 15 - Artifact Production And CI Consolidation
 
@@ -881,13 +881,13 @@ Recommended progression:
 1. `ios-env-probe.yml`
 2. `ios-host-configure.yml`
 3. `ios-host-tools.yml`
-4. `ios-sim-deps-configure.yml`
-5. `ios-sim-deps-basic.yml`
-6. `ios-sim-python.yml`
-7. `ios-sim-ispc.yml`
-8. `ios-sim-blender-configure.yml`
-9. `ios-sim-blender-build.yml`
-10. `ios-sim-smoke.yml`
+4. `ios-deps-configure.yml`
+5. `ios-deps-basic.yml`
+6. `ios-python.yml`
+7. `ios-ispc.yml`
+8. `ios-blender-configure.yml`
+9. `ios-blender-build.yml`
+10. `ios-package-inspect.yml`
 
 Rules:
 
@@ -916,7 +916,7 @@ If using `xcodebuild`, also capture:
 
 - [ ] raw `xcodebuild` log
 - [ ] `.xcresult` if available
-- [ ] simulator/crash logs if a run was attempted
+- [ ] device or package-inspection logs if a run was attempted
 
 ## 16. Easy Wins To Start With
 
@@ -929,7 +929,7 @@ Do these first because they improve velocity without committing to hard architec
 - [x] Add a script scaffold for iOS dependency build orchestration
 - [ ] Add manifest generation for dependency bundles
 - [ ] Add a narrow host-tools configure/build workflow
-- [ ] Add a simulator configure-only workflow
+- [ ] Add an iOS configure-only workflow
 
 These are low-risk and increase visibility immediately.
 
@@ -953,7 +953,6 @@ Maintain this as a live status tracker in `memory.md` or a dedicated parity file
 
 - [ ] Apple target selection
 - [ ] `ios` target handling
-- [ ] `ios-simulator` target handling
 - [ ] host/target split
 - [ ] host tools pathing
 - [ ] bundle layout routing
@@ -964,7 +963,6 @@ Maintain this as a live status tracker in `memory.md` or a dedicated parity file
 - [ ] dependency script exists
 - [ ] manifest generation exists
 - [ ] host tools built in CI
-- [ ] simulator deps bundle built in CI
 - [ ] device deps bundle strategy defined
 - [ ] LFS/submodule path deprecated or removed for iOS
 
@@ -993,7 +991,6 @@ Maintain this as a live status tracker in `memory.md` or a dedicated parity file
 
 - [ ] Metal guards and fixes
 - [ ] Cycles Metal fixes
-- [ ] simulator-specific Metal handling
 - [ ] HDR/EDR
 - [ ] ProMotion
 
@@ -1053,8 +1050,8 @@ Because there is no local Mac or iPad available, testing must be layered.
 
 - toolchain setup correctness
 - dependency build correctness
-- simulator build correctness
-- at least some bootstrap/runtime behavior on simulator
+- iOS build correctness
+- at least some bootstrap/runtime evidence from CI artifacts
 - artifact shape and packaging quality
 
 ### 21.2 What CI Cannot Fully Prove
@@ -1066,9 +1063,9 @@ Because there is no local Mac or iPad available, testing must be layered.
 
 Therefore:
 
-- use simulator as the main automated proving ground
+- use CI build/package evidence as the main automated proving ground
 - keep a list of device-only unknowns
-- do not pretend simulator success equals finished device support
+- do not pretend CI package success equals finished device support
 
 ## 22. What Not To Waste Time On Early
 
@@ -1087,7 +1084,7 @@ Prefer commits like:
 - observability / workflow scaffolding
 - dependency entrypoint script
 - host-tools bootstrap
-- simulator configure support
+- iOS configure support
 - iOS build shim layer
 - GHOST bootstrap
 - touch event plumbing
@@ -1108,8 +1105,8 @@ True completion means all of these are true:
 - [ ] no feature from the old iOS branch was silently dropped
 - [ ] dependency production no longer depends on pulling `lib/ios_arm64` as the main truth source
 - [ ] CI can produce the dependency bundle
-- [ ] CI can build Blender for at least `ios-simulator`
-- [ ] simulator smoke attempts produce useful results
+- [ ] CI can build Blender for `ios`
+- [ ] bundle inspection or launch-evidence runs produce useful results
 - [ ] invasive edits to shared files are minimized
 - [ ] future version porting is easier than the old branch model
 
@@ -1138,7 +1135,7 @@ If starting fresh, do this exact sequence:
 - [x] add host-tools configure workflow
 - [ ] run it and inspect artifacts
 - [x] add thin iOS dependency build script scaffold
-- [ ] add simulator deps configure workflow
+- [ ] add iOS deps configure workflow
 - [ ] only after that, start touching build-system files
 
 That is the lowest-risk on-ramp.

@@ -1,0 +1,25 @@
+name: Build Blender iOS IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Which temporary workflow stage to run
+        required: false
+        default: env-probe
+        type: choice
+        options:
+          - env-probe
+          - host-configure
+
+permissions:
+  contents: read
+
+jobs:
+  env-probe:
+    if: ${{ inputs.mode == 'env-probe' || inputs.mode == '' }}
+    uses: ./.github/workflows/ios-env-probe.yml
+
+  host-configure:
+    if: ${{ inputs.mode == 'host-configure' }}
+    uses: ./.github/workflows/ios-host-configure.yml

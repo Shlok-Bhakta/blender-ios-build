@@ -1,6 +1,7 @@
 name: iOS Host Configure
 
 on:
+  workflow_call:
   workflow_dispatch:
 
 permissions:

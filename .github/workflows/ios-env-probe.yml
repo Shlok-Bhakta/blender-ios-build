@@ -1,6 +1,7 @@
 name: iOS Env Probe
 
 on:
+  workflow_call:
   workflow_dispatch:
 
 permissions:
