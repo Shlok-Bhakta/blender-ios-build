@@ -25,15 +25,15 @@ Last updated: 2026-03-28
 
 ## Current Goals
 
-1. Get phase 4 host dependency configure green on GitHub Actions.
-2. Confirm the host configure artifact includes cache, logs, and a useful build-tree snapshot.
-3. After host configure is stable, add the narrow host-tools build workflow/job.
+1. Get phase 4 host dependency configure and first host-tools build green on GitHub Actions.
+2. Confirm the host configure/host-tools artifacts include cache, logs, and a useful build-tree snapshot.
+3. After the first host-tools build is proven, switch repeated host-tool reuse to a GitHub Releases bootstrap bundle per branch.
 4. Only then start porting deeper Apple target selection for real `ios` dependency configure.
 
 ## Workflow History
 
-- Last successful workflow: `Build Blender iOS IPA` run `23692682459` on `blender-v5.1-release-IOSPATCH-round2` in `env-probe` mode; uploaded environment metadata successfully.
-- Last failed workflow: `Build Blender iOS IPA` run `23692720328` on `blender-v5.1-release-IOSPATCH-round2` in `host-configure` mode; `build_files/build_environment/cmake/check_software.cmake` stopped configure because Homebrew packages `autoconf`, `automake`, `glibtoolize`, `yasm`, `dos2unix`, and Homebrew `bison` were missing from the runner environment.
+- Last successful workflow: `Build Blender iOS IPA` run `23693130442` on `blender-v5.1-release-IOSPATCH-round2` in `host-configure` mode; host dependency configure completed successfully using Blender mirror sources.
+- Last failed workflow: `Build Blender iOS IPA` run `23693330218` on `blender-v5.1-release-IOSPATCH-round2` in `host-tools` mode; `ll` finished, but `external_ispc` failed on Xcode 16.4 because `src/util.cpp` redeclared `std::__libcpp_verbose_abort` with an exception specification that no longer matches libc++ headers.
 - Latest known workflow in repo before changes: `.github/workflows/close-prs.yml` only.
 - Exploratory dispatches in this session: `23691855752` and `23691861803`, both manually cancelled after confirming `gh workflow run` worked.
 - Mistake repaired: accidental merge/push from legacy branch was fully rewound; cancelled run `23692208885` is historical only and must be ignored.
@@ -42,7 +42,7 @@ Last updated: 2026-03-28
 
 ## Next Hypothesis
 
-- The host configure blocker is still workflow setup, not Blender CMake logic: install the missing Homebrew prerequisites in `.github/workflows/ios-host-configure.yml`, push the fresh-port branch, rerun `host-configure`, and only then move on to host-tool outputs or `APPLE_TARGET_DEVICE` porting.
+- The next narrow win is to push the new GitHub Releases bootstrap flow plus heartbeat logging, rerun `host-tools`, publish a branch-scoped `python`+`llvm` checkpoint asset after `ll`, and then iterate on the now much-faster `external_ispc` failure.
 
 ## GitHub Actions Commands
 
@@ -84,6 +84,13 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 - Env probe artifact `ios-env-probe-23692682459` contains summary, selected env JSON, Xcode/SDK outputs, tool versions, and filesystem listings.
 - Fresh-port host configure failure `23692720328` is narrow and actionable: CMake reached compiler detection successfully, then stopped in `check_software.cmake` before real dependency configuration because the runner did not have the expected Homebrew helper packages.
 - The host configure artifact `ios-host-configure-23692720328` contains `manifest.json`, `host-configure-console.log`, `logs/configure.log`, and a build-tree snapshot; the key failure is in `logs/configure.log` rather than the console log.
+- Fresh-port host configure success `23693130442` proves the workflow-environment fixes plus Blender mirror fallback are enough for a clean host configure on GitHub Actions.
+- A new `host-tools` workflow exists and is intended to bootstrap the first real host tool outputs (`python`, `llvm`, `ispc`, `brotli`) while artifacting intermediate state.
+- `host-tools` run `23693330218` confirms the expensive `python` and `llvm` stages already succeed on CI; the first real code blocker after that is ISPC vs current Xcode libc++ headers, not LLVM buildability.
+- `host-tools` artifact `ios-host-tools-23693330218` confirms the expected host outputs already exist for `python/bin/python3.13`, `python/bin/meson`, `llvm/bin/llvm-config`, `clang`, `clang++`, `llvm-as`, `llvm-dis`, and `llvm-tblgen`.
+- `host-tools` run `23693330218` failed in `ispc-logs/build.log` at `build/ios-deps/host/build/ispc/src/external_ispc/src/util.cpp:51` with an exception-specification mismatch against `/usr/include/c++/v1/__verbose_abort` from Xcode 16.4.
+- User preference: long-running Actions must stay visibly alive. Future workflows should emit clear progress markers and heartbeat-style log lines before/after each expensive stage so a 60-90 minute compile does not look dead from the UI.
+- User preference: do not keep polling in the CLI unless explicitly asked; use GitHub Actions logs/artifacts as the primary visible progress surface while the run is active.
 
 ## Local Workflow Additions
 
@@ -94,10 +101,24 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 - Added workflow: `.github/workflows/ios-host-configure.yml`
 - Workflow display name: `iOS Host Configure`
 - Uploaded artifact name: `ios-host-configure-${github.run_id}`
+- Added workflow: `.github/workflows/ios-host-tools.yml`
+- Workflow display name: `iOS Host Tools`
+- Uploaded artifact name: `ios-host-tools-${github.run_id}`
 - Added compatibility driver: `.github/workflows/build-blender-ios.yml`
 - Dependency entrypoint: `tools/ios/build_deps.py`
-- Current local-only follow-up: `.github/workflows/ios-host-configure.yml` now installs the missing Homebrew configure prerequisites before invoking `tools/ios/build_deps.py`; this still needs a push before Actions can validate it.
+- `.github/workflows/ios-host-configure.yml` now installs the missing Homebrew configure prerequisites before invoking `tools/ios/build_deps.py`.
+- `.github/workflows/ios-host-tools.yml` currently source-builds host tools on CI and has now proven `python` plus `llvm`; `external_ispc` is the first downstream compile failure.
+- Local follow-up prepared but not yet pushed: add `tools/ios/host_bootstrap.py`, `tools/ios/run_with_heartbeat.sh`, GitHub Release asset restore/upload in `.github/workflows/ios-host-tools.yml`, and clearer heartbeat logging around long stages.
 - Local validation: `bash -n tools/ios/collect_ci_env.sh`, local env-probe dry run, `bash -n .github/poll-build-run.sh`, `python3 -m py_compile tools/ios/build_deps.py`, host and iOS dry runs for `tools/ios/build_deps.py`, and YAML parse via `nix-shell -p python3Packages.pyyaml`.
+
+## Planned Bootstrap Storage
+
+- Preferred durable storage is GitHub Releases assets on the writable fork, not git-committed binaries and not Actions cache as the canonical source.
+- Planned convention: one branch-scoped prerelease tag such as `blender-v5.1-release-IOSPATCH-round2-deps`.
+- Planned asset naming: readable tarballs such as `host-tools-macos-arm64-<key>.tar.zst` or per-tool variants like `host-llvm-macos-arm64-<key>.tar.zst`.
+- Planned selection key should include at least: dependency recipe hashes, relevant patch hashes, runner arch, and Xcode version.
+- Planned workflow behavior: compute key, log key/tag/asset names, try release download first, unpack into the expected host-tool layout, rebuild only on a cache miss or stale bundle, then upload replacement assets back to the same branch release.
+- Current planned first checkpoint asset is a `python-llvm` stage bundle so repeated retries do not have to spend another ~2 hours rebuilding LLVM before reaching ISPC.
 
 ## Dependency Entrypoint Notes
 
@@ -191,11 +212,13 @@ Gate status:
 - [x] Confirm where host tools land and how iOS recipes expect to find them.
 - [ ] Artifact-upload the host tool output layout.
 - [x] Document exact expected host output paths.
+- [ ] Switch repeated host-tool reuse over to GitHub Releases bootstrap assets after the first clean source build.
 
 Current note:
 
-- Run `23692720328` proved the workflow dispatch and artifact capture path, but host configure itself still fails at dependency-builder prerequisite discovery on the runner.
-- A local workflow fix is prepared to install the missing Homebrew packages before configure; rerun that on the fresh-port branch before judging Blender-side host configure viability.
+- Run `23693130442` proved that host configure now passes on the fresh-port branch after installing the missing Homebrew prerequisites and preferring the Blender mirror for dependency tarballs.
+- Run `23693330218` proved the host bootstrap path much further: `external_python_site_packages` and `ll` complete successfully, then `external_ispc` fails quickly on a real source-level incompatibility with Xcode 16.4 libc++.
+- A local workflow revision is ready to upload a branch-scoped GitHub Release checkpoint after the successful `python`+`llvm` stages and to add heartbeat/progress output around each long-running step.
 
 ## Parity Checklist
 

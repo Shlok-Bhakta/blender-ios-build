@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   host-tools:
@@ -48,66 +48,151 @@ jobs:
           echo "$(brew --prefix libtool)/bin" >> "${GITHUB_PATH}"
           echo "$(brew --prefix libtool)/libexec/gnubin" >> "${GITHUB_PATH}"
 
+      - name: Compute host bootstrap metadata
+        shell: bash
+        run: |
+          mkdir -p artifacts/ios-host-tools/bootstrap
+          python3 tools/ios/host_bootstrap.py metadata \
+            --branch "${GITHUB_REF_NAME}" \
+            --stage python-llvm \
+            --output artifacts/ios-host-tools/bootstrap/bootstrap-metadata.json
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          metadata = json.loads(
+              Path('artifacts/ios-host-tools/bootstrap/bootstrap-metadata.json').read_text(encoding='ascii')
+          )
+          github_env = Path(os.environ['GITHUB_ENV'])
+          with github_env.open('a', encoding='ascii') as handle:
+              handle.write(f"HOST_BOOTSTRAP_RELEASE_TAG={metadata['release_tag']}\n")
+              handle.write(f"HOST_BOOTSTRAP_ASSET_NAME={metadata['asset_name']}\n")
+              handle.write(f"HOST_BOOTSTRAP_MANIFEST_ASSET_NAME={metadata['manifest_asset_name']}\n")
+              handle.write(f"HOST_BOOTSTRAP_KEY={metadata['key']}\n")
+          print(f"[bootstrap] stage={metadata['stage']}")
+          print(f"[bootstrap] key={metadata['key']}")
+          print(f"[bootstrap] release_tag={metadata['release_tag']}")
+          print(f"[bootstrap] asset_name={metadata['asset_name']}")
+          print(f"[bootstrap] manifest_asset_name={metadata['manifest_asset_name']}")
+          PY
+
       - name: Configure host dependency build
         shell: bash
         run: |
           mkdir -p artifacts/ios-host-tools
-          python3 tools/ios/build_deps.py \
-            --mode host \
-            --configure-only \
-            --build-dir build/ios-deps/host \
-            --install-dir build/ios-deps/install/host \
-            --log-dir artifacts/ios-host-tools/configure-logs \
-            --manifest-path artifacts/ios-host-tools/configure-manifest.json \
-            2>&1 | tee artifacts/ios-host-tools/configure-console.log
+          bash tools/ios/run_with_heartbeat.sh configure 60 artifacts/ios-host-tools/configure-console.log \
+            python3 tools/ios/build_deps.py \
+              --mode host \
+              --configure-only \
+              --build-dir build/ios-deps/host \
+              --install-dir build/ios-deps/install/host \
+              --log-dir artifacts/ios-host-tools/configure-logs \
+              --manifest-path artifacts/ios-host-tools/configure-manifest.json
+
+      - name: Restore host bootstrap bundle
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          download_dir="artifacts/ios-host-tools/bootstrap/download"
+          mkdir -p "${download_dir}"
+          echo "[bootstrap] checking release tag ${HOST_BOOTSTRAP_RELEASE_TAG}"
+          echo "[bootstrap] looking for asset ${HOST_BOOTSTRAP_ASSET_NAME}"
+          if gh release view "${HOST_BOOTSTRAP_RELEASE_TAG}" -R "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            if gh release download "${HOST_BOOTSTRAP_RELEASE_TAG}" -R "${GITHUB_REPOSITORY}" -p "${HOST_BOOTSTRAP_ASSET_NAME}" -D "${download_dir}"; then
+              python3 tools/ios/host_bootstrap.py extract --input "${download_dir}/${HOST_BOOTSTRAP_ASSET_NAME}"
+              echo "HOST_BOOTSTRAP_HIT=true" >> "${GITHUB_ENV}"
+              echo "[bootstrap] hit=true"
+              echo "[bootstrap] restored ${HOST_BOOTSTRAP_ASSET_NAME} into build tree"
+            else
+              echo "HOST_BOOTSTRAP_HIT=false" >> "${GITHUB_ENV}"
+              echo "[bootstrap] hit=false"
+            fi
+          else
+            echo "HOST_BOOTSTRAP_HIT=false" >> "${GITHUB_ENV}"
+            echo "[bootstrap] release tag missing; full source build required"
+          fi
 
       - name: Build host Python and site packages
+        if: env.HOST_BOOTSTRAP_HIT != 'true'
         shell: bash
         run: |
-          python3 tools/ios/build_deps.py \
-            --mode host \
-            --build-target external_python_site_packages \
-            --build-dir build/ios-deps/host \
-            --install-dir build/ios-deps/install/host \
-            --log-dir artifacts/ios-host-tools/python-logs \
-            --manifest-path artifacts/ios-host-tools/python-manifest.json \
-            2>&1 | tee artifacts/ios-host-tools/python-console.log
+          bash tools/ios/run_with_heartbeat.sh python-site-packages 60 artifacts/ios-host-tools/python-console.log \
+            python3 tools/ios/build_deps.py \
+              --mode host \
+              --build-target external_python_site_packages \
+              --build-dir build/ios-deps/host \
+              --install-dir build/ios-deps/install/host \
+              --log-dir artifacts/ios-host-tools/python-logs \
+              --manifest-path artifacts/ios-host-tools/python-manifest.json
 
       - name: Build host LLVM tools
+        if: env.HOST_BOOTSTRAP_HIT != 'true'
         shell: bash
         run: |
-          python3 tools/ios/build_deps.py \
-            --mode host \
-            --build-target ll \
-            --build-dir build/ios-deps/host \
-            --install-dir build/ios-deps/install/host \
-            --log-dir artifacts/ios-host-tools/llvm-logs \
-            --manifest-path artifacts/ios-host-tools/llvm-manifest.json \
-            2>&1 | tee artifacts/ios-host-tools/llvm-console.log
+          bash tools/ios/run_with_heartbeat.sh llvm 300 artifacts/ios-host-tools/llvm-console.log \
+            python3 tools/ios/build_deps.py \
+              --mode host \
+              --build-target ll \
+              --build-dir build/ios-deps/host \
+              --install-dir build/ios-deps/install/host \
+              --log-dir artifacts/ios-host-tools/llvm-logs \
+              --manifest-path artifacts/ios-host-tools/llvm-manifest.json
+
+      - name: Publish host bootstrap bundle
+        if: success() && env.HOST_BOOTSTRAP_HIT != 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          bundle_dir="artifacts/ios-host-tools/bootstrap/upload"
+          bundle_path="${bundle_dir}/${HOST_BOOTSTRAP_ASSET_NAME}"
+          manifest_path="${bundle_dir}/bootstrap-bundle.json"
+          mkdir -p "${bundle_dir}"
+          python3 tools/ios/host_bootstrap.py bundle \
+            --branch "${GITHUB_REF_NAME}" \
+            --stage python-llvm \
+            --output "${bundle_path}" \
+            --metadata-output "${manifest_path}"
+          if ! gh release view "${HOST_BOOTSTRAP_RELEASE_TAG}" -R "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release create "${HOST_BOOTSTRAP_RELEASE_TAG}" \
+              -R "${GITHUB_REPOSITORY}" \
+              --target "${GITHUB_SHA}" \
+              --title "${HOST_BOOTSTRAP_RELEASE_TAG}" \
+              --notes "Branch-scoped host bootstrap bundles for ${GITHUB_REF_NAME}." \
+              --prerelease
+          fi
+          gh release upload "${HOST_BOOTSTRAP_RELEASE_TAG}" -R "${GITHUB_REPOSITORY}" --clobber \
+            "${bundle_path}" \
+            "${manifest_path}#${HOST_BOOTSTRAP_MANIFEST_ASSET_NAME}"
+          echo "[bootstrap] uploaded ${HOST_BOOTSTRAP_ASSET_NAME} to ${HOST_BOOTSTRAP_RELEASE_TAG}"
 
       - name: Build host ISPC
         shell: bash
         run: |
-          python3 tools/ios/build_deps.py \
-            --mode host \
-            --build-target external_ispc \
-            --build-dir build/ios-deps/host \
-            --install-dir build/ios-deps/install/host \
-            --log-dir artifacts/ios-host-tools/ispc-logs \
-            --manifest-path artifacts/ios-host-tools/ispc-manifest.json \
-            2>&1 | tee artifacts/ios-host-tools/ispc-console.log
+          bash tools/ios/run_with_heartbeat.sh ispc 60 artifacts/ios-host-tools/ispc-console.log \
+            python3 tools/ios/build_deps.py \
+              --mode host \
+              --build-target external_ispc \
+              --build-dir build/ios-deps/host \
+              --install-dir build/ios-deps/install/host \
+              --log-dir artifacts/ios-host-tools/ispc-logs \
+              --manifest-path artifacts/ios-host-tools/ispc-manifest.json
 
       - name: Build host Brotli
         shell: bash
         run: |
-          python3 tools/ios/build_deps.py \
-            --mode host \
-            --build-target external_brotli \
-            --build-dir build/ios-deps/host \
-            --install-dir build/ios-deps/install/host \
-            --log-dir artifacts/ios-host-tools/brotli-logs \
-            --manifest-path artifacts/ios-host-tools/brotli-manifest.json \
-            2>&1 | tee artifacts/ios-host-tools/brotli-console.log
+          bash tools/ios/run_with_heartbeat.sh brotli 60 artifacts/ios-host-tools/brotli-console.log \
+            python3 tools/ios/build_deps.py \
+              --mode host \
+              --build-target external_brotli \
+              --build-dir build/ios-deps/host \
+              --install-dir build/ios-deps/install/host \
+              --log-dir artifacts/ios-host-tools/brotli-logs \
+              --manifest-path artifacts/ios-host-tools/brotli-manifest.json
 
       - name: Collect host tool artifacts
         if: always()

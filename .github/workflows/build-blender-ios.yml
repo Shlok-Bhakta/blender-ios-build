@@ -27,4 +27,6 @@ jobs:
 
   host-tools:
     if: ${{ inputs.mode == 'host-tools' }}
+    permissions:
+      contents: write
     uses: ./.github/workflows/ios-host-tools.yml

@@ -675,6 +675,11 @@ Latest execution note:
 - `host-configure` dispatch `23692720328` reached compiler detection and artifact upload successfully, so the driver workflow, checkout path, and dependency entrypoint wiring are already usable.
 - The current failure is still workflow-environment setup, not Apple target logic: `build_files/build_environment/cmake/check_software.cmake` stopped on missing Homebrew packages (`autoconf`, `automake`, `glibtoolize`, `yasm`, `dos2unix`, and Homebrew `bison`).
 - Keep fixing the runner environment until host configure passes before judging Blender-side dependency CMake behavior.
+- Current branch-local `host-tools` workflow intentionally builds real host prerequisites in CI first; it does not yet bootstrap them from a prebuilt bundle.
+- After the first successful host-tools build, switch to a GitHub Releases bootstrap model so future runs can download a known-good host-tools bundle instead of recompiling LLVM on every workflow run.
+- New evidence from `host-tools` run `23693330218`: `external_python_site_packages` and `ll` both completed successfully on CI, so host Python and host LLVM are now proven buildable on the fresh-port branch.
+- The first post-LLVM blocker is `external_ispc`, which fails on Xcode 16.4 with an exception-specification mismatch in ISPC's `util.cpp` against libc++ `__verbose_abort`.
+- That makes GitHub Releases bootstrapping immediately worthwhile now: checkpoint the already-good `python`+`llvm` host state so retries reach the ISPC blocker quickly instead of recompiling LLVM for ~2 hours.
 
 Checklist:
 
@@ -685,12 +690,23 @@ Checklist:
 - [x] Confirm the old branch expectations around `CMAKE_DEPS_CROSSCOMPILE_BUILDDIR`
 - [x] Confirm where host tools land and how iOS recipes expect to find them
 - [ ] Artifact-upload the host tool output layout
+- [ ] Add a branch-scoped GitHub Release bootstrap flow for host-tool bundles
+- [ ] Download matching host-tool assets from GitHub Releases before falling back to source builds
 - [x] Document exact expected host output paths in `memory.md`
 
 Gate before moving on:
 
 - [ ] host configure passes
 - [ ] host tool outputs are discoverable and match the expectations of iOS helper logic
+
+Planned bootstrap convention once the first build is proven:
+
+- Use one prerelease tag per working branch, for example `blender-v5.1-release-IOSPATCH-round2-deps`.
+- Store host-tool tarballs as GitHub Release assets, not in git history and not in Actions cache as the source of truth.
+- Prefer readable asset names such as `host-tools-macos-arm64-<key>.tar.zst` or per-tool assets like `host-llvm-macos-arm64-<key>.tar.zst`.
+- Add a small manifest asset describing the dependency key, Xcode version, runner arch, and relevant build recipe hashes.
+- Future workflows should: compute the key, try to download matching release assets, unpack them into the expected host-tool layout, and only rebuild/publish when the asset is missing or stale.
+- This bootstrap path should preserve observability: log the release tag, asset name, computed key, download hit/miss result, and unpack destination clearly in the job log.
 
 ### Phase 5 - iOS Dependency Bring-Up Before Full Device Build
 
