@@ -88,6 +88,23 @@ DEP_CONFIG = {
             Path("build_files/build_environment/cmake/pugixml.cmake"),
         ],
     },
+    "tbb": {
+        "build_dir": Path("build/ios-deps/ios/build/tbb"),
+        "cmake_prefixes": ["TBB"],
+        "release_dir": Path("build/ios-deps/ios/Release/tbb"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/tbb.cmake"),
+        ],
+    },
+    "opensubdiv": {
+        "build_dir": Path("build/ios-deps/ios/build/opensubdiv"),
+        "cmake_prefixes": ["OPENSUBDIV", "TBB"],
+        "release_dir": Path("build/ios-deps/ios/Release/opensubdiv"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/opensubdiv.cmake"),
+            Path("build_files/build_environment/cmake/tbb.cmake"),
+        ],
+    },
 }
 
 VERSIONS_CMAKE = REPO_ROOT / "build_files/build_environment/cmake/versions.cmake"
