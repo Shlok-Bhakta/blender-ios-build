@@ -1,239 +1,584 @@
 name: iOS Deps
-
-on:
-  workflow_call:
-  workflow_dispatch:
-
+'on':
+  workflow_call: null
+  workflow_dispatch: null
 permissions:
   contents: write
-
 jobs:
   ios-deps:
     runs-on: macos-latest
     timeout-minutes: 300
     env:
       GH_TOKEN: ${{ github.token }}
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-          lfs: false
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        lfs: false
+    - name: Install iOS dependency prerequisites
+      shell: bash
+      env:
+        HOMEBREW_NO_AUTO_UPDATE: '1'
+      run: "set -euo pipefail\npackages=(\n  autoconf\n  automake\n  bison\n  dos2unix\n\
+        \  flex\n  libtool\n  yasm\n)\nmissing=()\nfor package in \"${packages[@]}\"\
+        ; do\n  if ! brew list --versions \"${package}\" >/dev/null 2>&1; then\n \
+        \   missing+=(\"${package}\")\n  fi\ndone\nif [ \"${#missing[@]}\" -gt 0 ];\
+        \ then\n  brew install \"${missing[@]}\"\nfi\necho \"$(brew --prefix bison)/bin\"\
+        \ >> \"${GITHUB_PATH}\"\necho \"$(brew --prefix flex)/bin\" >> \"${GITHUB_PATH}\"\
+        \necho \"$(brew --prefix libtool)/bin\" >> \"${GITHUB_PATH}\"\necho \"$(brew\
+        \ --prefix libtool)/libexec/gnubin\" >> \"${GITHUB_PATH}\""
+    - name: Compute host restore metadata
+      shell: bash
+      run: "mkdir -p artifacts/ios-deps/bootstrap\npython3 tools/ios/host_bootstrap.py\
+        \ metadata --branch \"${GITHUB_REF_NAME}\" --stage python-llvm --output artifacts/ios-deps/bootstrap/bootstrap-metadata.json\n\
+        python3 - <<'METADATA'\nimport json\nimport os\nfrom pathlib import Path\n\
+        \nmetadata = json.loads(\n    Path('artifacts/ios-deps/bootstrap/bootstrap-metadata.json').read_text(encoding='ascii')\n\
+        )\nversions_cmake = Path('build_files/build_environment/cmake/versions.cmake').read_text(encoding='utf-8')\n\
+        ispc_version = None\nfor line in versions_cmake.splitlines():\n    if line.startswith('set(ISPC_VERSION\
+        \ '):\n        ispc_version = line.split()[1].rstrip(')')\n        break\n\
+        if ispc_version is None:\n    raise RuntimeError('Unable to determine ISPC_VERSION\
+        \ from versions.cmake')\ngithub_env = Path(os.environ['GITHUB_ENV'])\nwith\
+        \ github_env.open('a', encoding='ascii') as handle:\n    handle.write(f\"\
+        HOST_BOOTSTRAP_RELEASE_TAG={metadata['release_tag']}\\n\")\n    handle.write(f\"\
+        HOST_BOOTSTRAP_ASSET_NAME={metadata['asset_name']}\\n\")\n    handle.write(f\"\
+        HOST_ISPC_RELEASE_ASSET_NAME=host-ispc-macos-arm64-{ispc_version}.tar.gz\\\
+        n\")\nprint(f\"[bootstrap] release_tag={metadata['release_tag']}\")\nprint(f\"\
+        [bootstrap] asset_name={metadata['asset_name']}\")\nprint(f\"[bootstrap] ispc_asset_name=host-ispc-macos-arm64-{ispc_version}.tar.gz\"\
+        )\nMETADATA"
+    - name: Restore host python and llvm build tree
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: 'set -euo pipefail
 
-      - name: Install iOS dependency prerequisites
-        shell: bash
-        env:
-          HOMEBREW_NO_AUTO_UPDATE: "1"
-        run: |
-          set -euo pipefail
-          packages=(
-            autoconf
-            automake
-            bison
-            dos2unix
-            flex
-            libtool
-            yasm
-          )
-          missing=()
-          for package in "${packages[@]}"; do
-            if ! brew list --versions "${package}" >/dev/null 2>&1; then
-              missing+=("${package}")
-            fi
-          done
-          if [ "${#missing[@]}" -gt 0 ]; then
-            brew install "${missing[@]}"
-          fi
-          echo "$(brew --prefix bison)/bin" >> "${GITHUB_PATH}"
-          echo "$(brew --prefix flex)/bin" >> "${GITHUB_PATH}"
-          echo "$(brew --prefix libtool)/bin" >> "${GITHUB_PATH}"
-          echo "$(brew --prefix libtool)/libexec/gnubin" >> "${GITHUB_PATH}"
+        download_dir="artifacts/ios-deps/bootstrap/download"
 
-      - name: Compute host restore metadata
-        shell: bash
-        run: |
-          mkdir -p artifacts/ios-deps/bootstrap
-          python3 tools/ios/host_bootstrap.py metadata \
-            --branch "${GITHUB_REF_NAME}" \
-            --stage python-llvm \
-            --output artifacts/ios-deps/bootstrap/bootstrap-metadata.json
-          python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
+        mkdir -p "${download_dir}"
 
-          metadata = json.loads(
-              Path('artifacts/ios-deps/bootstrap/bootstrap-metadata.json').read_text(encoding='ascii')
-          )
-          versions_cmake = Path('build_files/build_environment/cmake/versions.cmake').read_text(encoding='utf-8')
-          ispc_version = None
-          for line in versions_cmake.splitlines():
-              if line.startswith('set(ISPC_VERSION '):
-                  ispc_version = line.split()[1].rstrip(')')
-                  break
-          if ispc_version is None:
-              raise RuntimeError('Unable to determine ISPC_VERSION from versions.cmake')
-          github_env = Path(os.environ['GITHUB_ENV'])
-          with github_env.open('a', encoding='ascii') as handle:
-              handle.write(f"HOST_BOOTSTRAP_RELEASE_TAG={metadata['release_tag']}\n")
-              handle.write(f"HOST_BOOTSTRAP_ASSET_NAME={metadata['asset_name']}\n")
-              handle.write(f"HOST_ISPC_RELEASE_ASSET_NAME=host-ispc-macos-arm64-{ispc_version}.tar.gz\n")
-          print(f"[bootstrap] release_tag={metadata['release_tag']}")
-          print(f"[bootstrap] asset_name={metadata['asset_name']}")
-          print(f"[bootstrap] ispc_asset_name=host-ispc-macos-arm64-{ispc_version}.tar.gz")
-          PY
+        gh release download "${HOST_BOOTSTRAP_RELEASE_TAG}" -R "${GITHUB_REPOSITORY}"
+        -p "${HOST_BOOTSTRAP_ASSET_NAME}" -D "${download_dir}"
 
-      - name: Restore host python and llvm build tree
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          download_dir="artifacts/ios-deps/bootstrap/download"
-          mkdir -p "${download_dir}"
-          gh release download "${HOST_BOOTSTRAP_RELEASE_TAG}" -R "${GITHUB_REPOSITORY}" -p "${HOST_BOOTSTRAP_ASSET_NAME}" -D "${download_dir}"
-          python3 tools/ios/host_bootstrap.py extract --input "${download_dir}/${HOST_BOOTSTRAP_ASSET_NAME}"
-          test -d build/ios-deps/host/Release/python
-          test -d build/ios-deps/host/Release/llvm
+        python3 tools/ios/host_bootstrap.py extract --input "${download_dir}/${HOST_BOOTSTRAP_ASSET_NAME}"
 
-      - name: Restore host ISPC
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          download_dir="artifacts/ios-deps/ispc/download"
-          mkdir -p "${download_dir}" "build/ios-deps/host/Release"
-          gh release download "${HOST_BOOTSTRAP_RELEASE_TAG}" -R "${GITHUB_REPOSITORY}" -p "${HOST_ISPC_RELEASE_ASSET_NAME}" -D "${download_dir}"
-          tar -xzf "${download_dir}/${HOST_ISPC_RELEASE_ASSET_NAME}" -C build/ios-deps/host/Release
-          test -x build/ios-deps/host/Release/ispc/bin/ispc
+        test -d build/ios-deps/host/Release/python
 
-      - name: Configure iPhoneOS dependency build
-        shell: bash
-        run: |
-          mkdir -p artifacts/ios-deps
-          set -euo pipefail
-          python3 tools/ios/build_deps.py \
-            --mode ios \
-            --configure-only \
-            --build-dir build/ios-deps/ios \
-            --install-dir build/ios-deps/install/ios \
-            --host-build-dir build/ios-deps/host \
-            --host-install-dir build/ios-deps/install/host \
-            --log-dir artifacts/ios-deps/configure-logs \
-            --manifest-path artifacts/ios-deps/configure-manifest.json \
-            2>&1 | tee artifacts/ios-deps/ios-configure-console.log
+        test -d build/ios-deps/host/Release/llvm'
+    - name: Restore host ISPC
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: 'set -euo pipefail
 
-      - name: Build all iOS dependencies
-        shell: bash
-        run: |
-          set -euo pipefail
-          deps=(
-            zlib
-            openal
-            blosc
-            pthreads
-            png
-            jpeg
-            tiff
-            imath
-            openexr
-            brotli
-            freetype
-            bzip2
-            lzma
-            deflate
-            fmt
-            robinmap
-            pugixml
-            xml2
-            expat
-            pystring
-            yamlcpp
-            minizipng
-            ffi
-            alembic
-            openjpeg
-            webp
-            flac
-            sndfile
-            gmp
-            tbb
-            opensubdiv
-            ffmpeg
-            opus
-            vorbis
-            ogg
-            x264
-            x265
-            vpx
-            lame
-            aom
-            fftw
-            pybind11
-            nanobind
-            manifold
-            opencolorio
-            openimageio
-            openvdb
-            python
-            cython
-            numpy
-            shaderc
-            spirv-reflect
-          )
-          for dep in "${deps[@]}"; do
-            echo ""
-            echo "============================================"
-            echo "[dep] === Building ${dep} ==="
-            echo "============================================"
-            bash tools/ios/run_release_cached_dep.sh "${dep}" artifacts/ios-deps \
-              python3 tools/ios/build_deps.py \
-                --mode ios \
-                --build-target "external_${dep}" \
-                --build-dir build/ios-deps/ios \
-                --install-dir build/ios-deps/install/ios \
-                --host-build-dir build/ios-deps/host \
-                --host-install-dir build/ios-deps/install/host \
-                --log-dir "artifacts/ios-deps/${dep}-logs" \
-                --manifest-path "artifacts/ios-deps/${dep}-manifest.json"
-          done
+        download_dir="artifacts/ios-deps/ispc/download"
 
-      - name: Collect iOS dependency artifacts
-        if: always()
-        shell: bash
-        run: |
-          mkdir -p artifacts/ios-deps
-          if [ -f build/ios-deps/ios/CMakeCache.txt ]; then
-            cp build/ios-deps/ios/CMakeCache.txt artifacts/ios-deps/CMakeCache.txt
-          fi
-          if [ -f build/ios-deps/ios/CMakeFiles/CMakeOutput.log ]; then
-            cp build/ios-deps/ios/CMakeFiles/CMakeOutput.log artifacts/ios-deps/CMakeOutput.log
-          fi
-          if [ -f build/ios-deps/ios/CMakeFiles/CMakeError.log ]; then
-            cp build/ios-deps/ios/CMakeFiles/CMakeError.log artifacts/ios-deps/CMakeError.log
-          fi
-          python3 - <<'PY'
-          from pathlib import Path
+        mkdir -p "${download_dir}" "build/ios-deps/host/Release"
 
-          def write_tree(root: Path, out: Path) -> None:
-              entries = []
-              if root.exists():
-                  for path in sorted(root.rglob('*')):
-                      entries.append(str(path))
-              out.write_text('\n'.join(entries) + ('\n' if entries else ''), encoding='utf-8')
+        gh release download "${HOST_BOOTSTRAP_RELEASE_TAG}" -R "${GITHUB_REPOSITORY}"
+        -p "${HOST_ISPC_RELEASE_ASSET_NAME}" -D "${download_dir}"
 
-          artifact_root = Path('artifacts/ios-deps')
-          write_tree(Path('build/ios-deps/ios'), artifact_root / 'ios-build-tree.txt')
-          write_tree(Path('build/ios-deps/install/ios'), artifact_root / 'ios-install-tree.txt')
-          write_tree(Path('build/ios-deps/host/Release'), artifact_root / 'host-release-tree.txt')
-          PY
+        tar -xzf "${download_dir}/${HOST_ISPC_RELEASE_ASSET_NAME}" -C build/ios-deps/host/Release
 
-      - name: Upload iOS dependency artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-deps-${{ github.run_id }}
-          path: artifacts/ios-deps
-          retention-days: 14
+        test -x build/ios-deps/host/Release/ispc/bin/ispc'
+    - name: Configure iPhoneOS dependency build
+      shell: bash
+      run: 'mkdir -p artifacts/ios-deps
+
+        set -euo pipefail
+
+        python3 tools/ios/build_deps.py --mode ios --configure-only --build-dir build/ios-deps/ios
+        --install-dir build/ios-deps/install/ios --host-build-dir build/ios-deps/host
+        --host-install-dir build/ios-deps/install/host --log-dir artifacts/ios-deps/configure-logs
+        --manifest-path artifacts/ios-deps/configure-manifest.json 2>&1 | tee artifacts/ios-deps/ios-configure-console.log'
+    - name: Build zlib
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building zlib ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "zlib" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_zlib" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/zlib-logs" --manifest-path "artifacts/ios-deps/zlib-manifest.json"
+    - name: Build openal
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building openal ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "openal" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_openal" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/openal-logs" --manifest-path "artifacts/ios-deps/openal-manifest.json"
+    - name: Build blosc
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building blosc ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "blosc" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_blosc" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/blosc-logs" --manifest-path "artifacts/ios-deps/blosc-manifest.json"
+    - name: Build pthreads
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building pthreads ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "pthreads" artifacts/ios-deps
+        python3 tools/ios/build_deps.py --mode ios --build-target "external_pthreads"
+        --build-dir build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/pthreads-logs" --manifest-path "artifacts/ios-deps/pthreads-manifest.json"
+    - name: Build png
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building png ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "png" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_png" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/png-logs" --manifest-path "artifacts/ios-deps/png-manifest.json"
+    - name: Build jpeg
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building jpeg ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "jpeg" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_jpeg" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/jpeg-logs" --manifest-path "artifacts/ios-deps/jpeg-manifest.json"
+    - name: Build tiff
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building tiff ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "tiff" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_tiff" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/tiff-logs" --manifest-path "artifacts/ios-deps/tiff-manifest.json"
+    - name: Build imath
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building imath ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "imath" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_imath" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/imath-logs" --manifest-path "artifacts/ios-deps/imath-manifest.json"
+    - name: Build openexr
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building openexr ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "openexr" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_openexr" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/openexr-logs" --manifest-path "artifacts/ios-deps/openexr-manifest.json"
+    - name: Build brotli
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building brotli ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "brotli" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_brotli" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/brotli-logs" --manifest-path "artifacts/ios-deps/brotli-manifest.json"
+    - name: Build freetype
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building freetype ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "freetype" artifacts/ios-deps
+        python3 tools/ios/build_deps.py --mode ios --build-target "external_freetype"
+        --build-dir build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/freetype-logs" --manifest-path "artifacts/ios-deps/freetype-manifest.json"
+    - name: Build bzip2
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building bzip2 ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "bzip2" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_bzip2" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/bzip2-logs" --manifest-path "artifacts/ios-deps/bzip2-manifest.json"
+    - name: Build lzma
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building lzma ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "lzma" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_lzma" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/lzma-logs" --manifest-path "artifacts/ios-deps/lzma-manifest.json"
+    - name: Build deflate
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building deflate ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "deflate" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_deflate" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/deflate-logs" --manifest-path "artifacts/ios-deps/deflate-manifest.json"
+    - name: Build fmt
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building fmt ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "fmt" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_fmt" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/fmt-logs" --manifest-path "artifacts/ios-deps/fmt-manifest.json"
+    - name: Build robinmap
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building robinmap ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "robinmap" artifacts/ios-deps
+        python3 tools/ios/build_deps.py --mode ios --build-target "external_robinmap"
+        --build-dir build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/robinmap-logs" --manifest-path "artifacts/ios-deps/robinmap-manifest.json"
+    - name: Build pugixml
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building pugixml ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "pugixml" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_pugixml" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/pugixml-logs" --manifest-path "artifacts/ios-deps/pugixml-manifest.json"
+    - name: Build xml2
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building xml2 ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "xml2" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_xml2" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/xml2-logs" --manifest-path "artifacts/ios-deps/xml2-manifest.json"
+    - name: Build expat
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building expat ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "expat" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_expat" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/expat-logs" --manifest-path "artifacts/ios-deps/expat-manifest.json"
+    - name: Build pystring
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building pystring ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "pystring" artifacts/ios-deps
+        python3 tools/ios/build_deps.py --mode ios --build-target "external_pystring"
+        --build-dir build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/pystring-logs" --manifest-path "artifacts/ios-deps/pystring-manifest.json"
+    - name: Build yamlcpp
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building yamlcpp ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "yamlcpp" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_yamlcpp" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/yamlcpp-logs" --manifest-path "artifacts/ios-deps/yamlcpp-manifest.json"
+    - name: Build minizipng
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building minizipng ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "minizipng" artifacts/ios-deps
+        python3 tools/ios/build_deps.py --mode ios --build-target "external_minizipng"
+        --build-dir build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/minizipng-logs" --manifest-path "artifacts/ios-deps/minizipng-manifest.json"
+    - name: Build ffi
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building ffi ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "ffi" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_ffi" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/ffi-logs" --manifest-path "artifacts/ios-deps/ffi-manifest.json"
+    - name: Build alembic
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building alembic ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "alembic" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_alembic" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/alembic-logs" --manifest-path "artifacts/ios-deps/alembic-manifest.json"
+    - name: Build openjpeg
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building openjpeg ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "openjpeg" artifacts/ios-deps
+        python3 tools/ios/build_deps.py --mode ios --build-target "external_openjpeg"
+        --build-dir build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/openjpeg-logs" --manifest-path "artifacts/ios-deps/openjpeg-manifest.json"
+    - name: Build webp
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building webp ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "webp" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_webp" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/webp-logs" --manifest-path "artifacts/ios-deps/webp-manifest.json"
+    - name: Build flac
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building flac ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "flac" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_flac" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/flac-logs" --manifest-path "artifacts/ios-deps/flac-manifest.json"
+    - name: Build sndfile
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building sndfile ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "sndfile" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_sndfile" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/sndfile-logs" --manifest-path "artifacts/ios-deps/sndfile-manifest.json"
+    - name: Build gmp
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building gmp ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "gmp" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_gmp" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/gmp-logs" --manifest-path "artifacts/ios-deps/gmp-manifest.json"
+    - name: Build tbb
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building tbb ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "tbb" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_tbb" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/tbb-logs" --manifest-path "artifacts/ios-deps/tbb-manifest.json"
+    - name: Build opensubdiv
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building opensubdiv ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "opensubdiv" artifacts/ios-deps
+        python3 tools/ios/build_deps.py --mode ios --build-target "external_opensubdiv"
+        --build-dir build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/opensubdiv-logs" --manifest-path "artifacts/ios-deps/opensubdiv-manifest.json"
+    - name: Build ffmpeg
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building ffmpeg ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "ffmpeg" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_ffmpeg" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/ffmpeg-logs" --manifest-path "artifacts/ios-deps/ffmpeg-manifest.json"
+    - name: Build opus
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building opus ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "opus" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_opus" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/opus-logs" --manifest-path "artifacts/ios-deps/opus-manifest.json"
+    - name: Build vorbis
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building vorbis ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "vorbis" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_vorbis" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/vorbis-logs" --manifest-path "artifacts/ios-deps/vorbis-manifest.json"
+    - name: Build ogg
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building ogg ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "ogg" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_ogg" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/ogg-logs" --manifest-path "artifacts/ios-deps/ogg-manifest.json"
+    - name: Build x264
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building x264 ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "x264" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_x264" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/x264-logs" --manifest-path "artifacts/ios-deps/x264-manifest.json"
+    - name: Build x265
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building x265 ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "x265" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_x265" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/x265-logs" --manifest-path "artifacts/ios-deps/x265-manifest.json"
+    - name: Build vpx
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building vpx ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "vpx" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_vpx" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/vpx-logs" --manifest-path "artifacts/ios-deps/vpx-manifest.json"
+    - name: Build lame
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building lame ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "lame" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_lame" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/lame-logs" --manifest-path "artifacts/ios-deps/lame-manifest.json"
+    - name: Build aom
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building aom ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "aom" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_aom" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/aom-logs" --manifest-path "artifacts/ios-deps/aom-manifest.json"
+    - name: Build fftw
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building fftw ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "fftw" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_fftw" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/fftw-logs" --manifest-path "artifacts/ios-deps/fftw-manifest.json"
+    - name: Build pybind11
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building pybind11 ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "pybind11" artifacts/ios-deps
+        python3 tools/ios/build_deps.py --mode ios --build-target "external_pybind11"
+        --build-dir build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/pybind11-logs" --manifest-path "artifacts/ios-deps/pybind11-manifest.json"
+    - name: Build nanobind
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building nanobind ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "nanobind" artifacts/ios-deps
+        python3 tools/ios/build_deps.py --mode ios --build-target "external_nanobind"
+        --build-dir build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/nanobind-logs" --manifest-path "artifacts/ios-deps/nanobind-manifest.json"
+    - name: Build manifold
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building manifold ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "manifold" artifacts/ios-deps
+        python3 tools/ios/build_deps.py --mode ios --build-target "external_manifold"
+        --build-dir build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/manifold-logs" --manifest-path "artifacts/ios-deps/manifold-manifest.json"
+    - name: Build opencolorio
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building opencolorio ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "opencolorio" artifacts/ios-deps
+        python3 tools/ios/build_deps.py --mode ios --build-target "external_opencolorio"
+        --build-dir build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/opencolorio-logs" --manifest-path "artifacts/ios-deps/opencolorio-manifest.json"
+    - name: Build openimageio
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building openimageio ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "openimageio" artifacts/ios-deps
+        python3 tools/ios/build_deps.py --mode ios --build-target "external_openimageio"
+        --build-dir build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/openimageio-logs" --manifest-path "artifacts/ios-deps/openimageio-manifest.json"
+    - name: Build openvdb
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building openvdb ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "openvdb" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_openvdb" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/openvdb-logs" --manifest-path "artifacts/ios-deps/openvdb-manifest.json"
+    - name: Build python
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building python ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "python" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_python" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/python-logs" --manifest-path "artifacts/ios-deps/python-manifest.json"
+    - name: Build cython
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building cython ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "cython" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_cython" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/cython-logs" --manifest-path "artifacts/ios-deps/cython-manifest.json"
+    - name: Build numpy
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building numpy ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "numpy" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_numpy" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/numpy-logs" --manifest-path "artifacts/ios-deps/numpy-manifest.json"
+    - name: Build shaderc
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building shaderc ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "shaderc" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_shaderc" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/shaderc-logs" --manifest-path "artifacts/ios-deps/shaderc-manifest.json"
+    - name: Build spirv-reflect
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building spirv-reflect ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "spirv-reflect" artifacts/ios-deps
+        python3 tools/ios/build_deps.py --mode ios --build-target "external_spirv-reflect"
+        --build-dir build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/spirv-reflect-logs" --manifest-path "artifacts/ios-deps/spirv-reflect-manifest.json"
+    - name: Collect iOS dependency artifacts
+      if: always()
+      shell: bash
+      run: "mkdir -p artifacts/ios-deps\nif [ -f build/ios-deps/ios/CMakeCache.txt\
+        \ ]; then\n  cp build/ios-deps/ios/CMakeCache.txt artifacts/ios-deps/CMakeCache.txt\n\
+        fi\nif [ -f build/ios-deps/ios/CMakeFiles/CMakeOutput.log ]; then\n  cp build/ios-deps/ios/CMakeFiles/CMakeOutput.log\
+        \ artifacts/ios-deps/CMakeOutput.log\nfi\nif [ -f build/ios-deps/ios/CMakeFiles/CMakeError.log\
+        \ ]; then\n  cp build/ios-deps/ios/CMakeFiles/CMakeError.log artifacts/ios-deps/CMakeError.log\n\
+        fi\npython3 - <<'ARTIFACTS'\nfrom pathlib import Path\n\ndef write_tree(root:\
+        \ Path, out: Path) -> None:\n    entries = []\n    if root.exists():\n   \
+        \     for path in sorted(root.rglob('*')):\n            entries.append(str(path))\n\
+        \    out.write_text('\\n'.join(entries) + ('\\n' if entries else ''), encoding='utf-8')\n\
+        \nartifact_root = Path('artifacts/ios-deps')\nwrite_tree(Path('build/ios-deps/ios'),\
+        \ artifact_root / 'ios-build-tree.txt')\nwrite_tree(Path('build/ios-deps/install/ios'),\
+        \ artifact_root / 'ios-install-tree.txt')\nwrite_tree(Path('build/ios-deps/host/Release'),\
+        \ artifact_root / 'host-release-tree.txt')\nARTIFACTS"
+    - name: Upload iOS dependency artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-deps-${{ github.run_id }}
+        path: artifacts/ios-deps
+        retention-days: 14
+
