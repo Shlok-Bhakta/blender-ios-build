@@ -29,26 +29,28 @@ python3 tools/ios/dep_bootstrap.py metadata \
   --dep "${dep}" \
   --output "${metadata_path}"
 
-readarray -t metadata_values < <(
-  python3 - "${metadata_path}" <<'PY'
+metadata_field() {
+  python3 - "${metadata_path}" "$1" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 metadata = json.loads(Path(sys.argv[1]).read_text(encoding="ascii"))
-print(metadata["release_tag"])
-print(metadata["asset_name"])
-print(metadata["manifest_asset_name"])
+print(metadata[sys.argv[2]])
 PY
-)
+}
 
-release_tag="${metadata_values[0]}"
-asset_name="${metadata_values[1]}"
-manifest_asset_name="${metadata_values[2]}"
+release_tag="$(metadata_field release_tag)"
+asset_name="$(metadata_field asset_name)"
+manifest_asset_name="$(metadata_field manifest_asset_name)"
+source_hash_type="$(metadata_field source_hash_type)"
+source_hash="$(metadata_field source_hash)"
+source_file="$(metadata_field source_file)"
 
 {
   printf '[dep-cache][%s] release_tag=%s\n' "${dep}" "${release_tag}"
   printf '[dep-cache][%s] asset_name=%s\n' "${dep}" "${asset_name}"
+  printf '[dep-cache][%s] source=%s:%s (%s)\n' "${dep}" "${source_hash_type}" "${source_hash}" "${source_file}"
 } | tee "${cache_log}"
 
 if gh release view "${release_tag}" -R "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then

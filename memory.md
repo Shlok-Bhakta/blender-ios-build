@@ -1,6 +1,6 @@
 # iOS Forward-Port Memory
 
-Last updated: 2026-03-28
+Last updated: 2026-03-29
 
 ## Session Snapshot
 
@@ -33,7 +33,7 @@ Last updated: 2026-03-28
 ## Workflow History
 
 - Last successful workflow: `Build Blender iOS IPA` run `23702135538` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-configure` mode; iPhoneOS dependency configure completed successfully with `APPLE_TARGET_DEVICE=ios`, `WITH_APPLE_CROSSPLATFORM=ON`, and detected `iPhoneOS18.5.sdk` on Xcode `16.4`.
-- Last failed workflow: `Build Blender iOS IPA` run `23714250530` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-basic` mode; `zlib`, `png`, and `jpeg` succeeded, then `deflate` failed during install because libdeflate still tried to install its gzip program on iPhoneOS.
+- Last failed workflow: `Build Blender iOS IPA` run `23714629713` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-basic` mode; the first cache-enabled `Restore or Build zlib` step failed immediately because `tools/ios/run_release_cached_dep.sh` used `readarray`, which was not available in that runner shell context.
 - Latest cancelled workflow: `Build Blender iOS IPA` run `23714036934` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-basic` mode reached the `Build jpeg` step on commit `db26746f401` before cancellation.
 - Latest dispatched workflow: the next post-`deflate` fix rerun still needs to be sent from the current local branch state.
 - Latest known workflow in repo before changes: `.github/workflows/close-prs.yml` only.
@@ -44,8 +44,8 @@ Last updated: 2026-03-28
 
 ## Next Hypothesis
 
-- The next narrow win is to disable libdeflate's gzip program for Apple cross-platform builds using the helper-hook approach, rerun `ios-deps-basic`, and continue into `fmt`, `robinmap`, and `pugixml`.
-- Longer-term iteration speed should come from per-dependency release bundles: before each dep step, attempt a release restore keyed by branch + dep + recipe/helper/version/Xcode/SDK hash; on a miss, build and immediately publish that dep bundle.
+- The next narrow win is to rerun `ios-deps-basic` after the cache-wrapper portability fix and the stronger dep-source hash naming, then continue through `deflate`, `fmt`, `robinmap`, and `pugixml`.
+- Iteration speed should now come from per-dependency release bundles: before each dep step, attempt a release restore keyed by branch + dep + source tarball hash + recipe/helper/Xcode/SDK/config hash; on a miss, build and immediately publish that dep bundle.
 
 ## GitHub Actions Commands
 
@@ -105,9 +105,11 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 - `deflate` now fails at install rather than configure/build. libdeflate builds `libdeflate.a`, then tries to install `libdeflate-gzip.app` and hard-link `bin/libdeflate-gzip`, which is invalid for the iPhoneOS dependency target layout.
 - Old-branch archaeology for `build_files/build_environment/cmake/deflate.cmake` is relevant: the read-only `ios` branch disabled `LIBDEFLATE_BUILD_GZIP` for `WITH_APPLE_CROSSPLATFORM`.
 - `tools/ios/build_deps.py` now prints the tail of failing `configure.log` or `build.log` into the Actions step log, which materially improves CI iteration speed.
-- New local follow-up in progress: `tools/ios/dep_bootstrap.py` computes per-dependency bundle metadata using a SHA-256-derived asset key that includes `versions.cmake`, dep recipe/helper files, branch, Xcode version, SDK version, and machine.
-- New local follow-up in progress: `tools/ios/run_release_cached_dep.sh` wraps each dep step with `restore-hit -> skip`, `restore-miss -> build with heartbeat`, and `publish-on-success`.
-- `.github/workflows/ios-deps-basic.yml` local follow-up is to switch each dep step to that wrapper and grant `contents: write` so the workflow can publish reusable dep bundles to the existing branch-scoped release tag.
+- `ios-deps-basic` run `23714629713` was the first cache-enabled workflow on commit `c204652f357`; it failed before any dep restore/build because `run_release_cached_dep.sh` used `readarray`, which is not safe to assume in the Actions shell context here.
+- `tools/ios/dep_bootstrap.py` now computes per-dependency bundle metadata using explicit source-package identity from `versions.cmake` instead of hashing the whole file. Asset names now include the primary source hash, such as `ios-dep-png-sha256-<hash>-iphoneos-arm64-<configkey>.tar.gz`.
+- For dependency bundles with transitive inputs, metadata now records all relevant source packages, for example `png` carries both `PNG` and `ZLIB` source identities so a changed zlib tarball invalidates the png bundle too.
+- `tools/ios/run_release_cached_dep.sh` now reads metadata fields without `readarray`, logs the source package identity, and still wraps each dep step with `restore-hit -> skip`, `restore-miss -> build with heartbeat`, and `publish-on-success`.
+- `.github/workflows/ios-deps-basic.yml` now routes each dep through that wrapper and grants `contents: write` so the workflow can publish reusable dep bundles to the existing branch-scoped release tag.
 - A separate local clone at `/home/shlok/Documents/Programming/Sandbox/blender-full-readonly` now has `lib/macos_arm64` materialized; it provides reusable host `python` and `llvm` trees, but not `ispc`.
 - The branch release `blender-v5.1-release-IOSPATCH-round2-deps` now also contains readable seed assets: `host-python-macos-arm64.tar.gz`, `host-llvm-macos-arm64.tar.gz`, `host-ispc-macos-arm64-v1.29.1.tar.gz`, `host-python-llvm-buildtree-macos-arm64.tar.gz`, and `host-tool-seeds.json`.
 - User preference: long-running Actions must stay visibly alive. Future workflows should emit clear progress markers and heartbeat-style log lines before/after each expensive stage so a 60-90 minute compile does not look dead from the UI.
@@ -136,9 +138,9 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 
 - Preferred durable storage is GitHub Releases assets on the writable fork, not git-committed binaries and not Actions cache as the canonical source.
 - Active convention: one branch-scoped prerelease tag such as `blender-v5.1-release-IOSPATCH-round2-deps`.
-- Active asset naming: readable tarballs such as `host-python-llvm-buildtree-macos-arm64.tar.gz`, `host-python-macos-arm64.tar.gz`, `host-llvm-macos-arm64.tar.gz`, and `host-ispc-macos-arm64-v1.29.1.tar.gz`.
-- Planned selection key should include at least: dependency recipe hashes, relevant patch hashes, runner arch, and Xcode version.
-- Planned workflow behavior: compute key, log key/tag/asset names, try release download first, unpack into the expected host-tool layout, rebuild only on a cache miss or stale bundle, then upload replacement assets back to the same branch release.
+- Active asset naming: readable tarballs such as `host-python-llvm-buildtree-macos-arm64.tar.gz`, `host-python-macos-arm64.tar.gz`, `host-llvm-macos-arm64.tar.gz`, `host-ispc-macos-arm64-v1.29.1.tar.gz`, plus per-dep bundles such as `ios-dep-png-sha256-<sourcehash>-iphoneos-arm64-<configkey>.tar.gz`.
+- Current selection key for per-dep bundles includes: dependency source hash, relevant transitive source hashes, recipe/helper hashes, runner arch, Xcode version, SDK version, and a short config digest.
+- Current workflow behavior: compute key, log tag/asset/source identity, try release download first, unpack into the expected iOS dep layout, rebuild only on a cache miss or stale bundle, then upload replacement assets back to the same branch release.
 - Current practical split is: reuse release-seeded host `python`+`llvm`+`ispc`, and still build real iPhoneOS target libraries separately.
 
 ## Dependency Entrypoint Notes
