@@ -5,12 +5,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   ios-deps-basic:
     runs-on: macos-latest
     timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
 
     steps:
       - name: Checkout repository
@@ -122,10 +124,10 @@ jobs:
               --log-dir artifacts/ios-deps-basic/configure-logs \
               --manifest-path artifacts/ios-deps-basic/configure-manifest.json
 
-      - name: Build zlib
+      - name: Restore or Build zlib
         shell: bash
         run: |
-          bash tools/ios/run_with_heartbeat.sh zlib 60 artifacts/ios-deps-basic/zlib-console.log \
+          bash tools/ios/run_release_cached_dep.sh zlib artifacts/ios-deps-basic \
             python3 tools/ios/build_deps.py \
               --mode ios \
               --build-target external_zlib \
@@ -136,10 +138,10 @@ jobs:
               --log-dir artifacts/ios-deps-basic/zlib-logs \
               --manifest-path artifacts/ios-deps-basic/zlib-manifest.json
 
-      - name: Build png
+      - name: Restore or Build png
         shell: bash
         run: |
-          bash tools/ios/run_with_heartbeat.sh png 60 artifacts/ios-deps-basic/png-console.log \
+          bash tools/ios/run_release_cached_dep.sh png artifacts/ios-deps-basic \
             python3 tools/ios/build_deps.py \
               --mode ios \
               --build-target external_png \
@@ -150,10 +152,10 @@ jobs:
               --log-dir artifacts/ios-deps-basic/png-logs \
               --manifest-path artifacts/ios-deps-basic/png-manifest.json
 
-      - name: Build jpeg
+      - name: Restore or Build jpeg
         shell: bash
         run: |
-          bash tools/ios/run_with_heartbeat.sh jpeg 60 artifacts/ios-deps-basic/jpeg-console.log \
+          bash tools/ios/run_release_cached_dep.sh jpeg artifacts/ios-deps-basic \
             python3 tools/ios/build_deps.py \
               --mode ios \
               --build-target external_jpeg \
@@ -164,10 +166,10 @@ jobs:
               --log-dir artifacts/ios-deps-basic/jpeg-logs \
               --manifest-path artifacts/ios-deps-basic/jpeg-manifest.json
 
-      - name: Build deflate
+      - name: Restore or Build deflate
         shell: bash
         run: |
-          bash tools/ios/run_with_heartbeat.sh deflate 60 artifacts/ios-deps-basic/deflate-console.log \
+          bash tools/ios/run_release_cached_dep.sh deflate artifacts/ios-deps-basic \
             python3 tools/ios/build_deps.py \
               --mode ios \
               --build-target external_deflate \
@@ -178,10 +180,10 @@ jobs:
               --log-dir artifacts/ios-deps-basic/deflate-logs \
               --manifest-path artifacts/ios-deps-basic/deflate-manifest.json
 
-      - name: Build fmt
+      - name: Restore or Build fmt
         shell: bash
         run: |
-          bash tools/ios/run_with_heartbeat.sh fmt 60 artifacts/ios-deps-basic/fmt-console.log \
+          bash tools/ios/run_release_cached_dep.sh fmt artifacts/ios-deps-basic \
             python3 tools/ios/build_deps.py \
               --mode ios \
               --build-target external_fmt \
@@ -192,10 +194,10 @@ jobs:
               --log-dir artifacts/ios-deps-basic/fmt-logs \
               --manifest-path artifacts/ios-deps-basic/fmt-manifest.json
 
-      - name: Build robinmap
+      - name: Restore or Build robinmap
         shell: bash
         run: |
-          bash tools/ios/run_with_heartbeat.sh robinmap 60 artifacts/ios-deps-basic/robinmap-console.log \
+          bash tools/ios/run_release_cached_dep.sh robinmap artifacts/ios-deps-basic \
             python3 tools/ios/build_deps.py \
               --mode ios \
               --build-target external_robinmap \
@@ -206,10 +208,10 @@ jobs:
               --log-dir artifacts/ios-deps-basic/robinmap-logs \
               --manifest-path artifacts/ios-deps-basic/robinmap-manifest.json
 
-      - name: Build pugixml
+      - name: Restore or Build pugixml
         shell: bash
         run: |
-          bash tools/ios/run_with_heartbeat.sh pugixml 60 artifacts/ios-deps-basic/pugixml-console.log \
+          bash tools/ios/run_release_cached_dep.sh pugixml artifacts/ios-deps-basic \
             python3 tools/ios/build_deps.py \
               --mode ios \
               --build-target external_pugixml \

@@ -773,6 +773,7 @@ Current evidence:
 - current follow-up moved `CMAKE_SYSTEM_PROCESSOR:STRING=arm64` into iOS helper `options_apple_ios.cmake` so the fix lives in shared Apple-crossplatform plumbing instead of a `jpeg.cmake` one-off
 - `23714250530`: `jpeg` passed after the helper-layer processor fix, and the next blocker moved to `deflate`
 - read-only `ios` archaeology shows `deflate.cmake` should disable `LIBDEFLATE_BUILD_GZIP` under `WITH_APPLE_CROSSPLATFORM`; reintroduce that behavior through a helper hook instead of an inline shared-file branch
+- current follow-up adds per-dependency release caching in the workflow itself: compute a dep-specific SHA-256-derived asset key, restore and skip on hit, otherwise build and immediately upload the dep bundle to the branch-scoped release tag
 
 ### Phase 7 - Medium Dependencies
 

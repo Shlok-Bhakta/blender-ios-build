@@ -42,5 +42,5 @@ jobs:
   ios-deps-basic:
     if: ${{ inputs.mode == 'ios-deps-basic' }}
     permissions:
-      contents: read
+      contents: write
     uses: ./.github/workflows/ios-deps-basic.yml

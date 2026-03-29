@@ -45,6 +45,7 @@ Last updated: 2026-03-28
 ## Next Hypothesis
 
 - The next narrow win is to disable libdeflate's gzip program for Apple cross-platform builds using the helper-hook approach, rerun `ios-deps-basic`, and continue into `fmt`, `robinmap`, and `pugixml`.
+- Longer-term iteration speed should come from per-dependency release bundles: before each dep step, attempt a release restore keyed by branch + dep + recipe/helper/version/Xcode/SDK hash; on a miss, build and immediately publish that dep bundle.
 
 ## GitHub Actions Commands
 
@@ -104,6 +105,9 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 - `deflate` now fails at install rather than configure/build. libdeflate builds `libdeflate.a`, then tries to install `libdeflate-gzip.app` and hard-link `bin/libdeflate-gzip`, which is invalid for the iPhoneOS dependency target layout.
 - Old-branch archaeology for `build_files/build_environment/cmake/deflate.cmake` is relevant: the read-only `ios` branch disabled `LIBDEFLATE_BUILD_GZIP` for `WITH_APPLE_CROSSPLATFORM`.
 - `tools/ios/build_deps.py` now prints the tail of failing `configure.log` or `build.log` into the Actions step log, which materially improves CI iteration speed.
+- New local follow-up in progress: `tools/ios/dep_bootstrap.py` computes per-dependency bundle metadata using a SHA-256-derived asset key that includes `versions.cmake`, dep recipe/helper files, branch, Xcode version, SDK version, and machine.
+- New local follow-up in progress: `tools/ios/run_release_cached_dep.sh` wraps each dep step with `restore-hit -> skip`, `restore-miss -> build with heartbeat`, and `publish-on-success`.
+- `.github/workflows/ios-deps-basic.yml` local follow-up is to switch each dep step to that wrapper and grant `contents: write` so the workflow can publish reusable dep bundles to the existing branch-scoped release tag.
 - A separate local clone at `/home/shlok/Documents/Programming/Sandbox/blender-full-readonly` now has `lib/macos_arm64` materialized; it provides reusable host `python` and `llvm` trees, but not `ispc`.
 - The branch release `blender-v5.1-release-IOSPATCH-round2-deps` now also contains readable seed assets: `host-python-macos-arm64.tar.gz`, `host-llvm-macos-arm64.tar.gz`, `host-ispc-macos-arm64-v1.29.1.tar.gz`, `host-python-llvm-buildtree-macos-arm64.tar.gz`, and `host-tool-seeds.json`.
 - User preference: long-running Actions must stay visibly alive. Future workflows should emit clear progress markers and heartbeat-style log lines before/after each expensive stage so a 60-90 minute compile does not look dead from the UI.
