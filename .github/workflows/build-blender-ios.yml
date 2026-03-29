@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Which temporary workflow stage to run
+        description: Which workflow stage to run
         required: false
         default: env-probe
         type: choice
@@ -12,10 +12,7 @@ on:
           - env-probe
           - host-configure
           - host-tools
-          - ios-deps-configure
-          - ios-deps-basic
-          - ios-deps-zlib-cache
-          - ios-opensubdiv
+          - ios-deps
 
 permissions:
   contents: read
@@ -35,26 +32,8 @@ jobs:
       contents: write
     uses: ./.github/workflows/ios-host-tools.yml
 
-  ios-deps-configure:
-    if: ${{ inputs.mode == 'ios-deps-configure' }}
-    permissions:
-      contents: read
-    uses: ./.github/workflows/ios-deps-configure.yml
-
-  ios-deps-basic:
-    if: ${{ inputs.mode == 'ios-deps-basic' }}
+  ios-deps:
+    if: ${{ inputs.mode == 'ios-deps' }}
     permissions:
       contents: write
-    uses: ./.github/workflows/ios-deps-basic.yml
-
-  ios-deps-zlib-cache:
-    if: ${{ inputs.mode == 'ios-deps-zlib-cache' }}
-    permissions:
-      contents: write
-    uses: ./.github/workflows/ios-deps-zlib-cache.yml
-
-  ios-opensubdiv:
-    if: ${{ inputs.mode == 'ios-opensubdiv' }}
-    permissions:
-      contents: write
-    uses: ./.github/workflows/ios-opensubdiv.yml
+    uses: ./.github/workflows/ios-deps.yml

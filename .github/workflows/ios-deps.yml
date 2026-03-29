@@ -1,16 +1,18 @@
-name: iOS Deps Configure
+name: iOS Deps
 
 on:
   workflow_call:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  ios-deps-configure:
+  ios-deps:
     runs-on: macos-latest
-    timeout-minutes: 45
+    timeout-minutes: 300
+    env:
+      GH_TOKEN: ${{ github.token }}
 
     steps:
       - name: Checkout repository
@@ -19,7 +21,7 @@ jobs:
           fetch-depth: 1
           lfs: false
 
-      - name: Install iOS configure prerequisites
+      - name: Install iOS dependency prerequisites
         shell: bash
         env:
           HOMEBREW_NO_AUTO_UPDATE: "1"
@@ -51,18 +53,18 @@ jobs:
       - name: Compute host restore metadata
         shell: bash
         run: |
-          mkdir -p artifacts/ios-deps-configure/bootstrap
+          mkdir -p artifacts/ios-deps/bootstrap
           python3 tools/ios/host_bootstrap.py metadata \
             --branch "${GITHUB_REF_NAME}" \
             --stage python-llvm \
-            --output artifacts/ios-deps-configure/bootstrap/bootstrap-metadata.json
+            --output artifacts/ios-deps/bootstrap/bootstrap-metadata.json
           python3 - <<'PY'
           import json
           import os
           from pathlib import Path
 
           metadata = json.loads(
-              Path('artifacts/ios-deps-configure/bootstrap/bootstrap-metadata.json').read_text(encoding='ascii')
+              Path('artifacts/ios-deps/bootstrap/bootstrap-metadata.json').read_text(encoding='ascii')
           )
           versions_cmake = Path('build_files/build_environment/cmake/versions.cmake').read_text(encoding='utf-8')
           ispc_version = None
@@ -88,10 +90,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          download_dir="artifacts/ios-deps-configure/bootstrap/download"
+          download_dir="artifacts/ios-deps/bootstrap/download"
           mkdir -p "${download_dir}"
-          echo "[bootstrap] checking release tag ${HOST_BOOTSTRAP_RELEASE_TAG}"
-          echo "[bootstrap] downloading ${HOST_BOOTSTRAP_ASSET_NAME}"
           gh release download "${HOST_BOOTSTRAP_RELEASE_TAG}" -R "${GITHUB_REPOSITORY}" -p "${HOST_BOOTSTRAP_ASSET_NAME}" -D "${download_dir}"
           python3 tools/ios/host_bootstrap.py extract --input "${download_dir}/${HOST_BOOTSTRAP_ASSET_NAME}"
           test -d build/ios-deps/host/Release/python
@@ -103,10 +103,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          download_dir="artifacts/ios-deps-configure/ispc/download"
+          download_dir="artifacts/ios-deps/ispc/download"
           mkdir -p "${download_dir}" "build/ios-deps/host/Release"
-          echo "[ispc] checking release tag ${HOST_BOOTSTRAP_RELEASE_TAG}"
-          echo "[ispc] downloading ${HOST_ISPC_RELEASE_ASSET_NAME}"
           gh release download "${HOST_BOOTSTRAP_RELEASE_TAG}" -R "${GITHUB_REPOSITORY}" -p "${HOST_ISPC_RELEASE_ASSET_NAME}" -D "${download_dir}"
           tar -xzf "${download_dir}/${HOST_ISPC_RELEASE_ASSET_NAME}" -C build/ios-deps/host/Release
           test -x build/ios-deps/host/Release/ispc/bin/ispc
@@ -114,7 +112,7 @@ jobs:
       - name: Configure iPhoneOS dependency build
         shell: bash
         run: |
-          mkdir -p artifacts/ios-deps-configure
+          mkdir -p artifacts/ios-deps
           set -euo pipefail
           python3 tools/ios/build_deps.py \
             --mode ios \
@@ -123,22 +121,99 @@ jobs:
             --install-dir build/ios-deps/install/ios \
             --host-build-dir build/ios-deps/host \
             --host-install-dir build/ios-deps/install/host \
-            --log-dir artifacts/ios-deps-configure/logs \
-            --manifest-path artifacts/ios-deps-configure/manifest.json \
-            2>&1 | tee artifacts/ios-deps-configure/ios-configure-console.log
+            --log-dir artifacts/ios-deps/configure-logs \
+            --manifest-path artifacts/ios-deps/configure-manifest.json \
+            2>&1 | tee artifacts/ios-deps/ios-configure-console.log
 
-      - name: Collect iOS configure artifacts
+      - name: Build all iOS dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          deps=(
+            zlib
+            ssl
+            openal
+            blosc
+            pthreads
+            png
+            jpeg
+            tiff
+            imath
+            openexr
+            brotli
+            freetype
+            bzip2
+            lzma
+            deflate
+            fmt
+            robinmap
+            pugixml
+            xml2
+            expat
+            pystring
+            yamlcpp
+            minizipng
+            ffi
+            alembic
+            openjpeg
+            webp
+            flac
+            sndfile
+            gmp
+            tbb
+            opensubdiv
+            ffmpeg
+            opus
+            vorbis
+            ogg
+            x264
+            x265
+            vpx
+            lame
+            aom
+            fftw
+            pybind11
+            nanobind
+            manifold
+            opencolorio
+            openimageio
+            openvdb
+            python
+            cython
+            numpy
+            shaderc
+            spirv-reflect
+          )
+          for dep in "${deps[@]}"; do
+            echo ""
+            echo "============================================"
+            echo "[dep] === Building ${dep} ==="
+            echo "============================================"
+            bash tools/ios/run_release_cached_dep.sh "${dep}" artifacts/ios-deps \
+              python3 tools/ios/build_deps.py \
+                --mode ios \
+                --build-target "external_${dep}" \
+                --build-dir build/ios-deps/ios \
+                --install-dir build/ios-deps/install/ios \
+                --host-build-dir build/ios-deps/host \
+                --host-install-dir build/ios-deps/install/host \
+                --log-dir "artifacts/ios-deps/${dep}-logs" \
+                --manifest-path "artifacts/ios-deps/${dep}-manifest.json"
+          done
+
+      - name: Collect iOS dependency artifacts
         if: always()
         shell: bash
         run: |
+          mkdir -p artifacts/ios-deps
           if [ -f build/ios-deps/ios/CMakeCache.txt ]; then
-            cp build/ios-deps/ios/CMakeCache.txt artifacts/ios-deps-configure/CMakeCache.txt
+            cp build/ios-deps/ios/CMakeCache.txt artifacts/ios-deps/CMakeCache.txt
           fi
           if [ -f build/ios-deps/ios/CMakeFiles/CMakeOutput.log ]; then
-            cp build/ios-deps/ios/CMakeFiles/CMakeOutput.log artifacts/ios-deps-configure/CMakeOutput.log
+            cp build/ios-deps/ios/CMakeFiles/CMakeOutput.log artifacts/ios-deps/CMakeOutput.log
           fi
           if [ -f build/ios-deps/ios/CMakeFiles/CMakeError.log ]; then
-            cp build/ios-deps/ios/CMakeFiles/CMakeError.log artifacts/ios-deps-configure/CMakeError.log
+            cp build/ios-deps/ios/CMakeFiles/CMakeError.log artifacts/ios-deps/CMakeError.log
           fi
           python3 - <<'PY'
           from pathlib import Path
@@ -150,16 +225,16 @@ jobs:
                       entries.append(str(path))
               out.write_text('\n'.join(entries) + ('\n' if entries else ''), encoding='utf-8')
 
-          artifact_root = Path('artifacts/ios-deps-configure')
+          artifact_root = Path('artifacts/ios-deps')
           write_tree(Path('build/ios-deps/ios'), artifact_root / 'ios-build-tree.txt')
           write_tree(Path('build/ios-deps/install/ios'), artifact_root / 'ios-install-tree.txt')
           write_tree(Path('build/ios-deps/host/Release'), artifact_root / 'host-release-tree.txt')
           PY
 
-      - name: Upload iOS configure artifacts
+      - name: Upload iOS dependency artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ios-deps-configure-${{ github.run_id }}
-          path: artifacts/ios-deps-configure
+          name: ios-deps-${{ github.run_id }}
+          path: artifacts/ios-deps
           retention-days: 14

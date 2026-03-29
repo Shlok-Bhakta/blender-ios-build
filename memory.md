@@ -52,7 +52,7 @@ Last updated: 2026-03-29
 Run a workflow:
 
 ```bash
-nix-shell -p gh --run 'gh workflow run build-blender-ios.yml -R Shlok-Bhakta/blender-ios-build --ref blender-v5.1-release-IOSPATCH-round2'
+nix-shell -p gh --run 'gh workflow run build-blender-ios.yml -R Shlok-Bhakta/blender-ios-build --ref blender-v5.1-release-IOSPATCH-round2 -f mode=ios-deps'
 ```
 
 Poll a workflow:
@@ -135,6 +135,10 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 - Added workflow: `.github/workflows/ios-host-tools.yml`
 - Workflow display name: `iOS Host Tools`
 - Uploaded artifact name: `ios-host-tools-${github.run_id}`
+- Added workflow: `.github/workflows/ios-deps.yml`
+- Workflow display name: `iOS Deps`
+- Uploaded artifact name: `ios-deps-${github.run_id}`
+- Replaces: `ios-deps-basic.yml`, `ios-deps-configure.yml`, `ios-deps-zlib-cache.yml`, `ios-opensubdiv.yml`
 - Added compatibility driver: `.github/workflows/build-blender-ios.yml`
 - Dependency entrypoint: `tools/ios/build_deps.py`
 - `.github/workflows/ios-host-configure.yml` now installs the missing Homebrew configure prerequisites before invoking `tools/ios/build_deps.py`.
@@ -143,7 +147,7 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 - Added helper: `build_files/build_environment/cmake/platform/ios/pugixml_ios.cmake`
 - `build_files/build_environment/cmake/pugixml.cmake` now patches `PUGIXML_EXTRA_ARGS` through that helper so the CMake 4 compatibility flag stays isolated to the iOS cross-platform case.
 - Workflow artifact tree dumps and host-tool summary JSON now write UTF-8 instead of ASCII, preventing Unicode path failures during artifact collection on Actions.
-- Local validation: `bash -n tools/ios/collect_ci_env.sh`, local env-probe dry run, `bash -n .github/poll-build-run.sh`, `python3 -m py_compile tools/ios/build_deps.py`, host and iOS dry runs for `tools/ios/build_deps.py`, and YAML parse via `nix-shell -p python3Packages.pyyaml`.
+- Local validation: `bash -n tools/ios/collect_ci_env.sh`, local env-probe dry run, `bash -n .github/poll-build-run.sh`, `python3 -m py_compile tools/ios/dep_bootstrap.py`, host and iOS dry runs for `tools/ios/build_deps.py`, and YAML parse via `nix-shell -p python3Packages.pyyaml`.
 
 ## Planned Bootstrap Storage
 

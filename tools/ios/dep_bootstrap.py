@@ -36,6 +36,38 @@ DEP_CONFIG = {
             Path("build_files/build_environment/cmake/zlib.cmake"),
         ],
     },
+    "ssl": {
+        "build_dir": Path("build/ios-deps/ios/build/ssl"),
+        "cmake_prefixes": ["OPENSSL"],
+        "release_dir": Path("build/ios-deps/ios/Release/ssl"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/ssl.cmake"),
+        ],
+    },
+    "openal": {
+        "build_dir": Path("build/ios-deps/ios/build/openal"),
+        "cmake_prefixes": ["OPENAL"],
+        "release_dir": Path("build/ios-deps/ios/Release/openal"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/openal.cmake"),
+        ],
+    },
+    "blosc": {
+        "build_dir": Path("build/ios-deps/ios/build/blosc"),
+        "cmake_prefixes": ["BLOSC"],
+        "release_dir": Path("build/ios-deps/ios/Release/blosc"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/blosc.cmake"),
+        ],
+    },
+    "pthreads": {
+        "build_dir": Path("build/ios-deps/ios/build/pthreads"),
+        "cmake_prefixes": ["PTHREADS"],
+        "release_dir": Path("build/ios-deps/ios/Release/pthreads"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/pthreads.cmake"),
+        ],
+    },
     "png": {
         "build_dir": Path("build/ios-deps/ios/build/png"),
         "cmake_prefixes": ["PNG", "ZLIB"],
@@ -52,6 +84,62 @@ DEP_CONFIG = {
         "key_files": [
             Path("build_files/build_environment/cmake/jpeg.cmake"),
             Path("build_files/build_environment/cmake/platform/ios/jpeg_ios.cmake"),
+        ],
+    },
+    "tiff": {
+        "build_dir": Path("build/ios-deps/ios/build/tiff"),
+        "cmake_prefixes": ["TIFF", "ZLIB", "JPEG"],
+        "release_dir": Path("build/ios-deps/ios/Release/tiff"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/tiff.cmake"),
+        ],
+    },
+    "imath": {
+        "build_dir": Path("build/ios-deps/ios/build/imath"),
+        "cmake_prefixes": ["IMATH"],
+        "release_dir": Path("build/ios-deps/ios/Release/imath"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/imath.cmake"),
+        ],
+    },
+    "openexr": {
+        "build_dir": Path("build/ios-deps/ios/build/openexr"),
+        "cmake_prefixes": ["OPENEXR", "IMATH"],
+        "release_dir": Path("build/ios-deps/ios/Release/openexr"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/openexr.cmake"),
+        ],
+    },
+    "brotli": {
+        "build_dir": Path("build/ios-deps/ios/build/brotli"),
+        "cmake_prefixes": ["BROTLI"],
+        "release_dir": Path("build/ios-deps/ios/Release/brotli"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/brotli.cmake"),
+        ],
+    },
+    "freetype": {
+        "build_dir": Path("build/ios-deps/ios/build/freetype"),
+        "cmake_prefixes": ["FREETYPE", "BROTLI", "ZLIB"],
+        "release_dir": Path("build/ios-deps/ios/Release/freetype"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/freetype.cmake"),
+        ],
+    },
+    "bzip2": {
+        "build_dir": Path("build/ios-deps/ios/build/bzip2"),
+        "cmake_prefixes": ["BZIP2"],
+        "release_dir": Path("build/ios-deps/ios/Release/bzip2"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/bzip2.cmake"),
+        ],
+    },
+    "lzma": {
+        "build_dir": Path("build/ios-deps/ios/build/lzma"),
+        "cmake_prefixes": ["LZMA"],
+        "release_dir": Path("build/ios-deps/ios/Release/lzma"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/lzma.cmake"),
         ],
     },
     "deflate": {
@@ -88,6 +176,102 @@ DEP_CONFIG = {
             Path("build_files/build_environment/cmake/pugixml.cmake"),
         ],
     },
+    "xml2": {
+        "build_dir": Path("build/ios-deps/ios/build/xml2"),
+        "cmake_prefixes": ["XML2", "ZLIB", "LZMA"],
+        "release_dir": Path("build/ios-deps/ios/Release/xml2"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/xml2.cmake"),
+        ],
+    },
+    "expat": {
+        "build_dir": Path("build/ios-deps/ios/build/expat"),
+        "cmake_prefixes": ["EXPAT"],
+        "release_dir": Path("build/ios-deps/ios/Release/expat"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/expat.cmake"),
+        ],
+    },
+    "pystring": {
+        "build_dir": Path("build/ios-deps/ios/build/pystring"),
+        "cmake_prefixes": ["PYSTRING"],
+        "release_dir": Path("build/ios-deps/ios/Release/pystring"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/pystring.cmake"),
+        ],
+    },
+    "yamlcpp": {
+        "build_dir": Path("build/ios-deps/ios/build/yamlcpp"),
+        "cmake_prefixes": ["YAMLCPP"],
+        "release_dir": Path("build/ios-deps/ios/Release/yamlcpp"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/yamlcpp.cmake"),
+        ],
+    },
+    "minizipng": {
+        "build_dir": Path("build/ios-deps/ios/build/minizipng"),
+        "cmake_prefixes": ["MINIZIPNG", "ZLIB", "LZMA"],
+        "release_dir": Path("build/ios-deps/ios/Release/minizipng"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/minizipng.cmake"),
+        ],
+    },
+    "ffi": {
+        "build_dir": Path("build/ios-deps/ios/build/ffi"),
+        "cmake_prefixes": ["FFI"],
+        "release_dir": Path("build/ios-deps/ios/Release/ffi"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/ffi.cmake"),
+        ],
+    },
+    "alembic": {
+        "build_dir": Path("build/ios-deps/ios/build/alembic"),
+        "cmake_prefixes": ["ALEMBIC", "IMATH", "OPENEXR"],
+        "release_dir": Path("build/ios-deps/ios/Release/alembic"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/alembic.cmake"),
+        ],
+    },
+    "openjpeg": {
+        "build_dir": Path("build/ios-deps/ios/build/openjpeg"),
+        "cmake_prefixes": ["OPENJPEG"],
+        "release_dir": Path("build/ios-deps/ios/Release/openjpeg"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/openjpeg.cmake"),
+        ],
+    },
+    "webp": {
+        "build_dir": Path("build/ios-deps/ios/build/webp"),
+        "cmake_prefixes": ["WEBP", "ZLIB"],
+        "release_dir": Path("build/ios-deps/ios/Release/webp"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/webp.cmake"),
+        ],
+    },
+    "flac": {
+        "build_dir": Path("build/ios-deps/ios/build/flac"),
+        "cmake_prefixes": ["FLAC", "OGG"],
+        "release_dir": Path("build/ios-deps/ios/Release/flac"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/flac.cmake"),
+        ],
+    },
+    "sndfile": {
+        "build_dir": Path("build/ios-deps/ios/build/sndfile"),
+        "cmake_prefixes": ["SNDFILE", "FLAC", "VORBIS", "OGG"],
+        "release_dir": Path("build/ios-deps/ios/Release/sndfile"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/sndfile.cmake"),
+        ],
+    },
+    "gmp": {
+        "build_dir": Path("build/ios-deps/ios/build/gmp"),
+        "cmake_prefixes": ["GMP"],
+        "release_dir": Path("build/ios-deps/ios/Release/gmp"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/gmp.cmake"),
+        ],
+    },
     "tbb": {
         "build_dir": Path("build/ios-deps/ios/build/tbb"),
         "cmake_prefixes": ["TBB"],
@@ -106,6 +290,196 @@ DEP_CONFIG = {
                 "build_files/build_environment/cmake/platform/ios/opensubdiv_ios.cmake"
             ),
             Path("build_files/build_environment/cmake/tbb.cmake"),
+        ],
+    },
+    "fftw": {
+        "build_dir": Path("build/ios-deps/ios/build/fftw"),
+        "cmake_prefixes": ["FFTW"],
+        "release_dir": Path("build/ios-deps/ios/Release/fftw"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/fftw.cmake"),
+        ],
+    },
+    "opus": {
+        "build_dir": Path("build/ios-deps/ios/build/opus"),
+        "cmake_prefixes": ["OPUS"],
+        "release_dir": Path("build/ios-deps/ios/Release/opus"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/opus.cmake"),
+        ],
+    },
+    "vorbis": {
+        "build_dir": Path("build/ios-deps/ios/build/vorbis"),
+        "cmake_prefixes": ["VORBIS", "OGG"],
+        "release_dir": Path("build/ios-deps/ios/Release/vorbis"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/vorbis.cmake"),
+        ],
+    },
+    "ogg": {
+        "build_dir": Path("build/ios-deps/ios/build/ogg"),
+        "cmake_prefixes": ["OGG"],
+        "release_dir": Path("build/ios-deps/ios/Release/ogg"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/ogg.cmake"),
+        ],
+    },
+    "x264": {
+        "build_dir": Path("build/ios-deps/ios/build/x264"),
+        "cmake_prefixes": ["X264"],
+        "release_dir": Path("build/ios-deps/ios/Release/x264"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/x264.cmake"),
+        ],
+    },
+    "x265": {
+        "build_dir": Path("build/ios-deps/ios/build/x265"),
+        "cmake_prefixes": ["X265"],
+        "release_dir": Path("build/ios-deps/ios/Release/x265"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/x265.cmake"),
+        ],
+    },
+    "vpx": {
+        "build_dir": Path("build/ios-deps/ios/build/vpx"),
+        "cmake_prefixes": ["VPX"],
+        "release_dir": Path("build/ios-deps/ios/Release/vpx"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/vpx.cmake"),
+        ],
+    },
+    "lame": {
+        "build_dir": Path("build/ios-deps/ios/build/lame"),
+        "cmake_prefixes": ["LAME"],
+        "release_dir": Path("build/ios-deps/ios/Release/lame"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/lame.cmake"),
+        ],
+    },
+    "aom": {
+        "build_dir": Path("build/ios-deps/ios/build/aom"),
+        "cmake_prefixes": ["AOM"],
+        "release_dir": Path("build/ios-deps/ios/Release/aom"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/aom.cmake"),
+        ],
+    },
+    "ffmpeg": {
+        "build_dir": Path("build/ios-deps/ios/build/ffmpeg"),
+        "cmake_prefixes": [
+            "FFMPEG",
+            "OPUS",
+            "VORBIS",
+            "OGG",
+            "X264",
+            "X265",
+            "VPX",
+            "LAME",
+            "AOM",
+            "OPENSSL",
+        ],
+        "release_dir": Path("build/ios-deps/ios/Release/ffmpeg"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/ffmpeg.cmake"),
+        ],
+    },
+    "pybind11": {
+        "build_dir": Path("build/ios-deps/ios/build/pybind11"),
+        "cmake_prefixes": ["PYBIND11"],
+        "release_dir": Path("build/ios-deps/ios/Release/pybind11"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/pybind11.cmake"),
+        ],
+    },
+    "nanobind": {
+        "build_dir": Path("build/ios-deps/ios/build/nanobind"),
+        "cmake_prefixes": ["NANOBIND"],
+        "release_dir": Path("build/ios-deps/ios/Release/nanobind"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/nanobind.cmake"),
+        ],
+    },
+    "manifold": {
+        "build_dir": Path("build/ios-deps/ios/build/manifold"),
+        "cmake_prefixes": ["MANIFOLD"],
+        "release_dir": Path("build/ios-deps/ios/Release/manifold"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/manifold.cmake"),
+        ],
+    },
+    "opencolorio": {
+        "build_dir": Path("build/ios-deps/ios/build/opencolorio"),
+        "cmake_prefixes": ["OPENCOLORIO", "EXPAT", "PYSTRIING", "YAMLCPP", "OPENEXR"],
+        "release_dir": Path("build/ios-deps/ios/Release/opencolorio"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/opencolorio.cmake"),
+        ],
+    },
+    "openimageio": {
+        "build_dir": Path("build/ios-deps/ios/build/openimageio"),
+        "cmake_prefixes": [
+            "OPENIMAGEIO",
+            "OPENEXR",
+            "OPENJPEG",
+            "TIFF",
+            "WEBP",
+            "ZLIB",
+            "FMT",
+            "PYSTRIING",
+            "BLOSC",
+            "ROBINMAP",
+        ],
+        "release_dir": Path("build/ios-deps/ios/Release/openimageio"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/openimageio.cmake"),
+        ],
+    },
+    "openvdb": {
+        "build_dir": Path("build/ios-deps/ios/build/openvdb"),
+        "cmake_prefixes": ["OPENVDB", "TBB", "OPENEXR", "BLOSC", "ZLIB"],
+        "release_dir": Path("build/ios-deps/ios/Release/openvdb"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/openvdb.cmake"),
+        ],
+    },
+    "python": {
+        "build_dir": Path("build/ios-deps/ios/build/python"),
+        "cmake_prefixes": ["PYTHON"],
+        "release_dir": Path("build/ios-deps/ios/Release/python"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/python.cmake"),
+        ],
+    },
+    "cython": {
+        "build_dir": Path("build/ios-deps/ios/build/cython"),
+        "cmake_prefixes": ["CYTHON", "PYTHON"],
+        "release_dir": Path("build/ios-deps/ios/Release/cython"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/cython.cmake"),
+        ],
+    },
+    "numpy": {
+        "build_dir": Path("build/ios-deps/ios/build/numpy"),
+        "cmake_prefixes": ["NUMPY", "PYTHON"],
+        "release_dir": Path("build/ios-deps/ios/Release/numpy"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/numpy.cmake"),
+        ],
+    },
+    "shaderc": {
+        "build_dir": Path("build/ios-deps/ios/build/shaderc"),
+        "cmake_prefixes": ["SHADERC"],
+        "release_dir": Path("build/ios-deps/ios/Release/shaderc"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/shaderc.cmake"),
+        ],
+    },
+    "spirv-reflect": {
+        "build_dir": Path("build/ios-deps/ios/build/spirv-reflect"),
+        "cmake_prefixes": ["SPIRV_REFLECT"],
+        "release_dir": Path("build/ios-deps/ios/Release/spirv-reflect"),
+        "key_files": [
+            Path("build_files/build_environment/cmake/spirv-reflect.cmake"),
         ],
     },
 }
