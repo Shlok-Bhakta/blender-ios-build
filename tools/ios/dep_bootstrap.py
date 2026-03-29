@@ -102,6 +102,9 @@ DEP_CONFIG = {
         "release_dir": Path("build/ios-deps/ios/Release/opensubdiv"),
         "key_files": [
             Path("build_files/build_environment/cmake/opensubdiv.cmake"),
+            Path(
+                "build_files/build_environment/cmake/platform/ios/opensubdiv_ios.cmake"
+            ),
             Path("build_files/build_environment/cmake/tbb.cmake"),
         ],
     },
