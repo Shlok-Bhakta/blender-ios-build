@@ -153,6 +153,29 @@ def run_logged(command: list[str], log_path: Path, dry_run: bool) -> int:
         return process.returncode
 
 
+def emit_log_tail(log_path: Path, line_count: int = 120) -> None:
+    if not log_path.exists():
+        print(f"[log-tail] missing log file: {log_path}", file=sys.stderr)
+        return
+
+    lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    tail = lines[-line_count:]
+    print(
+        f"[log-tail] showing last {len(tail)} line(s) from {log_path}",
+        file=sys.stderr,
+    )
+    print(
+        f"[log-tail] --- begin {log_path.name} ---",
+        file=sys.stderr,
+    )
+    for line in tail:
+        print(line, file=sys.stderr)
+    print(
+        f"[log-tail] --- end {log_path.name} ---",
+        file=sys.stderr,
+    )
+
+
 def supports_apple_target_selection() -> bool:
     candidates = [
         BUILD_ENV_CMAKELISTS,
@@ -327,6 +350,7 @@ def main() -> int:
     if configure_rc != 0:
         manifest["status"] = "configure_failed"
         write_manifest(args.manifest_path, manifest)
+        emit_log_tail(args.log_dir / "configure.log")
         return configure_rc
 
     if args.configure_only:
@@ -338,6 +362,8 @@ def main() -> int:
     manifest["build_returncode"] = build_rc
     manifest["status"] = "complete" if build_rc == 0 else "build_failed"
     write_manifest(args.manifest_path, manifest)
+    if build_rc != 0:
+        emit_log_tail(args.log_dir / "build.log")
     return build_rc
 
 

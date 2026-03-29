@@ -59,10 +59,10 @@ set(ISPC_EXTRA_ARGS
   ${ISPC_EXTRA_ARGS_UNIX}
 )
 
-if(EXISTS ${LIBDIR}/ispc/bin/ispc)
-  message(STATUS "Using preseeded ISPC at ${LIBDIR}/ispc/bin/ispc")
-  add_custom_target(external_ispc)
-else()
+include(${CMAKE_CURRENT_LIST_DIR}/platform/ios/ispc_preseed.cmake)
+blender_platform_ios_try_use_preseeded_ispc(ISPC_PRESEEDED)
+
+if(NOT ISPC_PRESEEDED)
   ExternalProject_Add(external_ispc
     URL file://${PACKAGE_DIR}/${ISPC_FILE}
     DOWNLOAD_DIR ${DOWNLOAD_DIR}
