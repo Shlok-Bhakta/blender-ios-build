@@ -65,30 +65,27 @@ jobs:
               Path('artifacts/ios-host-tools/bootstrap/bootstrap-metadata.json').read_text(encoding='ascii')
           )
           github_env = Path(os.environ['GITHUB_ENV'])
+          versions_cmake = Path('build_files/build_environment/cmake/versions.cmake').read_text(encoding='utf-8')
+          ispc_version = None
+          for line in versions_cmake.splitlines():
+              if line.startswith('set(ISPC_VERSION '):
+                  ispc_version = line.split()[1].rstrip(')')
+                  break
+          if ispc_version is None:
+              raise RuntimeError('Unable to determine ISPC_VERSION from versions.cmake')
           with github_env.open('a', encoding='ascii') as handle:
               handle.write(f"HOST_BOOTSTRAP_RELEASE_TAG={metadata['release_tag']}\n")
               handle.write(f"HOST_BOOTSTRAP_ASSET_NAME={metadata['asset_name']}\n")
               handle.write(f"HOST_BOOTSTRAP_MANIFEST_ASSET_NAME={metadata['manifest_asset_name']}\n")
               handle.write(f"HOST_BOOTSTRAP_KEY={metadata['key']}\n")
+              handle.write(f"HOST_ISPC_RELEASE_ASSET_NAME=host-ispc-macos-arm64-{ispc_version}.tar.gz\n")
           print(f"[bootstrap] stage={metadata['stage']}")
           print(f"[bootstrap] key={metadata['key']}")
           print(f"[bootstrap] release_tag={metadata['release_tag']}")
           print(f"[bootstrap] asset_name={metadata['asset_name']}")
           print(f"[bootstrap] manifest_asset_name={metadata['manifest_asset_name']}")
+          print(f"[bootstrap] ispc_asset_name=host-ispc-macos-arm64-{ispc_version}.tar.gz")
           PY
-
-      - name: Configure host dependency build
-        shell: bash
-        run: |
-          mkdir -p artifacts/ios-host-tools
-          bash tools/ios/run_with_heartbeat.sh configure 60 artifacts/ios-host-tools/configure-console.log \
-            python3 tools/ios/build_deps.py \
-              --mode host \
-              --configure-only \
-              --build-dir build/ios-deps/host \
-              --install-dir build/ios-deps/install/host \
-              --log-dir artifacts/ios-host-tools/configure-logs \
-              --manifest-path artifacts/ios-host-tools/configure-manifest.json
 
       - name: Restore host bootstrap bundle
         shell: bash
@@ -114,6 +111,45 @@ jobs:
             echo "HOST_BOOTSTRAP_HIT=false" >> "${GITHUB_ENV}"
             echo "[bootstrap] release tag missing; full source build required"
           fi
+
+      - name: Restore prebuilt host ISPC
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          download_dir="artifacts/ios-host-tools/ispc/download"
+          mkdir -p "${download_dir}" "build/ios-deps/host/Release"
+          echo "[ispc] checking release tag ${HOST_BOOTSTRAP_RELEASE_TAG}"
+          echo "[ispc] looking for asset ${HOST_ISPC_RELEASE_ASSET_NAME}"
+          if gh release view "${HOST_BOOTSTRAP_RELEASE_TAG}" -R "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            if gh release download "${HOST_BOOTSTRAP_RELEASE_TAG}" -R "${GITHUB_REPOSITORY}" -p "${HOST_ISPC_RELEASE_ASSET_NAME}" -D "${download_dir}"; then
+              tar -xzf "${download_dir}/${HOST_ISPC_RELEASE_ASSET_NAME}" -C build/ios-deps/host/Release
+              test -x build/ios-deps/host/Release/ispc/bin/ispc
+              echo "HOST_ISPC_HIT=true" >> "${GITHUB_ENV}"
+              echo "[ispc] hit=true"
+              echo "[ispc] restored ${HOST_ISPC_RELEASE_ASSET_NAME} into build/ios-deps/host/Release/ispc"
+            else
+              echo "HOST_ISPC_HIT=false" >> "${GITHUB_ENV}"
+              echo "[ispc] hit=false"
+            fi
+          else
+            echo "HOST_ISPC_HIT=false" >> "${GITHUB_ENV}"
+            echo "[ispc] release tag missing; source build fallback required"
+          fi
+
+      - name: Configure host dependency build
+        shell: bash
+        run: |
+          mkdir -p artifacts/ios-host-tools
+          bash tools/ios/run_with_heartbeat.sh configure 60 artifacts/ios-host-tools/configure-console.log \
+            python3 tools/ios/build_deps.py \
+              --mode host \
+              --configure-only \
+              --build-dir build/ios-deps/host \
+              --install-dir build/ios-deps/install/host \
+              --log-dir artifacts/ios-host-tools/configure-logs \
+              --manifest-path artifacts/ios-host-tools/configure-manifest.json
 
       - name: Build host Python and site packages
         if: env.HOST_BOOTSTRAP_HIT != 'true'
@@ -171,6 +207,7 @@ jobs:
           echo "[bootstrap] uploaded ${HOST_BOOTSTRAP_ASSET_NAME} to ${HOST_BOOTSTRAP_RELEASE_TAG}"
 
       - name: Build host ISPC
+        if: env.HOST_ISPC_HIT != 'true'
         shell: bash
         run: |
           bash tools/ios/run_with_heartbeat.sh ispc 60 artifacts/ios-host-tools/ispc-console.log \

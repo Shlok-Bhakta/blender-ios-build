@@ -59,41 +59,46 @@ set(ISPC_EXTRA_ARGS
   ${ISPC_EXTRA_ARGS_UNIX}
 )
 
-ExternalProject_Add(external_ispc
-  URL file://${PACKAGE_DIR}/${ISPC_FILE}
-  DOWNLOAD_DIR ${DOWNLOAD_DIR}
-  URL_HASH ${ISPC_HASH_TYPE}=${ISPC_HASH}
-  PREFIX ${BUILD_DIR}/ispc
-  CMAKE_GENERATOR ${PLATFORM_ALT_GENERATOR}
+if(EXISTS ${LIBDIR}/ispc/bin/ispc)
+  message(STATUS "Using preseeded ISPC at ${LIBDIR}/ispc/bin/ispc")
+  add_custom_target(external_ispc)
+else()
+  ExternalProject_Add(external_ispc
+    URL file://${PACKAGE_DIR}/${ISPC_FILE}
+    DOWNLOAD_DIR ${DOWNLOAD_DIR}
+    URL_HASH ${ISPC_HASH_TYPE}=${ISPC_HASH}
+    PREFIX ${BUILD_DIR}/ispc
+    CMAKE_GENERATOR ${PLATFORM_ALT_GENERATOR}
 
-  PATCH_COMMAND ${PATCH_CMD} -p 1 -d
-    ${BUILD_DIR}/ispc/src/external_ispc <
-    ${PATCH_DIR}/ispc.diff
+    PATCH_COMMAND ${PATCH_CMD} -p 1 -d
+      ${BUILD_DIR}/ispc/src/external_ispc <
+      ${PATCH_DIR}/ispc.diff
 
-  CMAKE_ARGS
-    -DCMAKE_INSTALL_PREFIX=${LIBDIR}/ispc
-    -Wno-dev
-    ${DEFAULT_CMAKE_FLAGS}
-    ${ISPC_EXTRA_ARGS}
-    ${BUILD_DIR}/ispc/src/external_ispc
+    CMAKE_ARGS
+      -DCMAKE_INSTALL_PREFIX=${LIBDIR}/ispc
+      -Wno-dev
+      ${DEFAULT_CMAKE_FLAGS}
+      ${ISPC_EXTRA_ARGS}
+      ${BUILD_DIR}/ispc/src/external_ispc
 
-  INSTALL_DIR ${LIBDIR}/ispc
-)
+    INSTALL_DIR ${LIBDIR}/ispc
+  )
 
-add_dependencies(
-  external_ispc
-  ll
-  external_python
-)
-
-if(WIN32)
   add_dependencies(
     external_ispc
-    external_flexbison
+    ll
+    external_python
   )
-elseif(UNIX AND NOT APPLE)
-  add_dependencies(
-    external_ispc
-    external_flex
-  )
+
+  if(WIN32)
+    add_dependencies(
+      external_ispc
+      external_flexbison
+    )
+  elseif(UNIX AND NOT APPLE)
+    add_dependencies(
+      external_ispc
+      external_flex
+    )
+  endif()
 endif()

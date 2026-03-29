@@ -680,33 +680,37 @@ Latest execution note:
 - New evidence from `host-tools` run `23693330218`: `external_python_site_packages` and `ll` both completed successfully on CI, so host Python and host LLVM are now proven buildable on the fresh-port branch.
 - The first post-LLVM blocker is `external_ispc`, which fails on Xcode 16.4 with an exception-specification mismatch in ISPC's `util.cpp` against libc++ `__verbose_abort`.
 - That makes GitHub Releases bootstrapping immediately worthwhile now: checkpoint the already-good `python`+`llvm` host state so retries reach the ISPC blocker quickly instead of recompiling LLVM for ~2 hours.
+- New evidence from `host-tools` run `23695801764`: the branch release tag `blender-v5.1-release-IOSPATCH-round2-deps` is now real and already stores the first successful `python`+`llvm` bootstrap bundle.
+- New evidence from `host-tools` run `23698420837`: the restore path works in practice; CI reused the published `python`+`llvm` bundle, skipped the LLVM rebuild, and reached `external_ispc` quickly.
+- Practical seed strategy going forward: use readable release assets for host tools (`host-python-macos-arm64.tar.gz`, `host-llvm-macos-arm64.tar.gz`, `host-ispc-macos-arm64-v1.29.1.tar.gz`, `host-python-llvm-buildtree-macos-arm64.tar.gz`) and keep building real iPhoneOS target libraries from source.
+- Extra local reference clone now exists at `/home/shlok/Documents/Programming/Sandbox/blender-full-readonly`; it has `lib/macos_arm64` materialized and is useful as a source for host `python` and `llvm`, but it is not the canonical store and does not contain `ispc`.
 
 Checklist:
 
 - [x] Create a temporary workflow that only configures the dependency project for host macOS ARM
 - [x] Upload `CMakeCache.txt`, configure logs, and full console log
-- [ ] Once configure works, create a second temporary workflow/job that builds only the host prerequisites needed by iOS
-- [ ] Start with likely minimal host prerequisites such as host Python and host LLVM tools if needed
+- [x] Once configure works, create a second temporary workflow/job that builds only the host prerequisites needed by iOS
+- [x] Start with likely minimal host prerequisites such as host Python and host LLVM tools if needed
 - [x] Confirm the old branch expectations around `CMAKE_DEPS_CROSSCOMPILE_BUILDDIR`
 - [x] Confirm where host tools land and how iOS recipes expect to find them
-- [ ] Artifact-upload the host tool output layout
-- [ ] Add a branch-scoped GitHub Release bootstrap flow for host-tool bundles
-- [ ] Download matching host-tool assets from GitHub Releases before falling back to source builds
+- [x] Artifact-upload the host tool output layout
+- [x] Add a branch-scoped GitHub Release bootstrap flow for host-tool bundles
+- [x] Download matching host-tool assets from GitHub Releases before falling back to source builds
 - [x] Document exact expected host output paths in `memory.md`
 
 Gate before moving on:
 
-- [ ] host configure passes
-- [ ] host tool outputs are discoverable and match the expectations of iOS helper logic
+- [x] host configure passes
+- [x] host tool outputs are discoverable and match the expectations of iOS helper logic
 
 Planned bootstrap convention once the first build is proven:
 
 - Use one prerelease tag per working branch, for example `blender-v5.1-release-IOSPATCH-round2-deps`.
 - Store host-tool tarballs as GitHub Release assets, not in git history and not in Actions cache as the source of truth.
-- Prefer readable asset names such as `host-tools-macos-arm64-<key>.tar.zst` or per-tool assets like `host-llvm-macos-arm64-<key>.tar.zst`.
-- Add a small manifest asset describing the dependency key, Xcode version, runner arch, and relevant build recipe hashes.
-- Future workflows should: compute the key, try to download matching release assets, unpack them into the expected host-tool layout, and only rebuild/publish when the asset is missing or stale.
-- This bootstrap path should preserve observability: log the release tag, asset name, computed key, download hit/miss result, and unpack destination clearly in the job log.
+- Current readable assets on that tag are `host-python-llvm-buildtree-macos-arm64.tar.gz`, `host-python-macos-arm64.tar.gz`, `host-llvm-macos-arm64.tar.gz`, `host-ispc-macos-arm64-v1.29.1.tar.gz`, and `host-tool-seeds.json`.
+- Keep a small manifest asset describing source provenance and reuse intent; `host-tool-seeds.json` now fills that role for the manually seeded assets.
+- Future workflows should: restore the readable assets first, unpack them into the expected host-tool layout, and only rebuild/publish when an asset is missing or stale.
+- This bootstrap path should preserve observability: log the release tag, asset name, hit/miss result, and unpack destination clearly in the job log.
 
 ### Phase 5 - iOS Dependency Bring-Up Before Full Device Build
 

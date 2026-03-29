@@ -41,6 +41,10 @@ STAGE_PATHS = {
     ],
 }
 
+STAGE_ASSET_PREFIX = {
+    "python-llvm": "host-python-llvm-buildtree",
+}
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Manage host tool bootstrap bundles.")
@@ -106,7 +110,8 @@ def compute_metadata(branch: str, stage: str) -> dict[str, object]:
     short_key = digester.hexdigest()[:16]
 
     release_tag = f"{branch}-deps"
-    asset_stem = f"host-bootstrap-{stage}-macos-{machine}-{short_key}"
+    asset_prefix = STAGE_ASSET_PREFIX[stage]
+    asset_stem = f"{asset_prefix}-macos-{machine}"
     return {
         "asset_name": f"{asset_stem}.tar.gz",
         "branch": branch,
