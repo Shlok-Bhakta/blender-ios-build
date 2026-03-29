@@ -255,6 +255,274 @@ Current note:
 - Run `23698420837` proved the release restore path is already worth it: it reused the published `python`+`llvm` bundle and reached the ISPC blocker without recompiling LLVM.
 - The current practical state is good enough to move attention to medium-pain target deps; host bootstrap is no longer the critical path for low-pain iPhoneOS validation.
 
+## iOS Dependency Checklist
+
+Checkbox format: `[x]` = proven green on Actions, `[ ]` = not yet validated. Items within each dep are the specific fix/helper files needed when the base recipe fails on iOS.
+
+### Host Bootstrap (macOS arm64 — seeds the iOS build)
+
+These run on the macOS runner and produce host-side tools used by the iOS cross-compile.
+
+- [x] **python** — `23795801764`; released as `host-python-macos-arm64.tar.gz`
+- [x] **llvm** — `23795801764`; released as `host-llvm-macos-arm64.tar.gz`
+- [x] **ispc** — `23798420837`; released as `host-ispc-macos-arm64-v1.29.1.tar.gz`; note: currently source-built with known libc++ incompatibility that is bypassed via the release asset restore path
+- [x] **host bootstrap bundle** — `23795801764`; `host-python-llvm-buildtree-macos-arm64.tar.gz` bundles python+llvm together for fast restore
+
+### iOS Target Dependencies
+
+Built for `iphoneos-arm64`. Each dep that has needed an iOS-specific helper file is marked with the helper.
+
+#### Low-Pain Batch (already green on Actions)
+
+- [x] **zlib** — `23714880013`
+- [x] **png** — `23714880013`
+- [x] **jpeg** — `23714880013`; helper: `build_files/build_environment/cmake/platform/ios/options_apple_ios.cmake` (`-DCMAKE_SYSTEM_PROCESSOR:STRING=arm64`)
+- [x] **deflate** — `23714880013`; helper: `build_files/build_environment/cmake/platform/ios/deflate_ios.cmake` (`-DLIBDEFLATE_BUILD_GZIP=OFF`)
+- [x] **fmt** — `23714880013`
+- [x] **robinmap** — `23717838750`; helper: `build_files/build_environment/cmake/platform/ios/robinmap_ios.cmake` (`-DCMAKE_POLICY_VERSION_MINIMUM=3.5`)
+- [x] **pugixml** — `23718363006`; helper: `build_files/build_environment/cmake/platform/ios/pugixml_ios.cmake` (`-DCMAKE_POLICY_VERSION_MINIMUM=3.5`)
+
+#### Medium-Pain Batch (proven via `ios-opensubdiv` probe)
+
+- [x] **tbb** — `23719392429` (restore-hit in `ios-opensubdiv` workflow)
+- [x] **opensubdiv** — `23719392429`; helper: `build_files/build_environment/cmake/platform/ios/opensubdiv_ios.cmake` (`-DNO_OPENGL=ON`)
+
+#### Not Yet Validated
+
+- [ ] **ssl** — `OPENSSL` — not yet attempted on iOS
+- [ ] **openal** — `openal.cmake` — not yet attempted; old iOS branch keeps this
+- [ ] **blosc** — `blosc.cmake` — not yet attempted
+- [ ] **pthreads** — `pthreads.cmake` — not yet attempted
+- [ ] **imath** — `imath.cmake` — not yet attempted; old iOS branch keeps this
+- [ ] **openexr** — `openexr.cmake` — not yet attempted; old iOS branch keeps this
+- [ ] **brotli** — `brotli.cmake` — old iOS branch adds iOS-specific patch and cross-compile brotli tool path
+- [ ] **freetype** — `freetype.cmake` — old iOS branch wires brotli paths
+- [ ] **alembic** — `alembic.cmake` — old iOS branch adds Imath path override
+- [ ] **sdl** — `sdl.cmake` — old iOS branch may keep (verify if SDL is needed for iOS input)
+- [ ] **nasm** — `nasm.cmake` — not yet attempted
+- [ ] **tiff** — `tiff.cmake` — not yet attempted
+- [ ] **flexbison** — `flexbison.cmake` — not yet attempted
+- [ ] **python** — `python.cmake` — not yet attempted; very likely needs iOS-specific work
+- [ ] **llvm** — `llvm.cmake` — not needed for iOS target deps (host-side only)
+- [ ] **osl** — `osl.cmake` — old iOS branch disables `WITH_CYCLES_OSL` in final app build, but OSL dep may still be needed for OpenImageIO
+- [ ] **cython** — `cython.cmake` — not yet attempted
+- [ ] **numpy** — `numpy.cmake` — not yet attempted
+- [ ] **zstandard** — `zstandard.cmake` — old iOS branch disables for iOS in `build_environment/CMakeLists.txt` — skip unless needed by python
+- [ ] **python_site_packages** — not yet attempted
+- [ ] **package_python** — not yet attempted
+- [ ] **openimageio** — `openimageio.cmake` — old iOS branch keeps but disables many USE_* flags; likely medium-hard
+- [ ] **usd** — `usd.cmake` — old iOS branch disables `WITH_USD` in final app build — skip for now
+- [ ] **materialx** — `materialx.cmake` — not yet attempted; may be needed by Hydra which is disabled
+- [ ] **openvdb** — `openvdb.cmake` — likely medium pain; old iOS branch keeps, disables python module
+- [ ] **potrace** — `potrace.cmake` — not yet attempted
+- [ ] **haru** — `haru.cmake` — not yet attempted
+- [ ] **fribidi** — `fribidi.cmake` — not yet attempted
+- [ ] **harfbuzz** — `harfbuzz.cmake` — not yet attempted
+- [ ] **xr_openxr** — `xr_openxr.cmake` — old iOS branch disables for Apple — skip
+- [ ] **hiprt** — `hiprt.cmake` — skip; CUDA/HIP related
+- [ ] **dpcpp** — skip; Intel DPC++ compiler, not relevant for iOS
+- [ ] **dpcpp_deps** — skip; DPC++ related
+- [ ] **emhash** — skip; hash map lib, desktop-only
+- [ ] **parallelhashmap** — skip; desktop-only
+- [ ] **igc** — skip; Intel graphics compiler
+- [ ] **gmmlib** — skip; Intel GPU lib
+- [ ] **ocloc** — skip; Intel GPU tool
+- [ ] **openpgl** — skip; Path Guidance lib, desktop-only
+- [ ] **embree** — `embree.cmake` — old iOS branch keeps and adds iOS-specific TBB/Imath paths; likely medium pain
+- [ ] **xml2** — `xml2.cmake` — not yet attempted
+- [ ] **expat** — `expat.cmake` — not yet attempted
+- [ ] **pystring** — `pystring.cmake` — not yet attempted
+- [ ] **yamlcpp** — `yamlcpp.cmake` — not yet attempted
+- [ ] **minizipng** — `minizipng.cmake` — not yet attempted
+- [ ] **opencolorio** — `opencolorio.cmake` — old iOS branch keeps but disables python; likely medium pain
+- [ ] **openjph** — skip; old iOS branch omits from dep list
+- [ ] **thorvg** — skip; old iOS branch omits from dep list
+- [ ] **libheif** — skip; old iOS branch omits from dep list
+- [ ] **ffi** — `ffi.cmake` — old iOS branch adds iOS cross-compile flags
+- [ ] **webp** — `webp.cmake` — not yet attempted
+- [ ] **level-zero** — skip; not relevant for iOS
+- [ ] **gmp** — `gmp.cmake` — not yet attempted
+- [ ] **openjpeg** — `openjpeg.cmake` — not yet attempted
+- [ ] **sqlite** — `sqlite.cmake` — not yet attempted
+- [ ] **fftw** — `fftw.cmake` — not yet attempted; old iOS branch adds cross-compile flags
+- [ ] **aom** — `aom.cmake` — old iOS branch keeps but adds iOS-specific flags
+- [ ] **openimagedenoise** — `openimagedenoise.cmake` — skip; OIDN desktop-only
+- [ ] **lame** — `lame.cmake` — not yet attempted
+- [ ] **ogg** — `ogg.cmake` — not yet attempted
+- [ ] **vorbis** — `vorbis.cmake` — not yet attempted
+- [ ] **theora** — `theora.cmake` — not yet attempted
+- [ ] **opus** — `opus.cmake` — not yet attempted
+- [ ] **vpx** — `vpx.cmake` — not yet attempted; old iOS branch keeps
+- [ ] **x264** — `x264.cmake` — not yet attempted
+- [ ] **x265** — `x265.cmake` — old iOS branch keeps; likely hard
+- [ ] **ffmpeg** — `ffmpeg.cmake` — old iOS branch keeps but uses iOS-specific flags and patches; likely hard
+- [ ] **flac** — `flac.cmake` — old iOS branch adds cross-compile flags
+- [ ] **sndfile** — `sndfile.cmake` — not yet attempted
+- [ ] **spnav** — skip; desktop Linux only
+- [ ] **bzip2** — `bzip2.cmake` — not yet attempted; old iOS branch adds iOS flags
+- [ ] **lzma** — `lzma.cmake` — not yet attempted
+- [ ] **libglu** — skip; OpenGL utility lib, desktop-only
+- [ ] **mesa** — skip; desktop OpenGL
+- [ ] **wayland_protocols** — skip; Linux desktop only
+- [ ] **wayland** — skip; Linux desktop only
+- [ ] **wayland_weston** — skip; Linux desktop only
+- [ ] **shaderc_deps** — `shaderc_deps.cmake` — not yet attempted
+- [ ] **shaderc** — `shaderc.cmake` — not yet attempted; Vulkan shader compiler
+- [ ] **vulkan** — `vulkan.cmake` — old iOS branch disables `WITH_VULKAN_BACKEND` — skip
+- [ ] **vulkan-memory-allocator** — `vulkan-memory-allocator.cmake` — skip; Vulkan only
+- [ ] **spirv-reflect** — `spirv-reflect.cmake` — not yet attempted
+- [ ] **pybind11** — `pybind11.cmake` — not yet attempted; may be needed by openvdb/python path
+- [ ] **nanobind** — `nanobind.cmake` — not yet attempted
+- [ ] **manifold** — `manifold.cmake` — not yet attempted
+- [ ] **rubberband** — skip; old iOS branch omits
+- [ ] **abseil** — skip; old iOS branch omits
+- [ ] **eigen** — skip; old iOS branch omits
+- [ ] **ceres** — skip; old iOS branch omits
+
+### Old Branch iOS-Specific Dep Helpers Reference
+
+When a dep fails on iOS, check if the old `ios` branch has a helper file here before inventing a fix from scratch:
+
+- `build_files/build_environment/cmake/platform/ios/options_apple_ios.cmake`
+- `build_files/build_environment/cmake/platform/ios/jpeg_ios.cmake`
+- `build_files/build_environment/cmake/platform/ios/robinmap_ios.cmake`
+- `build_files/build_environment/cmake/platform/ios/pugixml_ios.cmake`
+- `build_files/build_environment/cmake/platform/ios/deflate_ios.cmake`
+- `build_files/build_environment/cmake/platform/ios/opensubdiv_ios.cmake`
+- `build_files/build_environment/patches/ios/` — iOS-specific source patches
+
+### Dep Build Strategy Going Forward
+
+1. Work through the not-yet-validated list in rough dependency order (foundational libs first, then consumers)
+2. Use narrow probe workflows per dep or small cluster, similar to `ios-opensubdiv.yml`
+3. When a dep fails, first check `build_files/build_environment/patches/ios/` for an existing patch, then look at `build_files/build_environment/cmake/platform/ios/` for a helper, then diagnose the actual configure failure
+4. After validating, update the checkbox and record the run ID and helper files used
+
+## Post-Deps Blender-Side Porting Work
+
+After deps are done, the real Blender-side iOS platform port begins. This is the GHOST / creator / Apple build-glue work that makes an actual iOS app compile and run. Each bucket has concrete files and commits from the old `ios` branch as reference.
+
+### Build-System / Toolchain
+
+Must be done before a full Xcode build can succeed:
+
+- [ ] **Apple target selection**: add `APPLE_TARGET_DEVICE` handling to main Blender CMake, routing `ios` and `ios-simulator` into the cross-compile path
+- [ ] **`ios` target handling**: ensure Blender's main `CMakeLists.txt` can generate an Xcode project for iOS; this is the configure equivalent of what deps configure does for the dep graph
+- [ ] **host/target split**: Blender needs to find cross-compiled tools (`makesdna`, `makesrna`, `msgfmt`, `datatoc`, `glsl_preprocess`) under `${CMAKE_SOURCE_DIR}/../build_ios/build_darwin_tools/${CMAKE_BUILD_TYPE}/bin/` — the old `GNUmakefile` wired this
+- [ ] **host tools pathing**: `${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}/deps_arm64/Release/` must supply `python/bin/python`, `llvm/bin/llvm-config`, `ispc/bin/ispc`, and `brotli/bin/brotli`; these must be reachable during the iOS configure and build
+- [ ] **bundle layout routing**: iOS app bundle layout differs from macOS; `source/creator/CMakeLists.txt` and `release/ios/` control this
+- [ ] **archive support**: `f3f86474a56` on the old branch added Xcode archiving support; this is for distribution builds
+
+Key files (old branch):
+- `CMakeLists.txt`
+- `GNUmakefile`
+- `build_files/cmake/platform/platform_apple.cmake`
+- `build_files/cmake/platform/platform_apple_xcode.cmake`
+- `build_files/cmake/platform/ios/`
+- `source/creator/CMakeLists.txt`
+
+Key old commits: `dff9c1c75ac`, `f3f86474a56`
+
+### GHOST / Runtime
+
+The iOS windowing and app lifecycle layer. Must exist before the app can start:
+
+- [ ] **`GHOST_SystemIOS`**: new backend in `intern/ghost/intern/GHOST_SystemIOS.mm`; manages iOS app lifecycle, event loop, and system-level coordination
+- [ ] **`GHOST_WindowIOS`**: window management in `intern/ghost/intern/GHOST_WindowIOS.mm`; handles window creation, sizing, and display association
+- [ ] **`GHOST_ContextIOS`**: Metal/OpenGL context setup in `intern/ghost/intern/GHOST_ContextIOS.mm`; creates and manages the rendering context
+- [ ] **main entry refactor**: `source/creator/creator.cc` needs iOS entry point routing; the old branch refactored from `WindowIOS`-centric to `SystemIOS`-centric entry (commit `cc08ff2b7c7`)
+- [ ] **app delegate flow**: iOS `UIApplicationDelegate` integration; needs proper app delegate initialization early in startup
+- [ ] **orientation handling**: portrait/landscape orientation routing in GHOST
+- [ ] **home indicator behavior**: auto-hide home indicator on iOS, handled via `preferredScreenEdgesDeferringSystemGestures` or equivalent
+
+Key files (old branch):
+- `intern/ghost/intern/GHOST_SystemIOS.mm`
+- `intern/ghost/intern/GHOST_WindowIOS.mm`
+- `intern/ghost/intern/GHOST_ContextIOS.mm`
+- `source/creator/creator.cc`
+- `source/creator/CMakeLists.txt`
+
+Key old commits: `cc08ff2b7c7`, `ae62cddbf04`, `4c6874685d1`
+
+### Input / Touch
+
+Touch event plumbing from iOS into Blender's event system:
+
+- [ ] **touch event types**: `source/blender/windowmanager/wm_event_types.hh` must include iOS touch event definitions
+- [ ] **multi-finger taps**: 2/3/4 finger tap detection; `c129d785346` on old branch
+- [ ] **edge swipe gestures**: inward edge swipe from screen edges; `bbd3bb5ce16` on old branch
+- [ ] **Pencil tap**: Apple Pencil input; `bcce1e82520` on old branch
+- [ ] **touch offset fixes**: coordinate translation fixes when iOS is not in fullscreen or has inset areas; `a8fc93e3b09`
+- [ ] **window switching fixes**: portrait mode window switching; `4f61bdd181b`
+- [ ] **browser/asset-shelf multi-finger scroll**: requires multi-finger pan for file browser and asset shelf; `4f40068f951`, `918ed1da796`
+- [ ] **editor interaction shims**: touch routing into `interface_handlers.cc`, `view2d_ops.cc`, `view3d_navigate_view_move.cc`, `view3d_navigate_view_rotate.cc`
+
+Key files (old branch):
+- `source/blender/windowmanager/wm_event_types.hh`
+- `source/blender/windowmanager/intern/wm_event_system.cc`
+- `source/blender/makesrna/intern/rna_wm.cc`
+- `source/blender/makesrna/intern/rna_screen.cc`
+- `source/blender/editors/interface/interface_handlers.cc`
+- `source/blender/editors/interface/view2d/view2d_ops.cc`
+- `source/blender/editors/space_view3d/view3d_navigate_view_move.cc`
+- `source/blender/editors/space_view3d/view3d_navigate_view_rotate.cc`
+- `scripts/presets/keyconfig/keymap_data/blender_default.py`
+- `scripts/startup/bl_operators/touch.py`
+
+Key old commits: `c129d785346`, `bbd3bb5ce16`, `bcce1e82520`, `4f40068f951`, `918ed1da796`, `a8fc93e3b09`, `4f61bdd181b`
+
+### File / Sandbox
+
+iOS document and file access plumbing:
+
+- [ ] **`Info.plist` document types**: `release/ios/Blender.app/Info.plist` must declare support for `.blend` file type so iOS can open documents
+- [ ] **security-scoped file access**: iOS sandbox requires security-scoped bookmarks for accessing files outside the app container; `4c6874685d1` on old branch
+- [ ] **storage wrapper behavior**: `source/blender/blenlib/intern/storage_apple.mm` handles iOS-specific storage paths
+- [ ] **appdir/resource path logic**: `source/blender/blenkernel/intern/appdir.cc` must return correct iOS bundle/resource paths
+- [ ] **file browser integration**: `source/blender/editors/space_file/fsmenu_system.mm` may need iOS-specific additions for document browser
+
+Key files (old branch):
+- `release/ios/Blender.app/Info.plist`
+- `source/blender/windowmanager/intern/wm_files.cc`
+- `source/blender/blenkernel/intern/appdir.cc`
+- `source/blender/blenlib/intern/storage_apple.mm`
+- `source/blender/editors/space_file/fsmenu_system.mm`
+
+Key old commits: `4c6874685d1`, `860884466d3`
+
+### Rendering / GPU
+
+Metal backend and Cycles Metal work for iOS GPU rendering:
+
+- [ ] **Metal guards and fixes**: `source/blender/gpu/metal/` needs iOS-compatible guards and Metal shader compilation for iOS targets; `f867de5303e`, `e351133c24a` on old branch
+- [ ] **Cycles Metal fixes**: `intern/cycles/device/metal/` needs fixes for iOS target compatibility
+- [ ] **HDR/EDR**: `9f8e5860bcb` on old branch enabled HDR/EDR rendering support
+- [ ] **ProMotion**: `ae62cddbf04` on old branch added ProMotion (120fps) support
+
+Key files (old branch):
+- `source/blender/gpu/metal/`
+- `intern/cycles/device/metal/`
+
+Key old commits: `ae62cddbf04`, `9f8e5860bcb`, `f867de5303e`, `e351133c24a`
+
+### Packaging / Distribution
+
+iOS app bundle assembly:
+
+- [ ] **storyboard**: `release/ios/Blender.app/Main.storyboard` defines launch screen and initial UI
+- [ ] **entitlements**: `release/ios/entitlements.plist` for app sandbox, keychain access, etc.
+- [ ] **archive support**: Xcode archive generation for TestFlight/App Store distribution; `f3f86474a56` on old branch
+- [ ] **version string handling**: `d9b6fe34ddc` on old branch corrected `CFBundleVersion` in `Info.plist`
+- [ ] **signing/export strategy documented**: must decide whether to target unsigned CI validation or signed distribution; certificate/profile strategy must be explicit
+
+Key files (old branch):
+- `release/ios/Blender.app/Main.storyboard`
+- `release/ios/entitlements.plist`
+- `source/creator/CMakeLists.txt`
+- `release/ios/Blender.app/Info.plist`
+
+Key old commits: `f3f86474a56`, `d9b6fe34ddc`
+
 ## Parity Checklist
 
 ### Build / Toolchain
@@ -270,7 +538,7 @@ Current note:
 
 - [x] dependency script exists
 - [x] manifest generation exists
-- [ ] host tools built in CI
+- [x] host tools built in CI
 - [x] device deps bundle strategy defined
 - [ ] LFS/submodule path deprecated or removed for iOS
 
