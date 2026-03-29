@@ -36,14 +36,6 @@ DEP_CONFIG = {
             Path("build_files/build_environment/cmake/zlib.cmake"),
         ],
     },
-    "ssl": {
-        "build_dir": Path("build/ios-deps/ios/build/ssl"),
-        "cmake_prefixes": ["OPENSSL"],
-        "release_dir": Path("build/ios-deps/ios/Release/ssl"),
-        "key_files": [
-            Path("build_files/build_environment/cmake/ssl.cmake"),
-        ],
-    },
     "openal": {
         "build_dir": Path("build/ios-deps/ios/build/openal"),
         "cmake_prefixes": ["OPENAL"],

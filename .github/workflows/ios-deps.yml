@@ -131,7 +131,6 @@ jobs:
           set -euo pipefail
           deps=(
             zlib
-            ssl
             openal
             blosc
             pthreads
