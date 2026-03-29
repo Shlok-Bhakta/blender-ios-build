@@ -52,7 +52,6 @@ DEP_CONFIG = {
         "release_dir": Path("build/ios-deps/ios/Release/jpeg"),
         "key_files": [
             Path("build_files/build_environment/cmake/jpeg.cmake"),
-            Path("build_files/build_environment/cmake/platform/ios/cmake_policy_compat.cmake"),
             Path("build_files/build_environment/cmake/platform/ios/jpeg_ios.cmake"),
         ],
     },
@@ -79,7 +78,6 @@ DEP_CONFIG = {
         "release_dir": Path("build/ios-deps/ios/Release/robinmap"),
         "key_files": [
             Path("build_files/build_environment/cmake/robinmap.cmake"),
-            Path("build_files/build_environment/cmake/platform/ios/cmake_policy_compat.cmake"),
             Path("build_files/build_environment/cmake/platform/ios/robinmap_ios.cmake"),
         ],
     },
