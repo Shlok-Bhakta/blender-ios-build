@@ -32,8 +32,10 @@ Last updated: 2026-03-28
 
 ## Workflow History
 
-- Last successful workflow: `Build Blender iOS IPA` run `23693130442` on `blender-v5.1-release-IOSPATCH-round2` in `host-configure` mode; host dependency configure completed successfully using Blender mirror sources.
-- Last failed workflow: `Build Blender iOS IPA` run `23698420837` on `blender-v5.1-release-IOSPATCH-round2` in `host-tools` mode; the release bootstrap restore hit for `python`+`llvm`, LLVM was skipped, and the run failed later at `external_ispc`.
+- Last successful workflow: `Build Blender iOS IPA` run `23702135538` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-configure` mode; iPhoneOS dependency configure completed successfully with `APPLE_TARGET_DEVICE=ios`, `WITH_APPLE_CROSSPLATFORM=ON`, and detected `iPhoneOS18.5.sdk` on Xcode `16.4`.
+- Last failed workflow: `Build Blender iOS IPA` run `23714250530` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-basic` mode; `zlib`, `png`, and `jpeg` succeeded, then `deflate` failed during install because libdeflate still tried to install its gzip program on iPhoneOS.
+- Latest cancelled workflow: `Build Blender iOS IPA` run `23714036934` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-basic` mode reached the `Build jpeg` step on commit `db26746f401` before cancellation.
+- Latest dispatched workflow: the next post-`deflate` fix rerun still needs to be sent from the current local branch state.
 - Latest known workflow in repo before changes: `.github/workflows/close-prs.yml` only.
 - Exploratory dispatches in this session: `23691855752` and `23691861803`, both manually cancelled after confirming `gh workflow run` worked.
 - Mistake repaired: accidental merge/push from legacy branch was fully rewound; cancelled run `23692208885` is historical only and must be ignored.
@@ -42,7 +44,7 @@ Last updated: 2026-03-28
 
 ## Next Hypothesis
 
-- The next narrow win is to consume release-seeded host assets with readable names, use a prebuilt `ispc` instead of rebuilding it from source, and then move on to iPhoneOS dependency configure instead of burning another multi-hour host-tools retry.
+- The next narrow win is to disable libdeflate's gzip program for Apple cross-platform builds using the helper-hook approach, rerun `ios-deps-basic`, and continue into `fmt`, `robinmap`, and `pugixml`.
 
 ## GitHub Actions Commands
 
@@ -73,7 +75,8 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 ## CI Observations
 
 - `gh` is not installed directly in the shell; the documented `nix-shell -p gh --run ...` wrapper is required.
-- Local `origin` points at upstream `blender/blender`, where current GitHub permission is `READ` only.
+- Local `origin` now points at the writable SSH fork `git@github.com:Shlok-Bhakta/blender-ios-build.git`.
+- Local `upstream` now points at read-only `https://github.com/blender/blender.git`.
 - Writable Actions live in fork repo `Shlok-Bhakta/blender-ios-build`, where current GitHub permission is `ADMIN`.
 - Current working branch already exists on the fork as `blender-v5.1-release-IOSPATCH-round2` and is the only fork branch to use for this effort.
 - Legacy fork branch `IOS5.1-round2` is off-limits even if useful-looking data exists there; archaeology comes only from read-only `ios`.
@@ -91,6 +94,16 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 - `host-tools` run `23693330218` failed in `ispc-logs/build.log` at `build/ios-deps/host/build/ispc/src/external_ispc/src/util.cpp:51` with an exception-specification mismatch against `/usr/include/c++/v1/__verbose_abort` from Xcode 16.4.
 - `host-tools` run `23695801764` successfully published the first branch-scoped release bootstrap bundle under tag `blender-v5.1-release-IOSPATCH-round2-deps`, then failed again at `external_ispc`.
 - `host-tools` run `23698420837` confirmed the bootstrap restore path works: the job reused the published `python`+`llvm` host bundle, skipped the LLVM rebuild, reached `external_ispc` quickly, and produced an artifact showing `ispc` still missing while `python` and `llvm` were present.
+- `ios-deps-configure` run `23702135538` proved the new Apple target plumbing is live in CI: `APPLE_TARGET_DEVICE=ios`, `WITH_APPLE_CROSSPLATFORM=ON`, `CMAKE_DEPS_CROSSCOMPILE_BUILDDIR=build/ios-deps/host`, and the runner detected `iPhoneOS18.5.sdk`.
+- `ios-deps-basic` run `23702360631` proved `external_zlib` and exposed a `png.cmake` version-drift bug: quoting `-DCMAKE_SYSTEM_PROCESSOR=\"aarch64\"` breaks nested CMake configure under CMake `4.3`.
+- `ios-deps-basic` run `23702716309` proved `external_png` after the quote fix, then failed at `jpeg`; archaeology confirmed there was no old `ios`-branch `jpeg.cmake` delta to port.
+- `ios-deps-basic` run `23713811661` proved the new log-tail observability path works; the `jpeg` failure is now visible directly in the job log rather than only in the uploaded artifact.
+- Current `jpeg` root cause is narrower than the earlier policy drift: libjpeg-turbo now gets past the `< 3.5` policy failure and instead trips on an empty `CMAKE_SYSTEM_PROCESSOR` under iPhoneOS configure.
+- The iOS helper layer now carries `-DCMAKE_SYSTEM_PROCESSOR:STRING=arm64` in `build_files/build_environment/cmake/platform/ios/options_apple_ios.cmake`, which should fix that class of failure generically for Apple cross-platform dependency recipes.
+- `ios-deps-basic` run `23714250530` confirmed that fix: `Build jpeg` succeeded, moving the batch forward to `Build deflate`.
+- `deflate` now fails at install rather than configure/build. libdeflate builds `libdeflate.a`, then tries to install `libdeflate-gzip.app` and hard-link `bin/libdeflate-gzip`, which is invalid for the iPhoneOS dependency target layout.
+- Old-branch archaeology for `build_files/build_environment/cmake/deflate.cmake` is relevant: the read-only `ios` branch disabled `LIBDEFLATE_BUILD_GZIP` for `WITH_APPLE_CROSSPLATFORM`.
+- `tools/ios/build_deps.py` now prints the tail of failing `configure.log` or `build.log` into the Actions step log, which materially improves CI iteration speed.
 - A separate local clone at `/home/shlok/Documents/Programming/Sandbox/blender-full-readonly` now has `lib/macos_arm64` materialized; it provides reusable host `python` and `llvm` trees, but not `ispc`.
 - The branch release `blender-v5.1-release-IOSPATCH-round2-deps` now also contains readable seed assets: `host-python-macos-arm64.tar.gz`, `host-llvm-macos-arm64.tar.gz`, `host-ispc-macos-arm64-v1.29.1.tar.gz`, `host-python-llvm-buildtree-macos-arm64.tar.gz`, and `host-tool-seeds.json`.
 - User preference: long-running Actions must stay visibly alive. Future workflows should emit clear progress markers and heartbeat-style log lines before/after each expensive stage so a 60-90 minute compile does not look dead from the UI.

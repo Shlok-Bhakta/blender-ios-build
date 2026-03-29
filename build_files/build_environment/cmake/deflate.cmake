@@ -9,6 +9,9 @@ set(DEFLATE_EXTRA_ARGS
   -DLIBDEFLATE_BUILD_SHARED_LIB=OFF
 )
 
+include(${CMAKE_CURRENT_LIST_DIR}/platform/ios/deflate_ios.cmake)
+blender_platform_ios_patch_deflate_extra_args(DEFLATE_EXTRA_ARGS)
+
 ExternalProject_Add(external_deflate
   URL file://${PACKAGE_DIR}/${DEFLATE_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}

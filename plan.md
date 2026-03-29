@@ -194,7 +194,8 @@ These are the expected local commands for interacting with Actions from the work
 
 Important repo note discovered during execution:
 
-- local `origin` points at upstream `blender/blender` and is read-only for Actions interaction
+- local `origin` points at writable fork `git@github.com:Shlok-Bhakta/blender-ios-build.git`
+- local `upstream` points at read-only `https://github.com/blender/blender.git`
 - writable Actions control currently lives in `Shlok-Bhakta/blender-ios-build`
 - the only writable branch to use for this port is `blender-v5.1-release-IOSPATCH-round2`
 - treat fork branch `IOS5.1-round2` as a broken legacy branch and ignore it completely
@@ -729,6 +730,14 @@ Gate before moving on:
 
 - [ ] iOS dependency configure is repeatable
 
+Current evidence:
+
+- `23702135538` succeeded for `ios-deps-configure`
+- artifact manifest proved `APPLE_TARGET_DEVICE=ios`
+- artifact manifest proved `WITH_APPLE_CROSSPLATFORM=ON`
+- artifact manifest proved host crosscompile dirs are being passed through
+- CI detected `iPhoneOS18.5.sdk` on Xcode `16.4`
+
 ### Phase 6 - Easy Dependency Wins Before Hard Dependencies
 
 Do not start with the ugliest deps.
@@ -755,6 +764,15 @@ Suggested order:
 Gate before moving on:
 
 - [ ] several simple deps build reproducibly under iOS mode
+
+Current evidence:
+
+- `23702360631`: `zlib` passed, `png` failed because quoted `CMAKE_SYSTEM_PROCESSOR` broke nested CMake configure under CMake `4.3`
+- `23702716309`: `zlib` and `png` passed, `jpeg` failed from new version/toolchain drift rather than a missed archaeology patch
+- `23713811661`: `jpeg` failure is now visible directly in the workflow log because `tools/ios/build_deps.py` emits failing log tails
+- current follow-up moved `CMAKE_SYSTEM_PROCESSOR:STRING=arm64` into iOS helper `options_apple_ios.cmake` so the fix lives in shared Apple-crossplatform plumbing instead of a `jpeg.cmake` one-off
+- `23714250530`: `jpeg` passed after the helper-layer processor fix, and the next blocker moved to `deflate`
+- read-only `ios` archaeology shows `deflate.cmake` should disable `LIBDEFLATE_BUILD_GZIP` under `WITH_APPLE_CROSSPLATFORM`; reintroduce that behavior through a helper hook instead of an inline shared-file branch
 
 ### Phase 7 - Medium Dependencies
 
