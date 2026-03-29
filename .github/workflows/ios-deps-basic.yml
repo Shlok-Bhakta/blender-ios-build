@@ -244,7 +244,7 @@ jobs:
               if root.exists():
                   for path in sorted(root.rglob('*')):
                       entries.append(str(path))
-              out.write_text('\n'.join(entries) + ('\n' if entries else ''), encoding='ascii')
+              out.write_text('\n'.join(entries) + ('\n' if entries else ''), encoding='utf-8')
 
           artifact_root = Path('artifacts/ios-deps-basic')
           write_tree(Path('build/ios-deps/ios'), artifact_root / 'ios-build-tree.txt')

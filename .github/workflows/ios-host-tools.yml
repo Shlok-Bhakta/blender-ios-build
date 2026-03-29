@@ -265,7 +265,7 @@ jobs:
             if root.exists():
               for path in sorted(root.rglob('*')):
                 entries.append(str(path))
-            out.write_text('\n'.join(entries) + ('\n' if entries else ''), encoding='ascii')
+            out.write_text('\n'.join(entries) + ('\n' if entries else ''), encoding='utf-8')
 
           write_tree(host_root, artifact_root / 'build-tree.txt')
           write_tree(release_root, artifact_root / 'release-tree.txt')
@@ -298,7 +298,7 @@ jobs:
 
           (artifact_root / 'expected-host-tools.json').write_text(
             json.dumps(summary, indent=2, sort_keys=True) + '\n',
-            encoding='ascii',
+            encoding='utf-8',
           )
           PY
 

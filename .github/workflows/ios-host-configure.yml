@@ -80,7 +80,7 @@ jobs:
           if root.exists():
               for path in sorted(root.rglob('*')):
                   entries.append(str(path))
-          out.write_text('\n'.join(entries) + ('\n' if entries else ''), encoding='ascii')
+          out.write_text('\n'.join(entries) + ('\n' if entries else ''), encoding='utf-8')
           PY
 
       - name: Upload configure artifacts
