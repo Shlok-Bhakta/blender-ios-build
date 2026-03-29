@@ -5,6 +5,9 @@
 set(PUGIXML_EXTRA_ARGS
 )
 
+include(${CMAKE_CURRENT_LIST_DIR}/platform/ios/pugixml_ios.cmake)
+blender_platform_ios_patch_pugixml_extra_args(PUGIXML_EXTRA_ARGS)
+
 ExternalProject_Add(external_pugixml
   URL file://${PACKAGE_DIR}/${PUGIXML_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
