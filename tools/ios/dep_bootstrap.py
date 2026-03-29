@@ -15,10 +15,9 @@ from typing import Iterable
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
+KEY_SCHEMA_VERSION = 2
+
 COMMON_KEY_FILES = [
-    Path("tools/ios/build_deps.py"),
-    Path("tools/ios/dep_bootstrap.py"),
-    Path("tools/ios/run_release_cached_dep.sh"),
     Path("build_files/build_environment/CMakeLists.txt"),
     Path("build_files/build_environment/cmake/options.cmake"),
     Path("build_files/build_environment/cmake/platform/ios/apple_target_device.cmake"),
@@ -97,10 +96,14 @@ VAR_PATTERN = re.compile(r"\$\{(?P<name>[A-Z0-9_]+)\}")
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Manage per-dependency iOS release bundles.")
+    parser = argparse.ArgumentParser(
+        description="Manage per-dependency iOS release bundles."
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    metadata = subparsers.add_parser("metadata", help="Write dependency bundle metadata.")
+    metadata = subparsers.add_parser(
+        "metadata", help="Write dependency bundle metadata."
+    )
     metadata.add_argument("--branch", required=True)
     metadata.add_argument("--dep", choices=sorted(DEP_CONFIG), required=True)
     metadata.add_argument("--output", type=Path, required=True)
@@ -111,7 +114,9 @@ def parse_args() -> argparse.Namespace:
     bundle.add_argument("--output", type=Path, required=True)
     bundle.add_argument("--metadata-output", type=Path, required=True)
 
-    extract = subparsers.add_parser("extract", help="Extract a dependency bundle tarball.")
+    extract = subparsers.add_parser(
+        "extract", help="Extract a dependency bundle tarball."
+    )
     extract.add_argument("--input", type=Path, required=True)
 
     return parser.parse_args()
@@ -171,7 +176,9 @@ def load_versions_map() -> dict[str, str]:
 def expand_value(value: str, values: dict[str, str]) -> str:
     expanded = value
     for _ in range(8):
-        updated = VAR_PATTERN.sub(lambda match: values.get(match.group("name"), match.group(0)), expanded)
+        updated = VAR_PATTERN.sub(
+            lambda match: values.get(match.group("name"), match.group(0)), expanded
+        )
         if updated == expanded:
             return expanded
         expanded = updated
@@ -207,6 +214,7 @@ def compute_metadata(branch: str, dep: str) -> dict[str, object]:
     file_hashes: dict[str, str] = {}
     versions_map = load_versions_map()
     packages = source_packages(dep, versions_map)
+    digester.update(f"schema:{KEY_SCHEMA_VERSION}".encode("ascii"))
     for relative_path in dep_key_files(dep):
         absolute_path = REPO_ROOT / relative_path
         file_digest = hashlib.sha256(absolute_path.read_bytes()).hexdigest()
@@ -239,15 +247,19 @@ def compute_metadata(branch: str, dep: str) -> dict[str, object]:
     source_hash_value = primary_package["hash"]
 
     asset_stem = (
-        f"ios-dep-{dep}-{source_hash_label}-{source_hash_value}-iphoneos-{machine}-{short_key}"
+        f"ios-dep-{dep}-{source_hash_label}-{source_hash_value}-iphoneos-{machine}"
     )
+    legacy_asset_stem = f"{asset_stem}-{short_key}"
+
     return {
         "asset_name": f"{asset_stem}.tar.gz",
         "branch": branch,
+        "key_schema_version": KEY_SCHEMA_VERSION,
         "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "dep": dep,
         "key": short_key,
         "key_files": file_hashes,
+        "legacy_asset_name": f"{legacy_asset_stem}.tar.gz",
         "source_file": primary_package["file"],
         "source_hash": source_hash_value,
         "source_hash_type": primary_package["hash_type"],
@@ -264,7 +276,9 @@ def compute_metadata(branch: str, dep: str) -> dict[str, object]:
 
 def write_json(path: Path, payload: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="ascii")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="ascii"
+    )
 
 
 def existing_stage_paths(dep: str) -> list[Path]:
@@ -301,7 +315,9 @@ def command_bundle(args: argparse.Namespace) -> int:
         for relative_path in included_paths:
             archive.add(REPO_ROOT / relative_path, arcname=relpath(relative_path))
 
-    metadata["bundle_created_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    metadata["bundle_created_at"] = datetime.now(timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
     metadata["bundle_path"] = str(args.output)
     metadata["included_paths"] = [relpath(path) for path in included_paths]
     write_json(args.metadata_output, metadata)
