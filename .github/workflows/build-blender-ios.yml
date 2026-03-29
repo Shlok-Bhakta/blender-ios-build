@@ -14,6 +14,7 @@ on:
           - host-tools
           - ios-deps-configure
           - ios-deps-basic
+          - ios-deps-zlib-cache
 
 permissions:
   contents: read
@@ -44,3 +45,9 @@ jobs:
     permissions:
       contents: write
     uses: ./.github/workflows/ios-deps-basic.yml
+
+  ios-deps-zlib-cache:
+    if: ${{ inputs.mode == 'ios-deps-zlib-cache' }}
+    permissions:
+      contents: write
+    uses: ./.github/workflows/ios-deps-zlib-cache.yml

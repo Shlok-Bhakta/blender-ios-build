@@ -102,7 +102,7 @@ if [ "${command_rc}" -ne 0 ]; then
 fi
 
 bundle_path="${upload_dir}/${asset_name}"
-manifest_path="${upload_dir}/bundle-metadata.json"
+manifest_path="${upload_dir}/${manifest_asset_name}"
 
 python3 tools/ios/dep_bootstrap.py bundle \
   --branch "${GITHUB_REF_NAME}" \
@@ -121,6 +121,6 @@ fi
 
 gh release upload "${release_tag}" -R "${GITHUB_REPOSITORY}" --clobber \
   "${bundle_path}" \
-  "${manifest_path}#${manifest_asset_name}"
+  "${manifest_path}"
 
 printf '[dep-cache][%s] uploaded %s\n' "${dep}" "${asset_name}" | tee -a "${cache_log}"
