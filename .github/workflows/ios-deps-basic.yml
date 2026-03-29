@@ -113,16 +113,17 @@ jobs:
         shell: bash
         run: |
           mkdir -p artifacts/ios-deps-basic
-          bash tools/ios/run_with_heartbeat.sh ios-configure 60 artifacts/ios-deps-basic/ios-configure-console.log \
-            python3 tools/ios/build_deps.py \
-              --mode ios \
-              --configure-only \
-              --build-dir build/ios-deps/ios \
-              --install-dir build/ios-deps/install/ios \
-              --host-build-dir build/ios-deps/host \
-              --host-install-dir build/ios-deps/install/host \
-              --log-dir artifacts/ios-deps-basic/configure-logs \
-              --manifest-path artifacts/ios-deps-basic/configure-manifest.json
+          set -euo pipefail
+          python3 tools/ios/build_deps.py \
+            --mode ios \
+            --configure-only \
+            --build-dir build/ios-deps/ios \
+            --install-dir build/ios-deps/install/ios \
+            --host-build-dir build/ios-deps/host \
+            --host-install-dir build/ios-deps/install/host \
+            --log-dir artifacts/ios-deps-basic/configure-logs \
+            --manifest-path artifacts/ios-deps-basic/configure-manifest.json \
+            2>&1 | tee artifacts/ios-deps-basic/ios-configure-console.log
 
       - name: Restore or Build zlib
         shell: bash

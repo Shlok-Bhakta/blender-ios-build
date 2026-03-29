@@ -63,7 +63,18 @@ fi
 
 printf '[dep-cache][%s] restore-miss\n' "${dep}" | tee -a "${cache_log}"
 
-bash tools/ios/run_with_heartbeat.sh "${dep}" 60 "${artifact_root}/${dep}-console.log" "$@"
+printf '[dep-cache][%s] command=' "${dep}" | tee -a "${cache_log}" "${artifact_root}/${dep}-console.log"
+printf '%q ' "$@" | tee -a "${cache_log}" "${artifact_root}/${dep}-console.log"
+printf '\n' | tee -a "${cache_log}" "${artifact_root}/${dep}-console.log"
+
+set +e
+"$@" 2>&1 | tee -a "${cache_log}" "${artifact_root}/${dep}-console.log"
+command_rc=${PIPESTATUS[0]}
+set -e
+
+if [ "${command_rc}" -ne 0 ]; then
+  exit "${command_rc}"
+fi
 
 bundle_path="${upload_dir}/${asset_name}"
 manifest_path="${upload_dir}/bundle-metadata.json"

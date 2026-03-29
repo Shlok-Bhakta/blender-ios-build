@@ -142,40 +142,43 @@ jobs:
         shell: bash
         run: |
           mkdir -p artifacts/ios-host-tools
-          bash tools/ios/run_with_heartbeat.sh configure 60 artifacts/ios-host-tools/configure-console.log \
-            python3 tools/ios/build_deps.py \
-              --mode host \
-              --configure-only \
-              --build-dir build/ios-deps/host \
-              --install-dir build/ios-deps/install/host \
-              --log-dir artifacts/ios-host-tools/configure-logs \
-              --manifest-path artifacts/ios-host-tools/configure-manifest.json
+          set -euo pipefail
+          python3 tools/ios/build_deps.py \
+            --mode host \
+            --configure-only \
+            --build-dir build/ios-deps/host \
+            --install-dir build/ios-deps/install/host \
+            --log-dir artifacts/ios-host-tools/configure-logs \
+            --manifest-path artifacts/ios-host-tools/configure-manifest.json \
+            2>&1 | tee artifacts/ios-host-tools/configure-console.log
 
       - name: Build host Python and site packages
         if: env.HOST_BOOTSTRAP_HIT != 'true'
         shell: bash
         run: |
-          bash tools/ios/run_with_heartbeat.sh python-site-packages 60 artifacts/ios-host-tools/python-console.log \
-            python3 tools/ios/build_deps.py \
-              --mode host \
-              --build-target external_python_site_packages \
-              --build-dir build/ios-deps/host \
-              --install-dir build/ios-deps/install/host \
-              --log-dir artifacts/ios-host-tools/python-logs \
-              --manifest-path artifacts/ios-host-tools/python-manifest.json
+          set -euo pipefail
+          python3 tools/ios/build_deps.py \
+            --mode host \
+            --build-target external_python_site_packages \
+            --build-dir build/ios-deps/host \
+            --install-dir build/ios-deps/install/host \
+            --log-dir artifacts/ios-host-tools/python-logs \
+            --manifest-path artifacts/ios-host-tools/python-manifest.json \
+            2>&1 | tee artifacts/ios-host-tools/python-console.log
 
       - name: Build host LLVM tools
         if: env.HOST_BOOTSTRAP_HIT != 'true'
         shell: bash
         run: |
-          bash tools/ios/run_with_heartbeat.sh llvm 300 artifacts/ios-host-tools/llvm-console.log \
-            python3 tools/ios/build_deps.py \
-              --mode host \
-              --build-target ll \
-              --build-dir build/ios-deps/host \
-              --install-dir build/ios-deps/install/host \
-              --log-dir artifacts/ios-host-tools/llvm-logs \
-              --manifest-path artifacts/ios-host-tools/llvm-manifest.json
+          set -euo pipefail
+          python3 tools/ios/build_deps.py \
+            --mode host \
+            --build-target ll \
+            --build-dir build/ios-deps/host \
+            --install-dir build/ios-deps/install/host \
+            --log-dir artifacts/ios-host-tools/llvm-logs \
+            --manifest-path artifacts/ios-host-tools/llvm-manifest.json \
+            2>&1 | tee artifacts/ios-host-tools/llvm-console.log
 
       - name: Publish host bootstrap bundle
         if: success() && env.HOST_BOOTSTRAP_HIT != 'true'
@@ -210,26 +213,28 @@ jobs:
         if: env.HOST_ISPC_HIT != 'true'
         shell: bash
         run: |
-          bash tools/ios/run_with_heartbeat.sh ispc 60 artifacts/ios-host-tools/ispc-console.log \
-            python3 tools/ios/build_deps.py \
-              --mode host \
-              --build-target external_ispc \
-              --build-dir build/ios-deps/host \
-              --install-dir build/ios-deps/install/host \
-              --log-dir artifacts/ios-host-tools/ispc-logs \
-              --manifest-path artifacts/ios-host-tools/ispc-manifest.json
+          set -euo pipefail
+          python3 tools/ios/build_deps.py \
+            --mode host \
+            --build-target external_ispc \
+            --build-dir build/ios-deps/host \
+            --install-dir build/ios-deps/install/host \
+            --log-dir artifacts/ios-host-tools/ispc-logs \
+            --manifest-path artifacts/ios-host-tools/ispc-manifest.json \
+            2>&1 | tee artifacts/ios-host-tools/ispc-console.log
 
       - name: Build host Brotli
         shell: bash
         run: |
-          bash tools/ios/run_with_heartbeat.sh brotli 60 artifacts/ios-host-tools/brotli-console.log \
-            python3 tools/ios/build_deps.py \
-              --mode host \
-              --build-target external_brotli \
-              --build-dir build/ios-deps/host \
-              --install-dir build/ios-deps/install/host \
-              --log-dir artifacts/ios-host-tools/brotli-logs \
-              --manifest-path artifacts/ios-host-tools/brotli-manifest.json
+          set -euo pipefail
+          python3 tools/ios/build_deps.py \
+            --mode host \
+            --build-target external_brotli \
+            --build-dir build/ios-deps/host \
+            --install-dir build/ios-deps/install/host \
+            --log-dir artifacts/ios-host-tools/brotli-logs \
+            --manifest-path artifacts/ios-host-tools/brotli-manifest.json \
+            2>&1 | tee artifacts/ios-host-tools/brotli-console.log
 
       - name: Collect host tool artifacts
         if: always()
