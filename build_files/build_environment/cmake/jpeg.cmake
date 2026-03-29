@@ -46,6 +46,12 @@ else()
     -DENABLE_SHARED=OFF
     -DCMAKE_INSTALL_LIBDIR=${LIBDIR}/jpeg/lib)
 
+  if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+    set(JPEG_EXTRA_ARGS
+      ${JPEG_EXTRA_ARGS}
+      -DCMAKE_POLICY_VERSION_MINIMUM=3.5)
+  endif()
+
   ExternalProject_Add(external_jpeg
     URL file://${PACKAGE_DIR}/${JPEG_FILE}
     DOWNLOAD_DIR ${DOWNLOAD_DIR}
