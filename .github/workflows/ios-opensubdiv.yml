@@ -1,0 +1,188 @@
+name: iOS OpenSubdiv
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ios-opensubdiv:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          lfs: false
+
+      - name: Install iOS dependency prerequisites
+        shell: bash
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+        run: |
+          set -euo pipefail
+          packages=(
+            autoconf
+            automake
+            bison
+            dos2unix
+            flex
+            libtool
+            yasm
+          )
+          missing=()
+          for package in "${packages[@]}"; do
+            if ! brew list --versions "${package}" >/dev/null 2>&1; then
+              missing+=("${package}")
+            fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            brew install "${missing[@]}"
+          fi
+          echo "$(brew --prefix bison)/bin" >> "${GITHUB_PATH}"
+          echo "$(brew --prefix flex)/bin" >> "${GITHUB_PATH}"
+          echo "$(brew --prefix libtool)/bin" >> "${GITHUB_PATH}"
+          echo "$(brew --prefix libtool)/libexec/gnubin" >> "${GITHUB_PATH}"
+
+      - name: Compute host restore metadata
+        shell: bash
+        run: |
+          mkdir -p artifacts/ios-opensubdiv/bootstrap
+          python3 tools/ios/host_bootstrap.py metadata \
+            --branch "${GITHUB_REF_NAME}" \
+            --stage python-llvm \
+            --output artifacts/ios-opensubdiv/bootstrap/bootstrap-metadata.json
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          metadata = json.loads(
+              Path('artifacts/ios-opensubdiv/bootstrap/bootstrap-metadata.json').read_text(encoding='ascii')
+          )
+          versions_cmake = Path('build_files/build_environment/cmake/versions.cmake').read_text(encoding='utf-8')
+          ispc_version = None
+          for line in versions_cmake.splitlines():
+              if line.startswith('set(ISPC_VERSION '):
+                  ispc_version = line.split()[1].rstrip(')')
+                  break
+          if ispc_version is None:
+              raise RuntimeError('Unable to determine ISPC_VERSION from versions.cmake')
+          github_env = Path(os.environ['GITHUB_ENV'])
+          with github_env.open('a', encoding='ascii') as handle:
+              handle.write(f"HOST_BOOTSTRAP_RELEASE_TAG={metadata['release_tag']}\n")
+              handle.write(f"HOST_BOOTSTRAP_ASSET_NAME={metadata['asset_name']}\n")
+              handle.write(f"HOST_ISPC_RELEASE_ASSET_NAME=host-ispc-macos-arm64-{ispc_version}.tar.gz\n")
+          print(f"[bootstrap] release_tag={metadata['release_tag']}")
+          print(f"[bootstrap] asset_name={metadata['asset_name']}")
+          print(f"[bootstrap] ispc_asset_name=host-ispc-macos-arm64-{ispc_version}.tar.gz")
+          PY
+
+      - name: Restore host python and llvm build tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          download_dir="artifacts/ios-opensubdiv/bootstrap/download"
+          mkdir -p "${download_dir}"
+          gh release download "${HOST_BOOTSTRAP_RELEASE_TAG}" -R "${GITHUB_REPOSITORY}" -p "${HOST_BOOTSTRAP_ASSET_NAME}" -D "${download_dir}"
+          python3 tools/ios/host_bootstrap.py extract --input "${download_dir}/${HOST_BOOTSTRAP_ASSET_NAME}"
+          test -d build/ios-deps/host/Release/python
+          test -d build/ios-deps/host/Release/llvm
+
+      - name: Restore host ISPC
+        shell: bash
+        run: |
+          set -euo pipefail
+          download_dir="artifacts/ios-opensubdiv/ispc/download"
+          mkdir -p "${download_dir}" "build/ios-deps/host/Release"
+          gh release download "${HOST_BOOTSTRAP_RELEASE_TAG}" -R "${GITHUB_REPOSITORY}" -p "${HOST_ISPC_RELEASE_ASSET_NAME}" -D "${download_dir}"
+          tar -xzf "${download_dir}/${HOST_ISPC_RELEASE_ASSET_NAME}" -C build/ios-deps/host/Release
+          test -x build/ios-deps/host/Release/ispc/bin/ispc
+
+      - name: Configure iPhoneOS dependency build
+        shell: bash
+        run: |
+          mkdir -p artifacts/ios-opensubdiv
+          set -euo pipefail
+          python3 tools/ios/build_deps.py \
+            --mode ios \
+            --configure-only \
+            --build-dir build/ios-deps/ios \
+            --install-dir build/ios-deps/install/ios \
+            --host-build-dir build/ios-deps/host \
+            --host-install-dir build/ios-deps/install/host \
+            --log-dir artifacts/ios-opensubdiv/configure-logs \
+            --manifest-path artifacts/ios-opensubdiv/configure-manifest.json \
+            2>&1 | tee artifacts/ios-opensubdiv/ios-configure-console.log
+
+      - name: Restore or Build tbb
+        shell: bash
+        run: |
+          bash tools/ios/run_release_cached_dep.sh tbb artifacts/ios-opensubdiv \
+            python3 tools/ios/build_deps.py \
+              --mode ios \
+              --build-target external_tbb \
+              --build-dir build/ios-deps/ios \
+              --install-dir build/ios-deps/install/ios \
+              --host-build-dir build/ios-deps/host \
+              --host-install-dir build/ios-deps/install/host \
+              --log-dir artifacts/ios-opensubdiv/tbb-logs \
+              --manifest-path artifacts/ios-opensubdiv/tbb-manifest.json
+
+      - name: Restore or Build opensubdiv
+        shell: bash
+        run: |
+          bash tools/ios/run_release_cached_dep.sh opensubdiv artifacts/ios-opensubdiv \
+            python3 tools/ios/build_deps.py \
+              --mode ios \
+              --build-target external_opensubdiv \
+              --build-dir build/ios-deps/ios \
+              --install-dir build/ios-deps/install/ios \
+              --host-build-dir build/ios-deps/host \
+              --host-install-dir build/ios-deps/install/host \
+              --log-dir artifacts/ios-opensubdiv/opensubdiv-logs \
+              --manifest-path artifacts/ios-opensubdiv/opensubdiv-manifest.json
+
+      - name: Collect OpenSubdiv artifacts
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p artifacts/ios-opensubdiv
+          if [ -f build/ios-deps/ios/CMakeCache.txt ]; then
+            cp build/ios-deps/ios/CMakeCache.txt artifacts/ios-opensubdiv/CMakeCache.txt
+          fi
+          if [ -f build/ios-deps/ios/CMakeFiles/CMakeOutput.log ]; then
+            cp build/ios-deps/ios/CMakeFiles/CMakeOutput.log artifacts/ios-opensubdiv/CMakeOutput.log
+          fi
+          if [ -f build/ios-deps/ios/CMakeFiles/CMakeError.log ]; then
+            cp build/ios-deps/ios/CMakeFiles/CMakeError.log artifacts/ios-opensubdiv/CMakeError.log
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def write_tree(root: Path, out: Path) -> None:
+              entries = []
+              if root.exists():
+                  for path in sorted(root.rglob('*')):
+                      entries.append(str(path))
+              out.write_text('\n'.join(entries) + ('\n' if entries else ''), encoding='utf-8')
+
+          artifact_root = Path('artifacts/ios-opensubdiv')
+          write_tree(Path('build/ios-deps/ios'), artifact_root / 'ios-build-tree.txt')
+          write_tree(Path('build/ios-deps/install/ios'), artifact_root / 'ios-install-tree.txt')
+          write_tree(Path('build/ios-deps/host/Release'), artifact_root / 'host-release-tree.txt')
+          PY
+
+      - name: Upload OpenSubdiv artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-opensubdiv-${{ github.run_id }}
+          path: artifacts/ios-opensubdiv
+          retention-days: 14
