@@ -12,6 +12,7 @@ on:
           - env-probe
           - host-configure
           - host-tools
+          - ios-deps-configure
 
 permissions:
   contents: read
@@ -30,3 +31,9 @@ jobs:
     permissions:
       contents: write
     uses: ./.github/workflows/ios-host-tools.yml
+
+  ios-deps-configure:
+    if: ${{ inputs.mode == 'ios-deps-configure' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ios-deps-configure.yml

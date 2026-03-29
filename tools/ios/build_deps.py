@@ -69,6 +69,18 @@ def parse_arguments() -> argparse.Namespace:
         help="CMake generator for dependency configure/build.",
     )
     parser.add_argument(
+        "--host-build-dir",
+        type=Path,
+        default=REPO_ROOT / "build" / "ios-deps" / "host",
+        help="Host dependency build tree used by cross-platform Apple builds.",
+    )
+    parser.add_argument(
+        "--host-install-dir",
+        type=Path,
+        default=REPO_ROOT / "build" / "ios-deps" / "install" / "host",
+        help="Host dependency install tree used by cross-platform Apple builds.",
+    )
+    parser.add_argument(
         "--cmake-arg",
         action="append",
         default=[],
@@ -201,6 +213,9 @@ def print_inputs(args: argparse.Namespace, manifest: dict[str, object]) -> None:
     print(f"dry_run={args.dry_run}")
     print(f"configure_only={args.configure_only}")
     print(f"apple_target_support={manifest['supports_apple_target_selection']}")
+    if args.mode != "host":
+        print(f"host_build_dir={args.host_build_dir}")
+        print(f"host_install_dir={args.host_install_dir}")
 
 
 def main() -> int:
@@ -233,6 +248,9 @@ def main() -> int:
         "supports_apple_target_selection": supports_apple_target_selection(),
         "tool_info": collect_tool_info(args.mode),
     }
+    if args.mode != "host":
+        manifest["host_build_dir"] = str(args.host_build_dir)
+        manifest["host_install_dir"] = str(args.host_install_dir)
 
     args.log_dir.mkdir(parents=True, exist_ok=True)
     args.build_dir.mkdir(parents=True, exist_ok=True)
@@ -282,6 +300,8 @@ def main() -> int:
             [
                 "-DWITH_APPLE_CROSSPLATFORM=ON",
                 "-DCMAKE_OSX_ARCHITECTURES=arm64",
+                f"-DCMAKE_DEPS_CROSSCOMPILE_BUILDDIR={args.host_build_dir}",
+                f"-DCMAKE_DEPS_CROSSCOMPILE_INSTALLDIR={args.host_install_dir}",
             ]
         )
 

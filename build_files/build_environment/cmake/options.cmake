@@ -26,6 +26,10 @@ if(NOT BUILD_MODE)
 endif()
 message(STATUS "BuildMode = ${BUILD_MODE}")
 
+if(WITH_APPLE_CROSSPLATFORM)
+  include(${CMAKE_CURRENT_LIST_DIR}/platform/ios/options_ios.cmake)
+endif()
+
 if(BUILD_MODE STREQUAL "Debug")
   set(LIBDIR ${CMAKE_CURRENT_BINARY_DIR}/Debug)
   set(MESON_BUILD_TYPE -Dbuildtype=debug)
@@ -210,7 +214,9 @@ else()
   set(PATCH_CMD patch)
   set(LIBEXT ".a")
   set(LIBPREFIX "lib")
-  set(MESON ${LIBDIR}/python/bin/meson)
+  if(NOT WITH_APPLE_CROSSPLATFORM)
+    set(MESON ${LIBDIR}/python/bin/meson)
+  endif()
   if(APPLE)
     set(SHAREDLIBEXT ".dylib")
 
@@ -221,19 +227,23 @@ else()
       set(BLENDER_PLATFORM_ARM ON)
     endif()
 
-    set(PLATFORM_CFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} -arch ${CMAKE_OSX_ARCHITECTURES}")
-    set(PLATFORM_CXXFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} -std=c++20 -stdlib=libc++ -arch ${CMAKE_OSX_ARCHITECTURES}")
-    set(PLATFORM_LDFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} -arch ${CMAKE_OSX_ARCHITECTURES} -headerpad_max_install_names")
-    if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
-      set(PLATFORM_BUILD_TARGET --build=x86_64-apple-darwin19.0.0) # OS X 10.15
+    if(WITH_APPLE_CROSSPLATFORM)
+      include(${CMAKE_CURRENT_LIST_DIR}/platform/ios/options_apple_ios.cmake)
     else()
-      set(PLATFORM_BUILD_TARGET --build=aarch64-apple-darwin20.0.0) # macOS 11.00
+      set(PLATFORM_CFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} -arch ${CMAKE_OSX_ARCHITECTURES}")
+      set(PLATFORM_CXXFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} -std=c++20 -stdlib=libc++ -arch ${CMAKE_OSX_ARCHITECTURES}")
+      set(PLATFORM_LDFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} -arch ${CMAKE_OSX_ARCHITECTURES} -headerpad_max_install_names")
+      if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
+        set(PLATFORM_BUILD_TARGET --build=x86_64-apple-darwin19.0.0) # OS X 10.15
+      else()
+        set(PLATFORM_BUILD_TARGET --build=aarch64-apple-darwin20.0.0) # macOS 11.00
+      endif()
+      set(PLATFORM_CMAKE_FLAGS
+        -DCMAKE_OSX_ARCHITECTURES:STRING=${CMAKE_OSX_ARCHITECTURES}
+        -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${CMAKE_OSX_DEPLOYMENT_TARGET}
+        -DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}
+      )
     endif()
-    set(PLATFORM_CMAKE_FLAGS
-      -DCMAKE_OSX_ARCHITECTURES:STRING=${CMAKE_OSX_ARCHITECTURES}
-      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${CMAKE_OSX_DEPLOYMENT_TARGET}
-      -DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}
-    )
   else()
     set(SHAREDLIBEXT ".so")
 

@@ -19,6 +19,9 @@ project("BlenderDependencies")
 if(POLICY CMP0135)
   cmake_policy(SET CMP0135 NEW) # CMake 3.24+ Set the date/time for extracted files to time of extraction
 endif()
+
+include(cmake/platform/ios/apple_target_device.cmake)
+
 include(ExternalProject)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/../cmake/Modules")

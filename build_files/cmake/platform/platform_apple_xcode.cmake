@@ -4,6 +4,11 @@
 
 # Xcode and system configuration for Apple.
 
+if(WITH_APPLE_CROSSPLATFORM)
+  include(${CMAKE_CURRENT_LIST_DIR}/ios/platform_apple_xcode_ios.cmake)
+  return()
+endif()
+
 # Detect processor architecture.
 if(NOT CMAKE_OSX_ARCHITECTURES)
   execute_process(COMMAND uname -m OUTPUT_VARIABLE ARCHITECTURE OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -40,7 +45,7 @@ if(NOT ${CMAKE_GENERATOR} MATCHES "Xcode")
     # This is needed because regex replace can not operate through the newline character
     # and applies substitutions for each individual lines.
     string(REPLACE "\n" " " _xcode_vers_build_nr_single_line "${_xcode_vers_build_nr}")
-    string(REGEX REPLACE "(.*)Xcode ([0-9\\.]+).*" "\\2" XCODE_VERSION "${_xcode_vers_build_nr_single_line}")
+    string(REGEX REPLACE "(.*)Xcode ([0-9\.]+).*" "\\2" XCODE_VERSION "${_xcode_vers_build_nr_single_line}")
     unset(_xcode_vers_build_nr_single_line)
   endif()
 
@@ -76,7 +81,7 @@ else()
 
   if(_cltools_pkg_info_result EQUAL 0)
     # Extract version.
-    string(REGEX REPLACE ".*version: ([0-9]+)\\.([0-9]+).*" "\\1.\\2" XCODE_VERSION "${_cltools_pkg_info}")
+    string(REGEX REPLACE ".*version: ([0-9]+)\.([0-9]+).*" "\\1.\\2" XCODE_VERSION "${_cltools_pkg_info}")
     # SDK directory.
     set(XCODE_SDK_DIR "${XCODE_DEVELOPER_DIR}/SDKs")
 
@@ -118,8 +123,8 @@ endif()
 # SDK version, so such SDK does exist on the system. And if it doesn't exist with full version
 # in the path, what SDK is in the major.minor folder then.
 set(OSX_SDK_TEST_VERSIONS ${OSX_SYSTEM})
-if(OSX_SYSTEM MATCHES "([0-9]+)\\.([0-9]+)\\.([0-9]+)")
-  string(REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+)" "\\1.\\2" OSX_SYSTEM_NO_PATCH "${OSX_SYSTEM}")
+if(OSX_SYSTEM MATCHES "([0-9]+)\.([0-9]+)\.([0-9]+)")
+  string(REGEX REPLACE "([0-9]+)\.([0-9]+)\.([0-9]+)" "\\1.\\2" OSX_SYSTEM_NO_PATCH "${OSX_SYSTEM}")
   list(APPEND OSX_SDK_TEST_VERSIONS ${OSX_SYSTEM_NO_PATCH})
   unset(OSX_SYSTEM_NO_PATCH)
 endif()

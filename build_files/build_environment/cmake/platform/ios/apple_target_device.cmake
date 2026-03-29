@@ -1,0 +1,18 @@
+if(APPLE)
+  set(APPLE_TARGET_DEVICE macos CACHE STRING "Target build device for Apple platforms. Default: macos")
+
+  if(APPLE_TARGET_DEVICE STREQUAL "ios" OR APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
+    set(WITH_APPLE_CROSSPLATFORM ON CACHE BOOL "Build dependencies for non-host Apple platforms" FORCE)
+    set(CMAKE_SYSTEM_NAME "iOS")
+  elseif(APPLE_TARGET_DEVICE STREQUAL "macos")
+    set(WITH_APPLE_CROSSPLATFORM OFF CACHE BOOL "" FORCE)
+  else()
+    message(FATAL_ERROR "Unrecognised Apple platform '${APPLE_TARGET_DEVICE}'")
+  endif()
+else()
+  set(WITH_APPLE_CROSSPLATFORM OFF)
+endif()
+
+if(WITH_APPLE_CROSSPLATFORM)
+  set(CMAKE_OSX_ARCHITECTURES "arm64")
+endif()
