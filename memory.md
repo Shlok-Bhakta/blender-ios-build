@@ -25,17 +25,17 @@ Last updated: 2026-03-29
 
 ## Current Goals
 
-1. Finish phase 4 host-tool reuse so GitHub Actions can restore host `python`, `llvm`, and `ispc` without another multi-hour source build.
-2. Keep the branch-scoped GitHub Release assets as the durable source of truth for reusable host tools.
-3. Start phase 5 by wiring an iPhoneOS dependency-configure workflow that consumes the seeded host tools.
-4. Only then start porting deeper Apple target selection and target-side dependency fixes for real `ios` builds.
+1. Keep the branch-scoped GitHub Release assets as the durable source of truth for reusable host tools and simple iPhoneOS dependency bundles.
+2. Preserve the now-green `ios-deps-basic` path as the baseline proof for low-pain dependency reuse on Actions.
+3. Start phase 7 by bringing up the next medium-pain iOS dependencies, beginning with the ones most likely to unblock a first Blender-side configure.
+4. Only then start porting deeper Apple target selection and target-side Blender build logic for real `ios` app builds.
 
 ## Workflow History
 
-- Last successful workflow: `Build Blender iOS IPA` run `23702135538` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-configure` mode; iPhoneOS dependency configure completed successfully with `APPLE_TARGET_DEVICE=ios`, `WITH_APPLE_CROSSPLATFORM=ON`, and detected `iPhoneOS18.5.sdk` on Xcode `16.4`.
-- Last failed workflow: `Build Blender iOS IPA` run `23714880013` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-basic` mode; cache-aware `zlib`, `png`, `jpeg`, `deflate`, and `fmt` all succeeded and uploaded branch release bundles, then `robinmap` failed at configure because its upstream `cmake_minimum_required()` is too old for CMake `4.3`.
+- Last successful workflow: `Build Blender iOS IPA` run `23718530852` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-basic` mode; `zlib`, `png`, `jpeg`, `deflate`, `fmt`, `robinmap`, and `pugixml` all completed successfully, artifact collection succeeded, and the workflow exited green end-to-end.
+- Last failed workflow: `Build Blender iOS IPA` run `23718363006` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-basic` mode; all simple deps including `pugixml` built successfully, but artifact collection failed afterward with a Python `UnicodeEncodeError` because tree listings were still written with ASCII.
 - Latest cancelled workflow: `Build Blender iOS IPA` run `23714036934` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-basic` mode reached the `Build jpeg` step on commit `db26746f401` before cancellation.
-- Latest dispatched workflow: the next post-`deflate` fix rerun still needs to be sent from the current local branch state.
+- Latest dispatched workflow: `23718530852`, sent after the UTF-8 artifact-output fix on commit `c84c2137f93`.
 - Latest known workflow in repo before changes: `.github/workflows/close-prs.yml` only.
 - Exploratory dispatches in this session: `23691855752` and `23691861803`, both manually cancelled after confirming `gh workflow run` worked.
 - Mistake repaired: accidental merge/push from legacy branch was fully rewound; cancelled run `23692208885` is historical only and must be ignored.
@@ -44,8 +44,8 @@ Last updated: 2026-03-29
 
 ## Next Hypothesis
 
-- The next narrow win is to rerun `ios-deps-basic` after the helper-based `robinmap` CMake policy compatibility fix, then continue through `pugixml`.
-- Iteration speed should now come from per-dependency release bundles: before each dep step, attempt a release restore keyed by branch + dep + source tarball hash + recipe/helper/Xcode/SDK/config hash; on a miss, build and immediately publish that dep bundle.
+- The low-pain iOS dependency batch is now stable and green, so the next narrow win is to start the medium-pain tier rather than spend more time on the already-proven simple deps.
+- Iteration speed should continue to come from per-dependency release bundles: before each dep step, attempt a release restore keyed by branch + dep + source tarball hash + recipe/helper/Xcode/SDK/config hash; on a miss, build and immediately publish that dep bundle.
 
 ## GitHub Actions Commands
 
@@ -113,6 +113,11 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 - `ios-deps-basic` run `23714880013` proved the release-backed dep cache flow end to end: `zlib`, `png`, `jpeg`, `deflate`, and `fmt` all built successfully and uploaded new per-dep release assets under `blender-v5.1-release-IOSPATCH-round2-deps`.
 - `robinmap` is the next blocker. Its failure is again version drift, not missed archaeology: read-only `ios` history shows no `robinmap.cmake` delta at all, and CMake `4.3` explicitly suggests `-DCMAKE_POLICY_VERSION_MINIMUM=3.5`.
 - Follow-up correction after that experiment: do not share the policy shim with `jpeg`. Restoring `jpeg_ios.cmake` to its standalone helper keeps the previously proven `jpeg` path isolated, and `robinmap_ios.cmake` now carries its own tiny policy-compat flag instead.
+- `ios-deps-basic` run `23717838750` proved broad reuse for the simple dependency cache: `zlib`, `png`, `jpeg`, `deflate`, `fmt`, and `robinmap` all restored successfully, leaving `pugixml` as the only remaining blocker in that batch.
+- `pugixml` was fixed by adding `build_files/build_environment/cmake/platform/ios/pugixml_ios.cmake` and wiring it from `build_files/build_environment/cmake/pugixml.cmake`; the helper injects `-DCMAKE_POLICY_VERSION_MINIMUM=3.5` only for `APPLE` + `WITH_APPLE_CROSSPLATFORM`, matching the already-proven narrow-fix pattern used for other CMake-4 drift cases.
+- `ios-deps-basic` run `23718363006` proved that `pugixml` now builds and publishes correctly under the release-backed cache flow; the only remaining failure in that run was artifact collection writing tree listings with `encoding='ascii'`.
+- The artifact-collection failure was fixed by switching workflow-generated tree listings and JSON summaries to UTF-8 in `.github/workflows/ios-deps-basic.yml`, `.github/workflows/ios-deps-configure.yml`, `.github/workflows/ios-host-configure.yml`, and `.github/workflows/ios-host-tools.yml`.
+- `ios-deps-basic` run `23718530852` is now the key baseline run: fully green, all simple deps successful, artifact collection/upload successful, and no remaining blocker in the low-pain batch.
 - A separate local clone at `/home/shlok/Documents/Programming/Sandbox/blender-full-readonly` now has `lib/macos_arm64` materialized; it provides reusable host `python` and `llvm` trees, but not `ispc`.
 - The branch release `blender-v5.1-release-IOSPATCH-round2-deps` now also contains readable seed assets: `host-python-macos-arm64.tar.gz`, `host-llvm-macos-arm64.tar.gz`, `host-ispc-macos-arm64-v1.29.1.tar.gz`, `host-python-llvm-buildtree-macos-arm64.tar.gz`, and `host-tool-seeds.json`.
 - User preference: long-running Actions must stay visibly alive. Future workflows should emit clear progress markers and heartbeat-style log lines before/after each expensive stage so a 60-90 minute compile does not look dead from the UI.
@@ -135,6 +140,9 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 - `.github/workflows/ios-host-configure.yml` now installs the missing Homebrew configure prerequisites before invoking `tools/ios/build_deps.py`.
 - `.github/workflows/ios-host-tools.yml` now has a release-backed bootstrap path for host `python`+`llvm`, and a local follow-up is prepared to restore a prebuilt `host-ispc-macos-arm64-v1.29.1.tar.gz` asset before configure.
 - `build_files/build_environment/cmake/ispc.cmake` now has a local follow-up prepared to treat `${LIBDIR}/ispc/bin/ispc` as a valid preseeded tool and skip the expensive source build when that binary already exists.
+- Added helper: `build_files/build_environment/cmake/platform/ios/pugixml_ios.cmake`
+- `build_files/build_environment/cmake/pugixml.cmake` now patches `PUGIXML_EXTRA_ARGS` through that helper so the CMake 4 compatibility flag stays isolated to the iOS cross-platform case.
+- Workflow artifact tree dumps and host-tool summary JSON now write UTF-8 instead of ASCII, preventing Unicode path failures during artifact collection on Actions.
 - Local validation: `bash -n tools/ios/collect_ci_env.sh`, local env-probe dry run, `bash -n .github/poll-build-run.sh`, `python3 -m py_compile tools/ios/build_deps.py`, host and iOS dry runs for `tools/ios/build_deps.py`, and YAML parse via `nix-shell -p python3Packages.pyyaml`.
 
 ## Planned Bootstrap Storage
@@ -245,7 +253,7 @@ Current note:
 - Run `23693130442` proved that host configure now passes on the fresh-port branch after installing the missing Homebrew prerequisites and preferring the Blender mirror for dependency tarballs.
 - Run `23693330218` proved the host bootstrap path much further: `external_python_site_packages` and `ll` complete successfully, then `external_ispc` fails quickly on a real source-level incompatibility with Xcode 16.4 libc++.
 - Run `23698420837` proved the release restore path is already worth it: it reused the published `python`+`llvm` bundle and reached the ISPC blocker without recompiling LLVM.
-- The current local follow-up is to seed `ispc` from a readable release asset and then move phase 5 bring-up onto real `iphoneos` dependency configure.
+- The current practical state is good enough to move attention to medium-pain target deps; host bootstrap is no longer the critical path for low-pain iPhoneOS validation.
 
 ## Parity Checklist
 
@@ -263,7 +271,7 @@ Current note:
 - [x] dependency script exists
 - [x] manifest generation exists
 - [ ] host tools built in CI
-- [ ] device deps bundle strategy defined
+- [x] device deps bundle strategy defined
 - [ ] LFS/submodule path deprecated or removed for iOS
 
 ### GHOST / Runtime

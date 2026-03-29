@@ -719,16 +719,16 @@ Because no local Mac is available, CI-first iOS dependency configure/build evide
 
 Checklist:
 
-- [ ] Create a temporary workflow that configures iOS dependencies only
-- [ ] Do not attempt full Blender app build yet
-- [ ] Upload config logs and `CMakeCache.txt`
-- [ ] Fix path issues, toolchain assumptions, and SDK detection first
-- [ ] Keep track of every failing dep in `memory.md`
-- [ ] Classify each failure as: missing flag, missing host tool, missing patch, version drift, or unnecessary dep
+- [x] Create a temporary workflow that configures iOS dependencies only
+- [x] Do not attempt full Blender app build yet
+- [x] Upload config logs and `CMakeCache.txt`
+- [x] Fix path issues, toolchain assumptions, and SDK detection first
+- [x] Keep track of every failing dep in `memory.md`
+- [x] Classify each failure as: missing flag, missing host tool, missing patch, version drift, or unnecessary dep
 
 Gate before moving on:
 
-- [ ] iOS dependency configure is repeatable
+- [x] iOS dependency configure is repeatable
 
 Current evidence:
 
@@ -737,6 +737,7 @@ Current evidence:
 - artifact manifest proved `WITH_APPLE_CROSSPLATFORM=ON`
 - artifact manifest proved host crosscompile dirs are being passed through
 - CI detected `iPhoneOS18.5.sdk` on Xcode `16.4`
+- `23718530852` later reconfirmed the same configure path inside a fully green `ios-deps-basic` workflow, so configure is no longer a one-off success
 
 ### Phase 6 - Easy Dependency Wins Before Hard Dependencies
 
@@ -744,10 +745,10 @@ Do not start with the ugliest deps.
 
 Checklist:
 
-- [ ] Build a first batch of low-pain deps
-- [ ] Validate install layout for those deps
-- [ ] Artifact-upload the bundle fragment or install tree
-- [ ] Confirm include/lib paths match what downstream recipes expect
+- [x] Build a first batch of low-pain deps
+- [x] Validate install layout for those deps
+- [x] Artifact-upload the bundle fragment or install tree
+- [x] Confirm include/lib paths match what downstream recipes expect
 - [ ] Only after this is stable, move to medium-pain deps
 
 Suggested order:
@@ -763,7 +764,7 @@ Suggested order:
 
 Gate before moving on:
 
-- [ ] several simple deps build reproducibly under iOS mode
+- [x] several simple deps build reproducibly under iOS mode
 
 Current evidence:
 
@@ -778,6 +779,9 @@ Current evidence:
 - `23714880013` proved the cache-aware path across the whole low-pain batch up through `fmt`: `zlib`, `png`, `jpeg`, `deflate`, and `fmt` all succeeded and published branch-scoped release bundles
 - `robinmap` is the next blocker and is again CMake `4.3` version drift rather than archaeology: there is no old `ios`-branch `robinmap.cmake` delta, and upstream now needs `-DCMAKE_POLICY_VERSION_MINIMUM=3.5`
 - current follow-up should keep that workaround local to `robinmap_ios.cmake` and restore `jpeg_ios.cmake` to its previously proven standalone helper so `jpeg` is not disturbed by further robinmap iteration
+- `23717838750` proved broad cache reuse for the simple batch: `zlib`, `png`, `jpeg`, `deflate`, `fmt`, and `robinmap` all hit restore, with `pugixml` as the remaining blocker
+- `23718363006` proved the `pugixml` blocker was also just CMake `4.3` version drift; adding an iOS-only helper that injects `-DCMAKE_POLICY_VERSION_MINIMUM=3.5` let `pugixml` build and publish, and the only remaining red step was artifact collection writing tree listings with ASCII
+- `23718530852` is the first fully green `ios-deps-basic` run: `zlib`, `png`, `jpeg`, `deflate`, `fmt`, `robinmap`, and `pugixml` all succeeded, artifact collection succeeded after switching tree listings to UTF-8, and the workflow now exits cleanly end-to-end
 
 ### Phase 7 - Medium Dependencies
 
@@ -977,8 +981,8 @@ Do these first because they improve velocity without committing to hard architec
 - [x] Add an environment-probe workflow with strong artifact output
 - [x] Add a script scaffold for iOS dependency build orchestration
 - [x] Add manifest generation for dependency bundles
-- [ ] Add a narrow host-tools configure/build workflow
-- [ ] Add an iOS configure-only workflow
+- [x] Add a narrow host-tools configure/build workflow
+- [x] Add an iOS configure-only workflow
 
 These are low-risk and increase visibility immediately.
 
