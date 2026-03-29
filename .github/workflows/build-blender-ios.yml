@@ -13,6 +13,7 @@ on:
           - host-configure
           - host-tools
           - ios-deps-configure
+          - ios-deps-basic
 
 permissions:
   contents: read
@@ -37,3 +38,9 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/ios-deps-configure.yml
+
+  ios-deps-basic:
+    if: ${{ inputs.mode == 'ios-deps-basic' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ios-deps-basic.yml
