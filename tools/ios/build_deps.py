@@ -154,9 +154,14 @@ def run_logged(command: list[str], log_path: Path, dry_run: bool) -> int:
 
 
 def supports_apple_target_selection() -> bool:
-    if not BUILD_ENV_CMAKELISTS.exists():
-        return False
-    return "APPLE_TARGET_DEVICE" in BUILD_ENV_CMAKELISTS.read_text(encoding="utf-8")
+    candidates = [
+        BUILD_ENV_CMAKELISTS,
+        BUILD_ENV_SOURCE / "cmake" / "platform" / "ios" / "apple_target_device.cmake",
+    ]
+    for path in candidates:
+        if path.exists() and "APPLE_TARGET_DEVICE" in path.read_text(encoding="utf-8"):
+            return True
+    return False
 
 
 def normalize_paths(args: argparse.Namespace) -> None:
