@@ -775,6 +775,9 @@ Current evidence:
 - read-only `ios` archaeology shows `deflate.cmake` should disable `LIBDEFLATE_BUILD_GZIP` under `WITH_APPLE_CROSSPLATFORM`; reintroduce that behavior through a helper hook instead of an inline shared-file branch
 - `23714629713` was the first cache-enabled rerun after that work and failed before any restore/build because `tools/ios/run_release_cached_dep.sh` used `readarray`, which is not portable enough for this runner shell context
 - current follow-up keeps the per-dependency release caching but tightens the key shape: asset names now carry the primary dependency source hash from `versions.cmake`, plus a short config digest derived from helper/recipe/Xcode/SDK inputs; transitive source packages such as `png` -> `zlib` are also recorded in metadata so tarball changes invalidate downstream bundles cleanly
+- `23714880013` proved the cache-aware path across the whole low-pain batch up through `fmt`: `zlib`, `png`, `jpeg`, `deflate`, and `fmt` all succeeded and published branch-scoped release bundles
+- `robinmap` is the next blocker and is again CMake `4.3` version drift rather than archaeology: there is no old `ios`-branch `robinmap.cmake` delta, and upstream now needs `-DCMAKE_POLICY_VERSION_MINIMUM=3.5`
+- current follow-up should land that workaround through a reusable iOS helper such as `platform/ios/cmake_policy_compat.cmake`, then rerun and continue to `pugixml`
 
 ### Phase 7 - Medium Dependencies
 

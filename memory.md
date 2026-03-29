@@ -33,7 +33,7 @@ Last updated: 2026-03-29
 ## Workflow History
 
 - Last successful workflow: `Build Blender iOS IPA` run `23702135538` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-configure` mode; iPhoneOS dependency configure completed successfully with `APPLE_TARGET_DEVICE=ios`, `WITH_APPLE_CROSSPLATFORM=ON`, and detected `iPhoneOS18.5.sdk` on Xcode `16.4`.
-- Last failed workflow: `Build Blender iOS IPA` run `23714629713` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-basic` mode; the first cache-enabled `Restore or Build zlib` step failed immediately because `tools/ios/run_release_cached_dep.sh` used `readarray`, which was not available in that runner shell context.
+- Last failed workflow: `Build Blender iOS IPA` run `23714880013` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-basic` mode; cache-aware `zlib`, `png`, `jpeg`, `deflate`, and `fmt` all succeeded and uploaded branch release bundles, then `robinmap` failed at configure because its upstream `cmake_minimum_required()` is too old for CMake `4.3`.
 - Latest cancelled workflow: `Build Blender iOS IPA` run `23714036934` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-basic` mode reached the `Build jpeg` step on commit `db26746f401` before cancellation.
 - Latest dispatched workflow: the next post-`deflate` fix rerun still needs to be sent from the current local branch state.
 - Latest known workflow in repo before changes: `.github/workflows/close-prs.yml` only.
@@ -44,7 +44,7 @@ Last updated: 2026-03-29
 
 ## Next Hypothesis
 
-- The next narrow win is to rerun `ios-deps-basic` after the cache-wrapper portability fix and the stronger dep-source hash naming, then continue through `deflate`, `fmt`, `robinmap`, and `pugixml`.
+- The next narrow win is to rerun `ios-deps-basic` after the helper-based `robinmap` CMake policy compatibility fix, then continue through `pugixml`.
 - Iteration speed should now come from per-dependency release bundles: before each dep step, attempt a release restore keyed by branch + dep + source tarball hash + recipe/helper/Xcode/SDK/config hash; on a miss, build and immediately publish that dep bundle.
 
 ## GitHub Actions Commands
@@ -110,6 +110,9 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 - For dependency bundles with transitive inputs, metadata now records all relevant source packages, for example `png` carries both `PNG` and `ZLIB` source identities so a changed zlib tarball invalidates the png bundle too.
 - `tools/ios/run_release_cached_dep.sh` now reads metadata fields without `readarray`, logs the source package identity, and still wraps each dep step with `restore-hit -> skip`, `restore-miss -> build with heartbeat`, and `publish-on-success`.
 - `.github/workflows/ios-deps-basic.yml` now routes each dep through that wrapper and grants `contents: write` so the workflow can publish reusable dep bundles to the existing branch-scoped release tag.
+- `ios-deps-basic` run `23714880013` proved the release-backed dep cache flow end to end: `zlib`, `png`, `jpeg`, `deflate`, and `fmt` all built successfully and uploaded new per-dep release assets under `blender-v5.1-release-IOSPATCH-round2-deps`.
+- `robinmap` is the next blocker. Its failure is again version drift, not missed archaeology: read-only `ios` history shows no `robinmap.cmake` delta at all, and CMake `4.3` explicitly suggests `-DCMAKE_POLICY_VERSION_MINIMUM=3.5`.
+- Local follow-up in progress: move the legacy CMake policy workaround into a reusable iOS helper `build_files/build_environment/cmake/platform/ios/cmake_policy_compat.cmake`, keep `robinmap.cmake` to a tiny include hook, and reuse that helper from `jpeg_ios.cmake`.
 - A separate local clone at `/home/shlok/Documents/Programming/Sandbox/blender-full-readonly` now has `lib/macos_arm64` materialized; it provides reusable host `python` and `llvm` trees, but not `ispc`.
 - The branch release `blender-v5.1-release-IOSPATCH-round2-deps` now also contains readable seed assets: `host-python-macos-arm64.tar.gz`, `host-llvm-macos-arm64.tar.gz`, `host-ispc-macos-arm64-v1.29.1.tar.gz`, `host-python-llvm-buildtree-macos-arm64.tar.gz`, and `host-tool-seeds.json`.
 - User preference: long-running Actions must stay visibly alive. Future workflows should emit clear progress markers and heartbeat-style log lines before/after each expensive stage so a 60-90 minute compile does not look dead from the UI.

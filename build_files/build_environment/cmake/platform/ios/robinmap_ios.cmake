@@ -4,6 +4,6 @@
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake_policy_compat.cmake)
 
-function(blender_platform_ios_patch_jpeg_extra_args out_var)
+function(blender_platform_ios_patch_robinmap_extra_args out_var)
   blender_platform_ios_append_legacy_cmake_policy_flag(${out_var})
 endfunction()

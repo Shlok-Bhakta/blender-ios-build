@@ -5,6 +5,9 @@
 set(ROBINMAP_EXTRA_ARGS
 )
 
+include(${CMAKE_CURRENT_LIST_DIR}/platform/ios/robinmap_ios.cmake)
+blender_platform_ios_patch_robinmap_extra_args(ROBINMAP_EXTRA_ARGS)
+
 ExternalProject_Add(external_robinmap
   URL file://${PACKAGE_DIR}/${ROBINMAP_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
