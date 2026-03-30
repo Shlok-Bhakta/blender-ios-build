@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 set(BROTLI_EXTRA_ARGS
+  -DCMAKE_OSX_BUNDLE=OFF
 )
 
 if(APPLE AND WITH_APPLE_CROSSPLATFORM)
