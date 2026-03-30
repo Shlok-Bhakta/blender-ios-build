@@ -360,15 +360,15 @@ jobs:
         --build-dir build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
         build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
         "artifacts/ios-deps/opensubdiv-logs" --manifest-path "artifacts/ios-deps/opensubdiv-manifest.json"
-    - name: Build ffmpeg
+    - name: Build ogg
       shell: bash
       run: echo "" && echo "============================================" && echo
-        "[dep] === Building ffmpeg ===" && echo "============================================"
-        && bash tools/ios/run_release_cached_dep.sh "ffmpeg" artifacts/ios-deps python3
-        tools/ios/build_deps.py --mode ios --build-target "external_ffmpeg" --build-dir
+        "[dep] === Building ogg ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "ogg" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_ogg" --build-dir
         build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
         build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
-        "artifacts/ios-deps/ffmpeg-logs" --manifest-path "artifacts/ios-deps/ffmpeg-manifest.json"
+        "artifacts/ios-deps/ogg-logs" --manifest-path "artifacts/ios-deps/ogg-manifest.json"
     - name: Build opus
       shell: bash
       run: echo "" && echo "============================================" && echo
@@ -387,15 +387,33 @@ jobs:
         build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
         build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
         "artifacts/ios-deps/vorbis-logs" --manifest-path "artifacts/ios-deps/vorbis-manifest.json"
-    - name: Build ogg
+    - name: Build flac
       shell: bash
       run: echo "" && echo "============================================" && echo
-        "[dep] === Building ogg ===" && echo "============================================"
-        && bash tools/ios/run_release_cached_dep.sh "ogg" artifacts/ios-deps python3
-        tools/ios/build_deps.py --mode ios --build-target "external_ogg" --build-dir
+        "[dep] === Building flac ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "flac" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_flac" --build-dir
         build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
         build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
-        "artifacts/ios-deps/ogg-logs" --manifest-path "artifacts/ios-deps/ogg-manifest.json"
+        "artifacts/ios-deps/flac-logs" --manifest-path "artifacts/ios-deps/flac-manifest.json"
+    - name: Build sndfile
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building sndfile ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "sndfile" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_sndfile" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/sndfile-logs" --manifest-path "artifacts/ios-deps/sndfile-manifest.json"
+    - name: Build ffmpeg
+      shell: bash
+      run: echo "" && echo "============================================" && echo
+        "[dep] === Building ffmpeg ===" && echo "============================================"
+        && bash tools/ios/run_release_cached_dep.sh "ffmpeg" artifacts/ios-deps python3
+        tools/ios/build_deps.py --mode ios --build-target "external_ffmpeg" --build-dir
+        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
+        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
+        "artifacts/ios-deps/ffmpeg-logs" --manifest-path "artifacts/ios-deps/ffmpeg-manifest.json"
     - name: Build x264
       shell: bash
       run: echo "" && echo "============================================" && echo
