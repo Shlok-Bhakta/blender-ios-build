@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 set(ALEMBIC_EXTRA_ARGS
-  -DImath_ROOT=${LIBDIR}/imath
+  -DImath_DIR=${LIBDIR}/imath/lib/cmake/Imath
+  -DILMBASE_ROOT=${LIBDIR}/openexr
   -DUSE_PYALEMBIC=OFF
   -DUSE_ARNOLD=OFF
   -DUSE_MAYA=OFF
@@ -16,6 +17,12 @@ set(ALEMBIC_EXTRA_ARGS
   -DCMAKE_PREFIX_PATH=${LIBDIR}/openexr
   -DUSE_LIBC++=ON
 )
+
+if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  list(APPEND ALEMBIC_EXTRA_ARGS
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+  )
+endif()
 
 if(APPLE AND WITH_APPLE_CROSSPLATFORM)
   list(APPEND ALEMBIC_EXTRA_ARGS
@@ -69,4 +76,5 @@ endif()
 add_dependencies(
   external_alembic
   external_imath
+  external_openexr
 )
