@@ -31,6 +31,9 @@ if(BUILD_MODE STREQUAL Release)
     )
   endif()
 
+  include(${CMAKE_CURRENT_LIST_DIR}/platform/ios/openal_ios.cmake)
+  blender_platform_ios_patch_openal_extra_args(OPENAL_EXTRA_ARGS)
+
   ExternalProject_Add(external_openal
     URL file://${PACKAGE_DIR}/${OPENAL_FILE}
     DOWNLOAD_DIR ${DOWNLOAD_DIR}

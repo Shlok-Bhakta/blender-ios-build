@@ -52,14 +52,6 @@ DEP_CONFIG = {
             Path("build_files/build_environment/cmake/blosc.cmake"),
         ],
     },
-    "pthreads": {
-        "build_dir": Path("build/ios-deps/ios/build/pthreads"),
-        "cmake_prefixes": ["PTHREADS"],
-        "release_dir": Path("build/ios-deps/ios/Release/pthreads"),
-        "key_files": [
-            Path("build_files/build_environment/cmake/pthreads.cmake"),
-        ],
-    },
     "png": {
         "build_dir": Path("build/ios-deps/ios/build/png"),
         "cmake_prefixes": ["PNG", "ZLIB"],

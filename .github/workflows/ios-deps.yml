@@ -117,15 +117,6 @@ jobs:
         build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
         build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
         "artifacts/ios-deps/blosc-logs" --manifest-path "artifacts/ios-deps/blosc-manifest.json"
-    - name: Build pthreads
-      shell: bash
-      run: echo "" && echo "============================================" && echo
-        "[dep] === Building pthreads ===" && echo "============================================"
-        && bash tools/ios/run_release_cached_dep.sh "pthreads" artifacts/ios-deps
-        python3 tools/ios/build_deps.py --mode ios --build-target "external_pthreads"
-        --build-dir build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
-        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
-        "artifacts/ios-deps/pthreads-logs" --manifest-path "artifacts/ios-deps/pthreads-manifest.json"
     - name: Build png
       shell: bash
       run: echo "" && echo "============================================" && echo
