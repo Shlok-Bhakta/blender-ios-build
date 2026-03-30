@@ -30,8 +30,7 @@ ExternalProject_Add(external_brotli
 
 if(APPLE AND WITH_APPLE_CROSSPLATFORM)
   ExternalProject_Add_Step(external_brotli patch_brotli
-    COMMAND perl -i -0pe
-      's/install\(\s*\n\s*TARGETS brotli\s*\n\s*RUNTIME DESTINATION[^)]*\)/# PATCHED for iOS cross-compile disabled brotli CLI install/sg'
+    COMMAND ${CMAKE_CURRENT_LIST_DIR}/platform/ios/patch_brotli.sh
       ${BUILD_DIR}/brotli/src/external_brotli/CMakeLists.txt
     DEPENDEES download
     DEPENDERS configure
