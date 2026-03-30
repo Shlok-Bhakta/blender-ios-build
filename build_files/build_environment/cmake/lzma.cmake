@@ -13,7 +13,7 @@ ExternalProject_Add(external_lzma
 
   CONFIGURE_COMMAND ${CONFIGURE_ENV} &&
     cd ${BUILD_DIR}/lzma/src/external_lzma/ &&
-    ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/lzma --disable-shared ${PLATFORM_HOST_TARGET}
+    cross_compiling=yes ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/lzma --disable-shared ${PLATFORM_HOST_TARGET}
 
   BUILD_COMMAND ${CONFIGURE_ENV} &&
     cd ${BUILD_DIR}/lzma/src/external_lzma/ &&
