@@ -16,7 +16,13 @@ set(TIFF_EXTRA_ARGS
   -Dlerc=OFF
   -Dtiff-tests=OFF
   -Dsphinx=OFF
+  -Dtiff-tools=OFF
+  -Dtiff-docs=OFF
 )
+
+if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  list(APPEND TIFF_EXTRA_ARGS -DCMAKE_POLICY_VERSION_MINIMUM=3.5)
+endif()
 
 if(APPLE)
   set(TIFF_EXTRA_ARGS
