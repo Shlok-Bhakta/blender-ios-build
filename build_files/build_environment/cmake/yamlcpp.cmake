@@ -16,6 +16,9 @@ if(WIN32)
   )
 endif()
 
+include(${CMAKE_CURRENT_LIST_DIR}/platform/ios/yamlcpp_ios.cmake)
+blender_platform_ios_patch_yamlcpp_extra_args(YAMLCPP_EXTRA_ARGS)
+
 ExternalProject_Add(external_yamlcpp
   URL file://${PACKAGE_DIR}/${YAMLCPP_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}

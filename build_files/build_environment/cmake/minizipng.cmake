@@ -22,6 +22,9 @@ set(MINIZIPNG_EXTRA_ARGS
   -DCMAKE_INSTALL_INCLUDEDIR=${LIBDIR}/minizipng/include/minizip-ng
 )
 
+include(${CMAKE_CURRENT_LIST_DIR}/platform/ios/minizipng_ios.cmake)
+blender_platform_ios_patch_minizipng_extra_args(MINIZIPNG_EXTRA_ARGS)
+
 ExternalProject_Add(external_minizipng
   URL file://${PACKAGE_DIR}/${MINIZIPNG_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
