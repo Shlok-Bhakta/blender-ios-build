@@ -30,7 +30,8 @@ ExternalProject_Add(external_brotli
 
 if(APPLE AND WITH_APPLE_CROSSPLATFORM)
   ExternalProject_Add_Step(external_brotli patch_brotli
-    COMMAND ${CMAKE_CURRENT_LIST_DIR}/platform/ios/patch_brotli.sh
+    COMMAND perl
+      ${CMAKE_CURRENT_LIST_DIR}/platform/ios/patch_brotli.sh
       ${BUILD_DIR}/brotli/src/external_brotli/CMakeLists.txt
     DEPENDEES download
     DEPENDERS configure
