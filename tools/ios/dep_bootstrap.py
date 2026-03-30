@@ -7,6 +7,7 @@ import os
 import platform
 import re
 import subprocess
+import sys
 import tarfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -673,8 +674,19 @@ def safe_members(members: Iterable[tarfile.TarInfo]) -> list[tarfile.TarInfo]:
         member_path = Path(member.name)
         if member_path.is_absolute() or ".." in member_path.parts:
             raise ValueError(f"Refusing to extract unsafe path: {member.name}")
+        if member.type == tarfile.SYMTYPE and member_linkpath_is_absolute(member):
+            raise ValueError(
+                f"Refusing to extract unsafe symlink: {member.name} -> {member.linkname}"
+            )
         approved.append(member)
     return approved
+
+
+def member_linkpath_is_absolute(member: tarfile.TarInfo) -> bool:
+    if member.linkname:
+        linkname = Path(member.linkname)
+        return linkname.is_absolute() or ".." in linkname.parts
+    return False
 
 
 def command_metadata(args: argparse.Namespace) -> int:
@@ -703,8 +715,16 @@ def command_bundle(args: argparse.Namespace) -> int:
 
 
 def command_extract(args: argparse.Namespace) -> int:
-    with tarfile.open(args.input, mode="r:gz") as archive:
-        archive.extractall(REPO_ROOT, members=safe_members(archive.getmembers()))
+    import subprocess
+
+    result = subprocess.run(
+        ["tar", "-xzf", str(args.input), "-C", str(REPO_ROOT)],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        print(f"tar extraction failed: {result.stderr}", file=sys.stderr)
+        return 1
     return 0
 
 
