@@ -2,13 +2,12 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-set(BROTLI_PATCH_COMMAND)
 if(APPLE AND WITH_APPLE_CROSSPLATFORM)
-  set(BROTLI_PATCH_COMMAND
-    COMMAND ${CMAKE_COMMAND} -E sed -i.bak
-      "s/install(TARGETS brotli RUNTIME DESTINATION \"\\${CMAKE_INSTALL_BINDIR}\")/# DISABLED for iOS cross-compile: install(TARGETS brotli RUNTIME DESTINATION \"\\${CMAKE_INSTALL_BINDIR}\")/"
-      ${BUILD_DIR}/brotli/src/external_brotli/CMakeLists.txt
-  )
+  set(BROTLI_PATCH_COMMAND COMMAND /usr/bin/perl -i -0pe
+    's/install\(\s*\n\s*TARGETS brotli\s*\n\s*RUNTIME DESTINATION[^)]*\)/# PATCHED for iOS: DISABLED brotli CLI tool install/s'
+    ${BUILD_DIR}/brotli/src/external_brotli/CMakeLists.txt)
+else()
+  set(BROTLI_PATCH_COMMAND)
 endif()
 
 ExternalProject_Add(external_brotli
