@@ -11,7 +11,7 @@ if(NOT WIN32)
 
     CONFIGURE_COMMAND ${CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/flac/src/external_flac/ &&
-      ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/flac --disable-shared --enable-static
+      ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/flac --disable-shared --enable-static ${PLATFORM_HOST_TARGET}
 
     BUILD_COMMAND ${CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/flac/src/external_flac/ &&
