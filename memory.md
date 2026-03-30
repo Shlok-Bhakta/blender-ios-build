@@ -35,7 +35,7 @@ Last updated: 2026-03-29
 - Last successful workflow: `Build Blender iOS IPA` run `23718530852` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-basic` mode; `zlib`, `png`, `jpeg`, `deflate`, `fmt`, `robinmap`, and `pugixml` all completed successfully, artifact collection succeeded, and the workflow exited green end-to-end.
 - Last failed workflow: `Build Blender iOS IPA` run `23718363006` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-basic` mode; all simple deps including `pugixml` built successfully, but artifact collection failed afterward with a Python `UnicodeEncodeError` because tree listings were still written with ASCII.
 - Latest cancelled workflow: `Build Blender iOS IPA` run `23714036934` on `blender-v5.1-release-IOSPATCH-round2` in `ios-deps-basic` mode reached the `Build jpeg` step on commit `db26746f401` before cancellation.
-- Latest dispatched workflow: `23718530852`, sent after the UTF-8 artifact-output fix on commit `c84c2137f93`.
+- Latest dispatched workflow: `23773547459`, fixing `ogg/flac/vorbis/opus` ordering bug (flac was built before ogg in the full `ios-deps` workflow, causing `'ogg/ogg.h' not found` at flac build time).
 - Latest known workflow in repo before changes: `.github/workflows/close-prs.yml` only.
 - Exploratory dispatches in this session: `23691855752` and `23691861803`, both manually cancelled after confirming `gh workflow run` worked.
 - Mistake repaired: accidental merge/push from legacy branch was fully rewound; cancelled run `23692208885` is historical only and must be ignored.
@@ -122,6 +122,12 @@ nix-shell -p gh --run 'gh run list -R Shlok-Bhakta/blender-ios-build --workflow 
 - The branch release `blender-v5.1-release-IOSPATCH-round2-deps` now also contains readable seed assets: `host-python-macos-arm64.tar.gz`, `host-llvm-macos-arm64.tar.gz`, `host-ispc-macos-arm64-v1.29.1.tar.gz`, `host-python-llvm-buildtree-macos-arm64.tar.gz`, and `host-tool-seeds.json`.
 - User preference: long-running Actions must stay visibly alive. Future workflows should emit clear progress markers and heartbeat-style log lines before/after each expensive stage so a 60-90 minute compile does not look dead from the UI.
 - User preference: do not keep polling in the CLI unless explicitly asked; use GitHub Actions logs/artifacts as the primary visible progress surface while the run is active.
+
+## Latest Dispatch
+
+- `ios-deps` run `23773547459` dispatched after fix for `ogg/flac/vorbis/opus` ordering bug in `ios-deps.yml`; flac was failing with `'ogg/ogg.h' not found` because `ogg` was scheduled 70+ steps after `flac` in the workflow.
+- Ordering corrected to: `opensubdiv → ogg → opus → vorbis → flac → sndfile → ffmpeg`; ffmpeg moved after sndfile since it links against those libs.
+- Run `23729907575` was the last failed run before the fix.
 
 ## Local Workflow Additions
 
@@ -360,7 +366,7 @@ Built for `iphoneos-arm64`. Each dep that has needed an iOS-specific helper file
 - [ ] **x264** — `x264.cmake` — not yet attempted
 - [ ] **x265** — `x265.cmake` — old iOS branch keeps; likely hard
 - [ ] **ffmpeg** — `ffmpeg.cmake` — old iOS branch keeps but uses iOS-specific flags and patches; likely hard
-- [ ] **flac** — `flac.cmake` — old iOS branch adds cross-compile flags
+- [ ] **flac** — `flac.cmake` — old iOS branch adds cross-compile flags; attempted in `23773547459` after ogg ordering fix
 - [ ] **sndfile** — `sndfile.cmake` — not yet attempted
 - [ ] **spnav** — skip; desktop Linux only
 - [ ] **bzip2** — `bzip2.cmake` — not yet attempted; old iOS branch adds iOS flags
