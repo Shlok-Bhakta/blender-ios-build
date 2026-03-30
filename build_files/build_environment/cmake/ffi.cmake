@@ -41,6 +41,7 @@ else()
       --enable-shared=no
       --enable-static=yes
       --with-pic
+      ${PLATFORM_HOST_TARGET}
   )
 endif()
 
