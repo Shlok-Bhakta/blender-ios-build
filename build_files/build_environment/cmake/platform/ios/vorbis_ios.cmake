@@ -6,7 +6,7 @@ function(blender_platform_ios_patch_vorbis_extra_args out_var)
   set(_vorbis_extra_args "${${out_var}}")
 
   if(APPLE AND WITH_APPLE_CROSSPLATFORM)
-    list(APPEND _vorbis_extra_args -DCMAKE_POLICY_VERSION_MINIMUM=3.5)
+    list(APPEND _vorbis_extra_args -DCMAKE_POLICY_VERSION_MINIMUM=3.10)
   endif()
 
   set(${out_var} "${_vorbis_extra_args}" PARENT_SCOPE)
