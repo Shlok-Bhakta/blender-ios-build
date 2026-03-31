@@ -16,6 +16,8 @@ ExternalProject_Add(external_vorbis
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=${LIBDIR}/vorbis
     -DOGG_ROOT=${LIBDIR}/ogg
+    -DOGG_LIBRARY=${LIBDIR}/ogg/lib/libogg.a
+    -DOGG_INCLUDE_DIR=${LIBDIR}/ogg/include
     ${DEFAULT_CMAKE_FLAGS}
     ${VORBIS_EXTRA_ARGS}
 
