@@ -73,6 +73,11 @@ if(BLENDER_PLATFORM_ARM)
   )
 endif()
 
+if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  include(${CMAKE_CURRENT_LIST_DIR}/platform/ios/gmp_ios.cmake)
+  blender_platform_ios_patch_gmp_options()
+endif()
+
 ExternalProject_Add(external_gmp
   URL file://${PACKAGE_DIR}/${GMP_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
