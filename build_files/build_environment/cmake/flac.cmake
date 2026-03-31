@@ -5,6 +5,7 @@
 if(NOT WIN32)
   include(${CMAKE_CURRENT_LIST_DIR}/platform/ios/flac_ios.cmake)
   blender_platform_ios_patch_flac_configure_env(FLAC_CONFIGURE_ENV)
+  blender_platform_ios_patch_flac_configure_command(FLAC_CONFIGURE_COMMAND)
 
   ExternalProject_Add(external_flac
     URL file://${PACKAGE_DIR}/${FLAC_FILE}
@@ -14,7 +15,7 @@ if(NOT WIN32)
 
     CONFIGURE_COMMAND ${FLAC_CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/flac/src/external_flac/ &&
-      ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/flac --disable-shared --enable-static ${PLATFORM_HOST_TARGET}
+      ${FLAC_CONFIGURE_COMMAND}
 
     BUILD_COMMAND ${CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/flac/src/external_flac/ &&
