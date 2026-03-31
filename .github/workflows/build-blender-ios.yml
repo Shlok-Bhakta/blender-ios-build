@@ -32,8 +32,8 @@ jobs:
       - name: Initialize Git LFS
         run: git lfs install
 
-      - name: Fetch prebuilt iOS libraries
-        run: python3 ./build_files/utils/make_update.py --use-ios-libraries
+      - name: Build iOS dependencies
+        run: make deps ios
 
       - name: Generate Xcode project
         run: cmake -G Xcode -S . -B build_ios
