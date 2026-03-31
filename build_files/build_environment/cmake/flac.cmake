@@ -11,17 +11,8 @@ if(NOT WIN32)
       PREFIX ${BUILD_DIR}/flac
 
       CONFIGURE_COMMAND
-        ${CMAKE_COMMAND} -E bash
-          ${CMAKE_SOURCE_DIR}/tools/ios/run_flac_configure.sh
-          ${BUILD_DIR}/flac/src/external_flac
-          ${LIBDIR}/flac
-          aarch64-apple-ios
-          ${LIBDIR}/ogg/include
-          ${LIBDIR}/ogg/lib
-          ${CMAKE_OSX_SYSROOT}
-          16.0
-
-      BUILD_COMMAND ${CONFIGURE_ENV} &&
+        ${CMAKE_COMMAND} -E bash "${CMAKE_SOURCE_DIR}/tools/ios/run_flac_configure.sh" "${BUILD_DIR}/flac/src/external_flac" "${LIBDIR}/flac" aarch64-apple-ios "${LIBDIR}/ogg/include" "${LIBDIR}/ogg/lib" "${CMAKE_OSX_SYSROOT}" 16.0
+      BUILD_COMMAND
         cd ${BUILD_DIR}/flac/src/external_flac/ &&
         make -j${MAKE_THREADS}
 
