@@ -4,7 +4,6 @@
 
 if(NOT WIN32)
   include(${CMAKE_CURRENT_LIST_DIR}/platform/ios/flac_ios.cmake)
-  blender_platform_ios_patch_flac_configure_env(FLAC_CONFIGURE_ENV)
   blender_platform_ios_patch_flac_configure_command(FLAC_CONFIGURE_COMMAND)
 
   ExternalProject_Add(external_flac
