@@ -8,7 +8,7 @@ function(blender_platform_ios_patch_flac_configure_command out_var)
   endif()
 
   set(FLAC_CFG
-    "flac_cv_prog_cc_cross=yes CC='clang -target aarch64-apple-ios -isysroot ${CMAKE_OSX_SYSROOT} -miphoneos-version-min=16.0' CXX='clang++ -target aarch64-apple-ios -isysroot ${CMAKE_OSX_SYSROOT} -miphoneos-version-min=16.0 -stdlib=libc++' CPPFLAGS='-I${LIBDIR}/ogg/include' ./configure --host=aarch64-apple-ios --prefix=${LIBDIR}/flac --disable-shared --enable-static"
+    "env flac_cv_prog_cc_cross=yes CC='clang -target aarch64-apple-ios -isysroot ${CMAKE_OSX_SYSROOT} -miphoneos-version-min=16.0' CXX='clang++ -target aarch64-apple-ios -isysroot ${CMAKE_OSX_SYSROOT} -miphoneos-version-min=16.0 -stdlib=libc++' CPPFLAGS='-I${LIBDIR}/ogg/include' ./configure --host=aarch64-apple-ios --prefix=${LIBDIR}/flac --disable-shared --enable-static"
   )
 
   set(${out_var} "${FLAC_CFG}" PARENT_SCOPE)
