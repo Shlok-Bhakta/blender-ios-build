@@ -10,6 +10,7 @@ function(blender_platform_ios_patch_flac_configure_env out_var)
   set(FLAC_CONFIGURE_ENV_WITH_CROSS
     ${CONFIGURE_ENV}
     flac_cv_prog_cc_cross=yes
+    export CPPFLAGS="-I${LIBDIR}/ogg/include"
   )
   set(${out_var} "${FLAC_CONFIGURE_ENV_WITH_CROSS}" PARENT_SCOPE)
 endfunction()
