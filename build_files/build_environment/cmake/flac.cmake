@@ -12,9 +12,7 @@ if(NOT WIN32)
     URL_HASH ${FLAC_HASH_TYPE}=${FLAC_HASH}
     PREFIX ${BUILD_DIR}/flac
 
-    CONFIGURE_COMMAND ${FLAC_CONFIGURE_ENV} &&
-      cd ${BUILD_DIR}/flac/src/external_flac/ &&
-      ${FLAC_CONFIGURE_COMMAND}
+    CONFIGURE_COMMAND cd ${BUILD_DIR}/flac/src/external_flac/ && ${FLAC_CONFIGURE_COMMAND}
 
     BUILD_COMMAND ${CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/flac/src/external_flac/ &&
