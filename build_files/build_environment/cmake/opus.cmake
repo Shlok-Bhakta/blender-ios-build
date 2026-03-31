@@ -11,20 +11,20 @@ if(MSVC)
 endif()
 
 if(NOT WIN32)
+  include(${CMAKE_CURRENT_LIST_DIR}/platform/ios/opus_ios.cmake)
+  blender_platform_ios_patch_opus_configure_env(OPUS_CONFIGURE_ENV)
+  blender_platform_ios_patch_opus_configure_command(OPUS_CONFIGURE_COMMAND)
+
   ExternalProject_Add(external_opus
     URL file://${PACKAGE_DIR}/${OPUS_FILE}
     DOWNLOAD_DIR ${DOWNLOAD_DIR}
     URL_HASH ${OPUS_HASH_TYPE}=${OPUS_HASH}
     PREFIX ${BUILD_DIR}/opus
 
-    CONFIGURE_COMMAND ${CONFIGURE_ENV} &&
+    CONFIGURE_COMMAND ${OPUS_CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/opus/src/external_opus/ &&
-      ${CONFIGURE_COMMAND}
+      ${OPUS_CONFIGURE_COMMAND}
         --prefix=${LIBDIR}/opus
-        --disable-shared
-        --enable-static
-        --with-pic
-        --disable-maintainer-mode
 
     BUILD_COMMAND ${CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/opus/src/external_opus/ &&
