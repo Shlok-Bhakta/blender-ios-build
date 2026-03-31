@@ -1,0 +1,93 @@
+name: Build Blender iOS IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          lfs: false
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf ~/Library/Android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/.ghcup
+          sudo rm -rf /Library/Developer/CoreSimulator/Profiles
+          sudo xcrun simctl delete all 2>/dev/null || true
+          df -h
+
+      - name: Install dependencies
+        run: brew install git-lfs cmake
+
+      - name: Initialize Git LFS
+        run: git lfs install
+
+      - name: Fetch prebuilt iOS libraries
+        run: python3 ./build_files/utils/make_update.py --use-ios-libraries
+
+      - name: Generate Xcode project
+        run: cmake -G Xcode -S . -B build_ios
+
+      - name: List Xcode targets
+        run: xcodebuild -project build_ios/Blender.xcodeproj -list
+
+      - name: Build cross-compilation tools
+        run: |
+          xcodebuild \
+            -project build_ios/Blender.xcodeproj \
+            -target blender_cross_tools_compile \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Build Blender.app for iOS
+        run: |
+          xcodebuild \
+            -project build_ios/Blender.xcodeproj \
+            -target install \
+            -sdk iphoneos \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            ARCHS=arm64
+
+      - name: Package unsigned IPA
+        run: |
+          APP="build_ios/bin/Release/Blender.app"
+          echo "Found app at: $APP"
+          ls -la "$APP" || (echo "App not found, searching..." && find build_ios -name "*.app" -type d)
+          du -sh "$APP"
+          rm -rf "$APP/Assets/5.0/python/lib/python3.11/config-3.11-darwin"
+          mkdir -p IPA/Payload
+          cp -r "$APP" IPA/Payload/
+          cd IPA && zip -r ../Blender.ipa Payload/
+          ls -lh ../Blender.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-ipad-unsigned
+          path: Blender.ipa
+          retention-days: 30
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            build_ios/**/*.log
+            build_ios/**/*.txt
+          retention-days: 7
