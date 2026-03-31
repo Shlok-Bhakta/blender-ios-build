@@ -27,7 +27,7 @@ jobs:
           df -h
 
       - name: Install dependencies
-        run: brew install git-lfs cmake
+        run: brew install git-lfs cmake autoconf automake bison yasm dos2unix flex libtool meson ninja pkg-config
 
       - name: Initialize Git LFS
         run: git lfs install
