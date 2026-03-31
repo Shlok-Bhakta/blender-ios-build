@@ -17,6 +17,7 @@ if(NOT WIN32)
           ${LIBDIR}/flac
           aarch64-apple-ios
           ${LIBDIR}/ogg/include
+          ${LIBDIR}/ogg/lib
           ${CMAKE_OSX_SYSROOT}
           16.0
 
