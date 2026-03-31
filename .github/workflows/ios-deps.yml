@@ -315,24 +315,6 @@ jobs:
         build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
         build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
         "artifacts/ios-deps/webp-logs" --manifest-path "artifacts/ios-deps/webp-manifest.json"
-    - name: Build flac
-      shell: bash
-      run: echo "" && echo "============================================" && echo
-        "[dep] === Building flac ===" && echo "============================================"
-        && bash tools/ios/run_release_cached_dep.sh "flac" artifacts/ios-deps python3
-        tools/ios/build_deps.py --mode ios --build-target "external_flac" --build-dir
-        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
-        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
-        "artifacts/ios-deps/flac-logs" --manifest-path "artifacts/ios-deps/flac-manifest.json"
-    - name: Build sndfile
-      shell: bash
-      run: echo "" && echo "============================================" && echo
-        "[dep] === Building sndfile ===" && echo "============================================"
-        && bash tools/ios/run_release_cached_dep.sh "sndfile" artifacts/ios-deps python3
-        tools/ios/build_deps.py --mode ios --build-target "external_sndfile" --build-dir
-        build/ios-deps/ios --install-dir build/ios-deps/install/ios --host-build-dir
-        build/ios-deps/host --host-install-dir build/ios-deps/install/host --log-dir
-        "artifacts/ios-deps/sndfile-logs" --manifest-path "artifacts/ios-deps/sndfile-manifest.json"
     - name: Build gmp
       shell: bash
       run: echo "" && echo "============================================" && echo
