@@ -3,27 +3,58 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 if(NOT WIN32)
-  include(${CMAKE_CURRENT_LIST_DIR}/platform/ios/flac_ios.cmake)
-  blender_platform_ios_patch_flac_configure_command(FLAC_CONFIGURE_COMMAND)
+  if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+    ExternalProject_Add(external_flac
+      URL file://${PACKAGE_DIR}/${FLAC_FILE}
+      DOWNLOAD_DIR ${DOWNLOAD_DIR}
+      URL_HASH ${FLAC_HASH_TYPE}=${FLAC_HASH}
+      PREFIX ${BUILD_DIR}/flac
 
-  ExternalProject_Add(external_flac
-    URL file://${PACKAGE_DIR}/${FLAC_FILE}
-    DOWNLOAD_DIR ${DOWNLOAD_DIR}
-    URL_HASH ${FLAC_HASH_TYPE}=${FLAC_HASH}
-    PREFIX ${BUILD_DIR}/flac
+      CONFIGURE_COMMAND
+        ${CMAKE_COMMAND} -E env
+          MACOSX_DEPLOYMENT_TARGET=16.0
+          MACOSX_SDK_VERSION=16.0
+        ${CMAKE_COMMAND} -E bash
+          ${CMAKE_SOURCE_DIR}/tools/ios/run_flac_configure.sh
+          ${BUILD_DIR}/flac/src/external_flac
+          ${LIBDIR}/flac
+          aarch64-apple-ios
+          ${LIBDIR}/ogg/include
+          ${CMAKE_OSX_SYSROOT}
+          16.0
 
-    CONFIGURE_COMMAND cd ${BUILD_DIR}/flac/src/external_flac/ && ${FLAC_CONFIGURE_COMMAND}
+      BUILD_COMMAND ${CONFIGURE_ENV} &&
+        cd ${BUILD_DIR}/flac/src/external_flac/ &&
+        make -j${MAKE_THREADS}
 
-    BUILD_COMMAND ${CONFIGURE_ENV} &&
-      cd ${BUILD_DIR}/flac/src/external_flac/ &&
-      make -j${MAKE_THREADS}
+      INSTALL_COMMAND ${CONFIGURE_ENV} &&
+        cd ${BUILD_DIR}/flac/src/external_flac/ &&
+        make install
 
-    INSTALL_COMMAND ${CONFIGURE_ENV} &&
-      cd ${BUILD_DIR}/flac/src/external_flac/ &&
-      make install
+      INSTALL_DIR ${LIBDIR}/flac
+    )
+  else()
+    ExternalProject_Add(external_flac
+      URL file://${PACKAGE_DIR}/${FLAC_FILE}
+      DOWNLOAD_DIR ${DOWNLOAD_DIR}
+      URL_HASH ${FLAC_HASH_TYPE}=${FLAC_HASH}
+      PREFIX ${BUILD_DIR}/flac
 
-    INSTALL_DIR ${LIBDIR}/flac
-  )
+      CONFIGURE_COMMAND ${CONFIGURE_ENV} &&
+        cd ${BUILD_DIR}/flac/src/external_flac/ &&
+        ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/flac --disable-shared --enable-static ${PLATFORM_HOST_TARGET}
+
+      BUILD_COMMAND ${CONFIGURE_ENV} &&
+        cd ${BUILD_DIR}/flac/src/external_flac/ &&
+        make -j${MAKE_THREADS}
+
+      INSTALL_COMMAND ${CONFIGURE_ENV} &&
+        cd ${BUILD_DIR}/flac/src/external_flac/ &&
+        make install
+
+      INSTALL_DIR ${LIBDIR}/flac
+    )
+  endif()
 
   harvest(external_flac flac/lib sndfile/lib "libFLAC.a")
 else()
