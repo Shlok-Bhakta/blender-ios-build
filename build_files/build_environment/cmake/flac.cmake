@@ -11,9 +11,6 @@ if(NOT WIN32)
       PREFIX ${BUILD_DIR}/flac
 
       CONFIGURE_COMMAND
-        ${CMAKE_COMMAND} -E env
-          MACOSX_DEPLOYMENT_TARGET=16.0
-          MACOSX_SDK_VERSION=16.0
         ${CMAKE_COMMAND} -E bash
           ${CMAKE_SOURCE_DIR}/tools/ios/run_flac_configure.sh
           ${BUILD_DIR}/flac/src/external_flac
