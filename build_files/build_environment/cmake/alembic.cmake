@@ -30,6 +30,10 @@ ExternalProject_Add(external_alembic
   CMAKE_GENERATOR ${PLATFORM_ALT_GENERATOR}
   PREFIX ${BUILD_DIR}/alembic
 
+  PATCH_COMMAND ${PATCH_CMD} -p 1 -d
+    ${BUILD_DIR}/alembic/src/external_alembic <
+    ${PATCH_DIR}/alembic_cmake4.diff
+
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=${LIBDIR}/alembic
     -Wno-dev

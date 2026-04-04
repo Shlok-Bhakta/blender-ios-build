@@ -1,0 +1,23 @@
+diff --git a/pxr/base/gf/half.h b/pxr/base/gf/half.h
+--- a/pxr/base/gf/half.h
++++ b/pxr/base/gf/half.h
+@@ -14,6 +14,7 @@
+ /// provide a hash_value function.  For documentation, of the half type,
+ /// please see the half header in ilmbase_half.h.
+ 
++#include <cstddef>
+ #include "pxr/pxr.h"
+ #include "pxr/base/gf/ilmbase_half.h"
+ #include "pxr/base/gf/ilmbase_halfLimits.h"
+@@ -25,8 +26,8 @@ PXR_NAMESPACE_OPEN_SCOPE
+ 
+ namespace pxr_half {
+     /// Overload hash_value for half.
+-    inline size_t hash_value(const half h) { return h.bits(); }
++    inline std::size_t hash_value(const half h) { return h.bits(); }
+     // Explicitly delete hashing via implicit conversion of half to float
+-    size_t hash_value(float) = delete;
++    std::size_t hash_value(float) = delete;
+ }
+ 
+ template <>

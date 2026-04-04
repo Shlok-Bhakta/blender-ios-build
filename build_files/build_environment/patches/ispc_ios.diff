@@ -109,3 +109,15 @@ diff -Naur ispc-1.17.0.org/cmake/GenerateBuiltins.cmake ispc-1.17.0/cmake/Genera
      else()
          find_package(Curses REQUIRED)
          if (CURSES_EXTRA_LIBRARY)
+--- a/CMakeLists.txt	2024-02-04 22:12:13
++++ b/CMakeLists.txt	2024-02-05 09:54:41
+@@ -338,7 +338,7 @@
+ if (X86_ENABLED)
+     list(APPEND LLVM_COMPONENTS x86)
+ endif()
+ if (ARM_ENABLED)
+-    list(APPEND LLVM_COMPONENTS arm aarch64)
++    list(APPEND LLVM_COMPONENTS ARM AArch64)
+ endif()
+ if (WASM_ENABLED)
+     list(APPEND LLVM_COMPONENTS webassembly)

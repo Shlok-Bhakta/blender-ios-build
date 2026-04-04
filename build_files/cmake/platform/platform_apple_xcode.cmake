@@ -8,6 +8,10 @@
 if(WITH_APPLE_CROSSPLATFORM)
   set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "" FORCE) 
   set(CMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH "YES")
+  find_program(CCACHE_PROGRAM ccache)
+  if(CCACHE_PROGRAM)
+    set(WITH_COMPILER_CCACHE ON CACHE BOOL "" FORCE)
+  endif()
 
   ### Configure cross-platform parameters per platform type. ###
   # IPad: iOS arm64

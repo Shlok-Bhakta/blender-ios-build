@@ -205,7 +205,13 @@ if(NOT WITH_APPLE_CROSSPLATFORM)
 
 else()
   # When building for iOS we use the MacOS version of Python from the macos libs dir
-  set(CROSSCOMPILE_HOST_LIBDIR "${CMAKE_SOURCE_DIR}/lib/macos_arm64")
+  if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64)$")
+    set(CROSSCOMPILE_HOST_LIBDIR "${CMAKE_SOURCE_DIR}/lib/macos_x64")
+  elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
+    set(CROSSCOMPILE_HOST_LIBDIR "${CMAKE_SOURCE_DIR}/lib/macos_arm64")
+  else()
+    message(FATAL_ERROR "Unsupported Apple host architecture: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+  endif()
   if(NOT PYTHON_VERSION)
 	# IOS_FIXME: This is not great why is PYTHON_VERSION not defined here?
 	message("WARNING Manually defining Python Version to 3.11 for iOS build")
@@ -337,6 +343,9 @@ if(WITH_CODEC_FFMPEG)
     mp3lame ogg opus swresample swscale
     theora theoradec theoraenc vorbis vorbisenc
     vorbisfile vpx x264)
+  if(EXISTS ${LIBDIR}/ffmpeg/lib/libx265.a)
+    list(APPEND FFMPEG_FIND_COMPONENTS x265)
+  endif()
   if(EXISTS ${LIBDIR}/ffmpeg/lib/libaom.a)
     list(APPEND FFMPEG_FIND_COMPONENTS aom)
   endif()

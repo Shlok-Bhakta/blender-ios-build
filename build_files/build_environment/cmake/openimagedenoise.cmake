@@ -12,23 +12,38 @@ set(OIDN_EXTRA_ARGS
 )
 if(APPLE)
   if(WITH_APPLE_CROSSPLATFORM)
-    # Use cross-compiled host ISPC
-    set(ISPC_EXECUTABLE_PATH ${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}/deps_arm64/Release/ispc/bin/ispc)
-    if( NOT EXISTS ${ISPC_EXECUTABLE_PATH})
-      message(FATAL_ERROR "Could not find cross-compiled ISPC executable at: ${ISPC_EXECUTABLE_PATH}. Please ensure host dependencies are built before attempting to build for ios.")
-    endif()
-
-    # TODO: Enable OIDN_DEVICE_METAL for cross-platform builds.
     set(OIDN_EXTRA_ARGS
       ${OIDN_EXTRA_ARGS}
-      -DISPC_EXECUTABLE=${ISPC_EXECUTABLE_PATH}
+      -DOIDN_DEVICE_CPU=OFF
+      -DOIDN_DEVICE_METAL=ON
     )
   else()
+    execute_process(COMMAND xcrun --find metal
+      RESULT_VARIABLE OIDN_METAL_FOUND
+      OUTPUT_QUIET
+      ERROR_QUIET)
+    execute_process(COMMAND xcrun --find metallib
+      RESULT_VARIABLE OIDN_METALLIB_FOUND
+      OUTPUT_QUIET
+      ERROR_QUIET)
+
     set(OIDN_EXTRA_ARGS
       ${OIDN_EXTRA_ARGS}
       -DISPC_EXECUTABLE=${LIBDIR}/ispc/bin/ispc
-      -DOIDN_DEVICE_METAL=ON
     )
+
+    if(OIDN_METAL_FOUND EQUAL 0 AND OIDN_METALLIB_FOUND EQUAL 0)
+      set(OIDN_EXTRA_ARGS
+        ${OIDN_EXTRA_ARGS}
+        -DOIDN_DEVICE_METAL=ON
+      )
+    else()
+      message(WARNING "OpenImageDenoise Metal backend disabled: Apple 'metal' and 'metallib' tools are not both available.")
+      set(OIDN_EXTRA_ARGS
+        ${OIDN_EXTRA_ARGS}
+        -DOIDN_DEVICE_METAL=OFF
+      )
+    endif()
   endif()
 
 else()
@@ -84,8 +99,17 @@ endif()
 set(ODIN_PATCH_COMMAND
   ${PATCH_CMD} --verbose -p 1 -N -d
   ${BUILD_DIR}/openimagedenoise/src/external_openimagedenoise <
-  ${PATCH_DIR}/oidn.diff
+  ${PATCH_DIR}/oidn.diff || true
 )
+
+if(WITH_APPLE_CROSSPLATFORM)
+  set(ODIN_PATCH_COMMAND
+    ${ODIN_PATCH_COMMAND} ;
+    ${PATCH_CMD} --verbose -p 1 -N -d
+    ${BUILD_DIR}/openimagedenoise/src/external_openimagedenoise <
+    ${PATCH_DIR}/oidn_ios.diff || true
+  )
+endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # Replace `attrib.memoryType` with `attrib.type`.

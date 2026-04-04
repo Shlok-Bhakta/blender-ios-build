@@ -1,0 +1,21 @@
+--- a/cmake/oidn_ispc.cmake
++++ b/cmake/oidn_ispc.cmake
+@@ -100,10 +100,16 @@ macro(ispc_compile)
+   if(OIDN_ARCH STREQUAL "X64")
+     set(ISPC_ARCHITECTURE "x86-64")
+   elseif(OIDN_ARCH STREQUAL "ARM64")
+     set(ISPC_ARCHITECTURE "aarch64")
+-    if(APPLE AND ISPC_VERSION VERSION_LESS "1.16.0")
+-      set(ISPC_TARGET_OS "--target-os=ios")
++    if(APPLE)
++      if(CMAKE_OSX_SYSROOT MATCHES "iPhoneSimulator")
++        set(ISPC_TARGET_OS "--target-os=ios-simulator")
++      elseif(CMAKE_SYSTEM_NAME STREQUAL "iOS")
++        set(ISPC_TARGET_OS "--target-os=ios")
++      elseif(ISPC_VERSION VERSION_LESS "1.16.0")
++        set(ISPC_TARGET_OS "--target-os=ios")
++      endif()
+     endif()
+   endif()
+ 
+   set(ISPC_TARGET_DIR ${CMAKE_CURRENT_BINARY_DIR})

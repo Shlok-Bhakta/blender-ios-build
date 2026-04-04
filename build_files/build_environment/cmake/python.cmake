@@ -102,6 +102,8 @@ else()
         export ac_cv_prog_READELF=""  &&
         # Disable nis module
         export py_cv_module_nis=n/a &&
+        # `_decimal` is built in via Modules/Setup for iOS, so skip the duplicate shared-module path.
+        export py_cv_module__decimal=n/a &&
         # Disable posix shmem module
         export py_cv_module__posixshmem=n/a
       )
@@ -152,7 +154,7 @@ else()
   set(PYTHON_LDFLAGS "-L${LIBDIR}/ffi/lib -L${LIBDIR}/sqlite/lib -L${LIBDIR}/bzip2/lib -L${LIBDIR}/lzma/lib -L${LIBDIR}/zlib/lib -L${LIBDIR}/ssl/lib -L${LIBDIR}/ssl/lib64 -L${LIBDIR}/libb2/lib ${PLATFORM_LDFLAGS}")
   
   if(WITH_APPLE_CROSSPLATFORM)
-    set(PYTHON_BINARY ${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}/deps_arm64/Release/python/bin/python${PYTHON_SHORT_VERSION})
+    set(PYTHON_BINARY ${APPLE_CROSSCOMPILE_HOST_BUILD_DIR}/python/bin/python${PYTHON_SHORT_VERSION})
     set(PYTHON_CONFIGURE_EXTRA_ARGS 
         ${PYTHON_CONFIGURE_EXTRA_ARGS} 
         --with-force-crosscompile 
@@ -186,9 +188,13 @@ else()
   # and fix the order of `-ldl` flags for SSL to avoid link errors.
   if(APPLE)
     if(WITH_APPLE_CROSSPLATFORM)
-      set(PYTHON_PATCH ${PATCH_CMD} --verbose -p1 -d 
-        ${BUILD_DIR}/python/src/external_python < 
-        ${PATCH_DIR}/python_ios.diff
+      set(PYTHON_PATCH
+        ${PATCH_CMD} --verbose -p1 -d
+          ${BUILD_DIR}/python/src/external_python <
+          ${PATCH_DIR}/python_ios.diff &&
+        ${PATCH_CMD} --verbose -p1 -d
+          ${BUILD_DIR}/python/src/external_python <
+          ${PATCH_DIR}/python_ios_decimal.diff
       )
     else()
       set(PYTHON_PATCH ${PATCH_CMD} --verbose -p1 -d 

@@ -16,21 +16,28 @@ if(WIN32)
     set(ISPC_EXTRA_ARGS_WIN ${ISPC_EXTRA_ARGS_WIN} -DARM_ENABLED=Off)
   endif()
 elseif(APPLE)
+  if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
+    set(HOMEBREW_PREFIX /opt/homebrew)
+  else()
+    set(HOMEBREW_PREFIX /usr/local)
+  endif()
+
   # Use bison and flex installed via Homebrew.
   # The ones that come with Xcode toolset are too old.
   if(BLENDER_PLATFORM_ARM OR WITH_APPLE_CROSSPLATFORM)
     set(ISPC_EXTRA_ARGS_APPLE
-      -DBISON_EXECUTABLE=/opt/homebrew/opt/bison/bin/bison
-      -DFLEX_EXECUTABLE=/opt/homebrew/opt/flex/bin/flex
+      -DBISON_EXECUTABLE=${HOMEBREW_PREFIX}/opt/bison/bin/bison
+      -DFLEX_EXECUTABLE=${HOMEBREW_PREFIX}/opt/flex/bin/flex
       -DARM_ENABLED=On
     )
   else()
     set(ISPC_EXTRA_ARGS_APPLE
-      -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison
-      -DFLEX_EXECUTABLE=/usr/local/opt/flex/bin/flex
+      -DBISON_EXECUTABLE=${HOMEBREW_PREFIX}/opt/bison/bin/bison
+      -DFLEX_EXECUTABLE=${HOMEBREW_PREFIX}/opt/flex/bin/flex
       -DARM_ENABLED=Off
     )
   endif()
+  unset(HOMEBREW_PREFIX)
 elseif(UNIX)
   set(ISPC_EXTRA_ARGS_UNIX
     -DCMAKE_C_COMPILER=${LIBDIR}/llvm/bin/clang
@@ -58,14 +65,14 @@ if(WITH_APPLE_CROSSPLATFORM)
   #       link and resolve indirectly via other dependencies in the project.
   # TODO: Add curses and tinfo as dependencies for ispc and build locally.
 
-  set(LLVM_TOOLS_BINARY_DIR ${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}/deps_arm64/Release/llvm/bin)
+  set(LLVM_TOOLS_BINARY_DIR ${APPLE_CROSSCOMPILE_HOST_BUILD_DIR}/llvm/bin)
 
   # Copy LLVM tools to build_ios path as lib dir is derived from tool dir and this erroneously links macOS libraries.
-  set(LLVM_CONFIG_EXECUTABLE_PATH_ORIG ${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}/deps_arm64/Release/llvm/bin/llvm-config)
-  set(CLANG_EXECUTABLE_PATH_ORIG ${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}/deps_arm64/Release/llvm/bin/clang)
-  set(CLANGPP_EXECUTABLE_PATH_ORIG ${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}/deps_arm64/Release/llvm/bin/clang++)
-  set(LLVM_DIS_EXECUTABLE_PATH_ORIG ${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}/deps_arm64/Release/llvm/bin/llvm-dis)
-  set(LLVM_AS_EXECUTABLE_PATH_ORIG ${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}/deps_arm64/Release/llvm/bin/llvm-as)
+  set(LLVM_CONFIG_EXECUTABLE_PATH_ORIG ${APPLE_CROSSCOMPILE_HOST_BUILD_DIR}/llvm/bin/llvm-config)
+  set(CLANG_EXECUTABLE_PATH_ORIG ${APPLE_CROSSCOMPILE_HOST_BUILD_DIR}/llvm/bin/clang)
+  set(CLANGPP_EXECUTABLE_PATH_ORIG ${APPLE_CROSSCOMPILE_HOST_BUILD_DIR}/llvm/bin/clang++)
+  set(LLVM_DIS_EXECUTABLE_PATH_ORIG ${APPLE_CROSSCOMPILE_HOST_BUILD_DIR}/llvm/bin/llvm-dis)
+  set(LLVM_AS_EXECUTABLE_PATH_ORIG ${APPLE_CROSSCOMPILE_HOST_BUILD_DIR}/llvm/bin/llvm-as)
 
   set(LLVM_CONFIG_EXECUTABLE_PATH ${LIBDIR}/llvm/bin/llvm-config)
   set(CLANG_EXECUTABLE_PATH ${LIBDIR}/llvm/bin/clang)
@@ -161,30 +168,44 @@ else()
 endif()
 
 if(WITH_APPLE_CROSSPLATFORM)
-  set(ISPC_PATCH_PATH  ${PATCH_DIR}/ispc_ios.diff)
+  set(HOST_ISPC_ROOT ${APPLE_CROSSCOMPILE_HOST_BUILD_DIR}/ispc)
+  if(NOT EXISTS ${HOST_ISPC_ROOT}/bin/ispc)
+    message(FATAL_ERROR "Could not find host ISPC executable at ${HOST_ISPC_ROOT}/bin/ispc")
+  endif()
+
+  ExternalProject_Add(external_ispc
+    PREFIX ${BUILD_DIR}/ispc
+    DOWNLOAD_COMMAND ""
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND
+      ${CMAKE_COMMAND} -E make_directory ${LIBDIR}/ispc &&
+      ${CMAKE_COMMAND} -E copy_directory ${HOST_ISPC_ROOT} ${LIBDIR}/ispc
+    INSTALL_DIR ${LIBDIR}/ispc
+  )
 else()
   set(ISPC_PATCH_PATH  ${PATCH_DIR}/ispc.diff)
+
+  ExternalProject_Add(external_ispc
+    URL file://${PACKAGE_DIR}/${ISPC_FILE}
+    DOWNLOAD_DIR ${DOWNLOAD_DIR}
+    URL_HASH ${ISPC_HASH_TYPE}=${ISPC_HASH}
+    PREFIX ${BUILD_DIR}/ispc
+
+    PATCH_COMMAND ${PATCH_CMD} -p 1 -d
+      ${BUILD_DIR}/ispc/src/external_ispc <
+      ${ISPC_PATCH_PATH}
+
+    CMAKE_ARGS
+      -DCMAKE_INSTALL_PREFIX=${LIBDIR}/ispc
+      -Wno-dev
+      ${DEFAULT_CMAKE_FLAGS}
+      ${ISPC_EXTRA_ARGS}
+      ${BUILD_DIR}/ispc/src/external_ispc
+
+    INSTALL_DIR ${LIBDIR}/ispc
+  )
 endif()
-
-ExternalProject_Add(external_ispc
-  URL file://${PACKAGE_DIR}/${ISPC_FILE}
-  DOWNLOAD_DIR ${DOWNLOAD_DIR}
-  URL_HASH ${ISPC_HASH_TYPE}=${ISPC_HASH}
-  PREFIX ${BUILD_DIR}/ispc
-
-  PATCH_COMMAND ${PATCH_CMD} -p 1 -d
-    ${BUILD_DIR}/ispc/src/external_ispc <
-    ${ISPC_PATCH_PATH}
-
-  CMAKE_ARGS
-    -DCMAKE_INSTALL_PREFIX=${LIBDIR}/ispc
-    -Wno-dev
-    ${DEFAULT_CMAKE_FLAGS}
-    ${ISPC_EXTRA_ARGS}
-    ${BUILD_DIR}/ispc/src/external_ispc
-
-  INSTALL_DIR ${LIBDIR}/ispc
-)
 
 add_dependencies(
   external_ispc

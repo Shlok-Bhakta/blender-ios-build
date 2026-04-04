@@ -10,6 +10,9 @@ else()
   set(LIB_SUFFIX "")
 endif()
 
+# x265 still uses code that is rejected under C++17 (for example `register`).
+string(REPLACE "-DCMAKE_CXX_STANDARD=17" "-DCMAKE_CXX_STANDARD=11" X265_CMAKE_FLAGS "${DEFAULT_CMAKE_FLAGS}")
+
 if(BLENDER_PLATFORM_WINDOWS_ARM)
   set(X265_COMMON_ARGS
     -DCMAKE_C_COMPILER=${LIBDIR}/llvm/bin/clang-cl.exe
@@ -23,15 +26,35 @@ if(BLENDER_PLATFORM_WINDOWS_ARM)
   set(X265_10_PATCH_COMMAND COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265_10/src/external_x265_10 < ${PATCH_DIR}/x265_windows_arm.diff)
   set(X265_PATCH_COMMAND COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265/src/external_x265 < ${PATCH_DIR}/x265_windows_arm.diff)
 elseif(WITH_APPLE_CROSSPLATFORM)
-  set(X265_COMMON_ARGS)
-  set(X265_12_PATCH_COMMAND COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265_12/src/external_x265_12 < ${PATCH_DIR}/x265_apple_ios.diff)
-  set(X265_10_PATCH_COMMAND COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265_10/src/external_x265_10 < ${PATCH_DIR}/x265_apple_ios.diff)
-  set(X265_PATCH_COMMAND COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265/src/external_x265 < ${PATCH_DIR}/x265_apple_ios.diff)
+  set(X265_COMMON_ARGS
+    -DENABLE_ASSEMBLY=OFF
+  )
+  set(X265_12_PATCH_COMMAND
+    COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265_12/src/external_x265_12 < ${PATCH_DIR}/x265_cmake4.diff
+    COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265_12/src/external_x265_12 < ${PATCH_DIR}/x265_apple_ios.diff
+  )
+  set(X265_10_PATCH_COMMAND
+    COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265_10/src/external_x265_10 < ${PATCH_DIR}/x265_cmake4.diff
+    COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265_10/src/external_x265_10 < ${PATCH_DIR}/x265_apple_ios.diff
+  )
+  set(X265_PATCH_COMMAND
+    COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265/src/external_x265 < ${PATCH_DIR}/x265_cmake4.diff
+    COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265/src/external_x265 < ${PATCH_DIR}/x265_apple_ios.diff
+  )
 elseif(APPLE)
   set(X265_COMMON_ARGS)
-  set(X265_12_PATCH_COMMAND COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265_12/src/external_x265_12 < ${PATCH_DIR}/x265_apple.diff)
-  set(X265_10_PATCH_COMMAND COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265_10/src/external_x265_10 < ${PATCH_DIR}/x265_apple.diff)
-  set(X265_PATCH_COMMAND COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265/src/external_x265 < ${PATCH_DIR}/x265_apple.diff)
+  set(X265_12_PATCH_COMMAND
+    COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265_12/src/external_x265_12 < ${PATCH_DIR}/x265_cmake4.diff
+    COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265_12/src/external_x265_12 < ${PATCH_DIR}/x265_apple.diff
+  )
+  set(X265_10_PATCH_COMMAND
+    COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265_10/src/external_x265_10 < ${PATCH_DIR}/x265_cmake4.diff
+    COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265_10/src/external_x265_10 < ${PATCH_DIR}/x265_apple.diff
+  )
+  set(X265_PATCH_COMMAND
+    COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265/src/external_x265 < ${PATCH_DIR}/x265_cmake4.diff
+    COMMAND ${PATCH_CMD} -p 1 -d ${BUILD_DIR}/x265/src/external_x265 < ${PATCH_DIR}/x265_apple.diff
+  )
 else()
   set(X265_COMMON_ARGS)
   set(X265_12_PATCH_COMMAND)
@@ -66,6 +89,10 @@ set(X265_EXTRA_ARGS
   -DLINKED_12BIT=ON
 )
 
+if(WITH_APPLE_CROSSPLATFORM)
+  list(APPEND X265_EXTRA_ARGS -DENABLE_CLI=OFF)
+endif()
+
 if(UNIX)
   # Use the suffix `.part` so this library isn't included when installing,
   # as the library which is merged is used instead.
@@ -89,7 +116,7 @@ ExternalProject_Add(external_x265_12
   CMAKE_GENERATOR ${PLATFORM_ALT_GENERATOR}
   SOURCE_SUBDIR source
   PATCH_COMMAND ${X265_12_PATCH_COMMAND}
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${LIBDIR}/x265_12 ${DEFAULT_CMAKE_FLAGS} ${X265_COMMON_ARGS} ${X265_12_EXTRA_ARGS}
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${LIBDIR}/x265_12 ${X265_CMAKE_FLAGS} ${X265_COMMON_ARGS} ${X265_12_EXTRA_ARGS}
   INSTALL_DIR ${LIBDIR}/x265_12
 )
 
@@ -101,7 +128,7 @@ ExternalProject_Add(external_x265_10
   CMAKE_GENERATOR ${PLATFORM_ALT_GENERATOR}
   SOURCE_SUBDIR source
   PATCH_COMMAND ${X265_10_PATCH_COMMAND}
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${LIBDIR}/x265_10 ${DEFAULT_CMAKE_FLAGS} ${X265_COMMON_ARGS} ${X265_10_EXTRA_ARGS}
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${LIBDIR}/x265_10 ${X265_CMAKE_FLAGS} ${X265_COMMON_ARGS} ${X265_10_EXTRA_ARGS}
   INSTALL_DIR ${LIBDIR}/x265_10
 )
 
@@ -114,7 +141,7 @@ ExternalProject_Add(external_x265
   SOURCE_SUBDIR source
   PATCH_COMMAND ${X265_PATCH_COMMAND}
   LIST_SEPARATOR ^^
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${LIBDIR}/x265 ${DEFAULT_CMAKE_FLAGS} ${X265_COMMON_ARGS} ${X265_EXTRA_ARGS}
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${LIBDIR}/x265 ${X265_CMAKE_FLAGS} ${X265_COMMON_ARGS} ${X265_EXTRA_ARGS}
   INSTALL_DIR ${LIBDIR}/x265
 )
 
@@ -171,7 +198,7 @@ execute_process(
     unset(_ar_cmake)
   else()
     ExternalProject_Add_Step(external_x265 after_install
-      COMMAND libtool -static -o
+      COMMAND /usr/bin/libtool -static -o
         ${LIBDIR}/x265/lib/${LIB_PREFIX}x265${LIB_SUFFIX}${LIBEXT}
         ${LIBDIR}/x265/lib/${LIB_PREFIX}x265${LIB_SUFFIX}_unmerged${LIBEXT}.part
         ${LIBDIR}/x265_10/lib/${LIB_PREFIX}x265${LIB_SUFFIX}${LIBEXT}

@@ -5,7 +5,7 @@
 if(WITH_APPLE_CROSSPLATFORM)
   set(BROTLI_EXTRA_ARGS
   -DWITH_APPLE_CROSSPLATFORM=YES
-  -DBROTLI_EXECUTABLE:string=${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}/deps_arm64/Release/brotli/bin/brotli
+  -DBROTLI_EXECUTABLE:string=${APPLE_CROSSCOMPILE_HOST_BUILD_DIR}/brotli/bin/brotli
   )
   set(PATCH PATCH_COMMAND ${PATCH_CMD} --verbose ${BUILD_DIR}/brotli/src/external_brotli/CMakeLists.txt ${PATCH_DIR}/brotli_ios.diff)
 else()

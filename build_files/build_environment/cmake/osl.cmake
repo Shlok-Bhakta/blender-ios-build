@@ -15,7 +15,7 @@ else()
 
   if(APPLE)
     # Explicitly specify Homebrew path, so we don't use the old system one.
-    if(BLENDER_PLATFORM_ARM)
+    if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
       set(OSL_FLEX_BISON -DBISON_EXECUTABLE=/opt/homebrew/opt/bison/bin/bison)
     else()
       set(OSL_FLEX_BISON -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison)

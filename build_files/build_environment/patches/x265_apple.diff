@@ -1,7 +1,7 @@
 diff --git a/source/CMakeLists.txt b/source/CMakeLists.txt
 index ab5ddfe..50e9a05 100755
 --- a/source/CMakeLists.txt
---- b/source/CMakeLists.txt
++++ b/source/CMakeLists.txt
 @@ -478,6 +478,10 @@ if(ARM64)
    endif()
  endif(ARM64)

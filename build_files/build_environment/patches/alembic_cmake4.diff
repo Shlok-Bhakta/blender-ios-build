@@ -1,0 +1,13 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 50769ce..75b6c57 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -100,7 +100,7 @@ IF ("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
+     SET(DARWIN TRUE)
+     # suppress rpath warning
+     IF (POLICY CMP0042)
+-        CMAKE_POLICY(SET CMP0042 OLD)
++        CMAKE_POLICY(SET CMP0042 NEW)
+     ENDIF()
+ ENDIF()
+ 

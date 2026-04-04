@@ -27,14 +27,27 @@ endif()
 message(STATUS "BuildMode = ${BUILD_MODE}")
 
 if(WITH_APPLE_CROSSPLATFORM)
+  if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64)$")
+    set(APPLE_CROSSCOMPILE_HOST_ARCH "x64")
+  elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
+    set(APPLE_CROSSCOMPILE_HOST_ARCH "arm64")
+  else()
+    message(FATAL_ERROR "Unsupported Apple host architecture: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+  endif()
+
+  set(APPLE_CROSSCOMPILE_HOST_BUILD_DIR
+    ${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}/deps_${APPLE_CROSSCOMPILE_HOST_ARCH}/${BUILD_MODE})
+
   message("\n------- Building libraries for Apple Crossplatform: ${APPLE_TARGET_DEVICE} -----\n")
   message("\n-- ${APPLE_TARGET_DEVICE}  Cross-compilation source directory --")
   message(" * Some ${APPLE_TARGET_DEVICE}  library build processes require tools which have been compiled on the native build machine. To support these, we can use the regular macOS builds to run these tools locally. The cross-compile directory points to the build directories used by make deps for macOS.\n")
+  message("APPLE_CROSSCOMPILE_HOST_ARCH = ${APPLE_CROSSCOMPILE_HOST_ARCH}")
+  message("APPLE_CROSSCOMPILE_HOST_BUILD_DIR = ${APPLE_CROSSCOMPILE_HOST_BUILD_DIR}")
   message("CMAKE_DEPS_CROSSCOMPILE_BUILDDIR = ${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}")
   message("CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR = ${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}")
 
   # Set python to cross-compiled binary
-  set(PYTHON_BINARY ${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}/deps_arm64/Release/python/bin/python${PYTHON_SHORT_VERSION})
+  set(PYTHON_BINARY ${APPLE_CROSSCOMPILE_HOST_BUILD_DIR}/python/bin/python3)
   message("PYTHON_BINARY = ${PYTHON_BINARY}")
   message("")
 endif()
@@ -224,7 +237,7 @@ else()
 
   # For Python Meson, use crosscompiled tool.
   if(WITH_APPLE_CROSSPLATFORM)
-    set(MESON ${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}/deps_arm64/Release/python/bin/meson)
+    set(MESON ${APPLE_CROSSCOMPILE_HOST_BUILD_DIR}/python/bin/meson)
   else()
     set(MESON ${LIBDIR}/python/bin/meson)
   endif()
@@ -430,6 +443,7 @@ endif()
 
 set(DEFAULT_CMAKE_FLAGS
   -DCMAKE_BUILD_TYPE=${BUILD_MODE}
+  -DCMAKE_POLICY_VERSION_MINIMUM=3.5
   -DCMAKE_C_FLAGS_DEBUG=${BLENDER_CMAKE_C_FLAGS_DEBUG}
   -DCMAKE_C_FLAGS_MINSIZEREL=${BLENDER_CMAKE_C_FLAGS_MINSIZEREL}
   -DCMAKE_C_FLAGS_RELEASE=${BLENDER_CMAKE_C_FLAGS_RELEASE}

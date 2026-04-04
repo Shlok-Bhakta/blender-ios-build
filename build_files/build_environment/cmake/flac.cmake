@@ -15,15 +15,48 @@ if(NOT WIN32)
     set(CROSS_COMPILE_FLAGS)
   endif()
 
+  if(APPLE)
+    set(FLAC_CONFIGURE_COMMAND
+      ${CMAKE_COMMAND} -E env
+      "MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}"
+      "MACOSX_SDK_VERSION=${CMAKE_OSX_DEPLOYMENT_TARGET}"
+      "CC=${CMAKE_C_COMPILER}"
+      "CFLAGS=${PLATFORM_CFLAGS} -std=gnu11"
+      "CXXFLAGS=${PLATFORM_CXXFLAGS}"
+      "LDFLAGS=${PLATFORM_LDFLAGS}"
+      "ac_cv_prog_cc_c23=no"
+      "ac_cv_prog_cc_c11=-std=gnu11"
+      "ac_cv_prog_cc_stdc=-std=gnu11"
+      "ACLOCAL=aclocal"
+      "AUTOMAKE=automake"
+      "AUTOCONF=autoconf"
+      "AUTOHEADER=autoheader"
+      ${CMAKE_COMMAND} -E chdir ${BUILD_DIR}/flac/src/external_flac
+      ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/flac --disable-shared --enable-static ${CROSS_COMPILE_FLAGS}
+    )
+  else()
+    set(FLAC_CONFIGURE_ENV
+      ${CONFIGURE_ENV} &&
+      export ACLOCAL=aclocal &&
+      export AUTOMAKE=automake &&
+      export AUTOCONF=autoconf &&
+      export AUTOHEADER=autoheader
+    )
+
+    set(FLAC_CONFIGURE_COMMAND
+      ${FLAC_CONFIGURE_ENV} &&
+      cd ${BUILD_DIR}/flac/src/external_flac/ &&
+      ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/flac --disable-shared --enable-static ${CROSS_COMPILE_FLAGS}
+    )
+  endif()
+
   ExternalProject_Add(external_flac
     URL file://${PACKAGE_DIR}/${FLAC_FILE}
     DOWNLOAD_DIR ${DOWNLOAD_DIR}
     URL_HASH ${FLAC_HASH_TYPE}=${FLAC_HASH}
     PREFIX ${BUILD_DIR}/flac
 
-    CONFIGURE_COMMAND ${CONFIGURE_ENV} &&
-      cd ${BUILD_DIR}/flac/src/external_flac/ &&
-      ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/flac --disable-shared --enable-static  ${CROSS_COMPILE_FLAGS}
+    CONFIGURE_COMMAND ${FLAC_CONFIGURE_COMMAND}
 
     BUILD_COMMAND ${CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/flac/src/external_flac/ &&

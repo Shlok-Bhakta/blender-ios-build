@@ -199,6 +199,13 @@ endif
 ifeq ($(CPU),aarch64)
 	CPU:=arm64
 endif
+
+# Apple cross-platform builds still target arm64, even when the host machine is Intel.
+DEPS_INSTALL_ARCH:=$(CPU)
+ifneq ($(filter $(OS_NCASE),ios ios-simulator),)
+	DEPS_INSTALL_ARCH:=arm64
+endif
+
 ifeq ($(OS_NCASE),darwin)
 	OS_LIBDIR:=macos
 else
@@ -230,7 +237,7 @@ ifndef DEPS_BUILD_DIR
 endif
 
 ifndef DEPS_INSTALL_DIR
-	DEPS_INSTALL_DIR:=$(BLENDER_DIR)/lib/$(OS_LIBDIR)_$(CPU)
+	DEPS_INSTALL_DIR:=$(BLENDER_DIR)/lib/$(OS_LIBDIR)_$(DEPS_INSTALL_ARCH)
 endif
 
 ifndef CROSSCOMPILE_DEPS_INSTALL_DIR

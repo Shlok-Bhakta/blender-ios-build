@@ -141,18 +141,23 @@ endif()
 
 if(APPLE)
   if(WITH_APPLE_CROSSPLATFORM)
+    set(FFMPEG_APPLE_TARGET_OS ios)
+    if(APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
+      set(FFMPEG_APPLE_TARGET_OS ios-simulator)
+    endif()
+
     set(FFMPEG_EXTRA_FLAGS
       ${FFMPEG_EXTRA_FLAGS}
       --enable-cross-compile
       --arch=aarch64
-      --target-os=ios-simulator
+      --target-os=${FFMPEG_APPLE_TARGET_OS}
 
       --sysroot=${CMAKE_OSX_SYSROOT} 
       --extra-ldflags=${PLATFORM_LDFLAGS} 
       --extra-ldsoflags=${PLATFORM_LDFLAGS} 
-      --extra-cflags=${PLATFORM_C_FLAGS}
-      --extra-cxxflags=${PLATFORM_CXX_FLAGS}
-      --extra-objcflags=${PLATFORM_C_FLAGS}
+      --extra-cflags=${PLATFORM_CFLAGS}
+      --extra-cxxflags=${PLATFORM_CXXFLAGS}
+      --extra-objcflags=${PLATFORM_CFLAGS}
 
     )
   else()
