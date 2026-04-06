@@ -45,6 +45,10 @@
 
 using blender::StringRef;
 using blender::StringRefNull;
+using blender::WM_event_add_mousemove;
+using blender::WM_menutype_find;
+using blender::WM_menutype_poll;
+using blender::WM_window_get_active_screen;
 
 /* -------------------------------------------------------------------- */
 /** \name Utility Functions

@@ -4721,6 +4721,7 @@ static void GREASE_PENCIL_OT_convert_curve_type(wmOperatorType *ot)
 void ED_operatortypes_grease_pencil_edit()
 {
   using namespace blender::ed::greasepencil;
+  using blender::WM_operatortype_append;
   WM_operatortype_append(GREASE_PENCIL_OT_stroke_smooth);
   WM_operatortype_append(GREASE_PENCIL_OT_stroke_simplify);
   WM_operatortype_append(GREASE_PENCIL_OT_delete);

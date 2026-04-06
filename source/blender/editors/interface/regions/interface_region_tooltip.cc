@@ -84,6 +84,17 @@
 #include "interface_intern.hh"
 #include "interface_regions_intern.hh"
 
+using blender::WM_operatortype_description_or_name;
+using blender::WM_operator_last_redo;
+using blender::WM_operator_properties_create_ptr;
+using blender::WM_operator_properties_free;
+using blender::WM_operator_properties_sanitize;
+using blender::WM_operator_pystring_abbreviate;
+using blender::WM_operator_pystring_ex;
+using blender::WM_operatortype_find;
+using blender::WM_window_native_pixel_size;
+using blender::wmOrtho2_region_pixelspace;
+
 /* Portions of line height. */
 #define UI_TIP_SPACER 0.3f
 #define UI_TIP_PADDING_X 1.95f

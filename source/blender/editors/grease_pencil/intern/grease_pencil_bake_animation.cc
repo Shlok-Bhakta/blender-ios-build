@@ -367,5 +367,5 @@ static void GREASE_PENCIL_OT_bake_grease_pencil_animation(wmOperatorType *ot)
 void ED_operatortypes_grease_pencil_bake_animation()
 {
   using namespace blender::ed::greasepencil;
-  WM_operatortype_append(GREASE_PENCIL_OT_bake_grease_pencil_animation);
+  blender::WM_operatortype_append(GREASE_PENCIL_OT_bake_grease_pencil_animation);
 }

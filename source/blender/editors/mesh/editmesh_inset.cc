@@ -42,6 +42,8 @@
 #include "mesh_intern.hh" /* own include */
 
 using blender::Vector;
+using blender::WM_userdef_event_type_from_keymap_type;
+using blender::WM_event_add_modal_handler;
 
 struct InsetObjectStore {
   /** Must have a valid edit-mesh. */

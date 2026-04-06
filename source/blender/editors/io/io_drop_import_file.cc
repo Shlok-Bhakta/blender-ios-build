@@ -125,7 +125,7 @@ static wmOperatorStatus wm_drop_import_file_exec(bContext *C, wmOperator *op)
 
   WM_operator_name_call_ptr(
       C, ot, blender::wm::OpCallContext::InvokeDefault, &file_props, nullptr);
-  WM_operator_properties_free(&file_props);
+  blender::WM_operator_properties_free(&file_props);
   return OPERATOR_FINISHED;
 }
 
@@ -186,7 +186,7 @@ void WM_OT_drop_import_file(wmOperatorType *ot)
 
 static void drop_import_file_copy(bContext * /*C*/, wmDrag *drag, wmDropBox *drop)
 {
-  blender::ed::io::paths_to_operator_properties(drop->ptr, WM_drag_get_paths(drag));
+  blender::ed::io::paths_to_operator_properties(drop->ptr, blender::WM_drag_get_paths(drag));
 }
 
 static bool drop_import_file_poll(bContext *C, wmDrag *drag, const wmEvent * /*event*/)
@@ -194,7 +194,7 @@ static bool drop_import_file_poll(bContext *C, wmDrag *drag, const wmEvent * /*e
   if (drag->type != WM_DRAG_PATH) {
     return false;
   }
-  const auto paths = WM_drag_get_paths(drag);
+  const auto paths = blender::WM_drag_get_paths(drag);
   return !drop_import_file_poll_file_handlers(C, paths, true).is_empty();
 }
 
@@ -203,7 +203,7 @@ static std::string drop_import_file_tooltip(bContext *C,
                                             const int /*xy*/[2],
                                             wmDropBox * /*drop*/)
 {
-  const auto paths = WM_drag_get_paths(drag);
+  const auto paths = blender::WM_drag_get_paths(drag);
   const auto file_handlers = drop_import_file_poll_file_handlers(C, paths, true);
   if (file_handlers.size() == 1) {
     wmOperatorType *ot = WM_operatortype_find(file_handlers[0]->import_operator, false);
@@ -215,8 +215,8 @@ static std::string drop_import_file_tooltip(bContext *C,
 
 void ED_dropbox_drop_import_file()
 {
-  ListBase *lb = WM_dropboxmap_find("Window", SPACE_EMPTY, RGN_TYPE_WINDOW);
-  WM_dropbox_add(lb,
+  blender::ListBaseT<wmDropBox> *lb = blender::WM_dropboxmap_find("Window", SPACE_EMPTY, RGN_TYPE_WINDOW);
+  blender::WM_dropbox_add(lb,
                  "WM_OT_drop_import_file",
                  drop_import_file_poll,
                  drop_import_file_copy,

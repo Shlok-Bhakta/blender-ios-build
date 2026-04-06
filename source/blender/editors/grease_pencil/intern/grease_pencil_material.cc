@@ -25,6 +25,8 @@
 
 #include "WM_api.hh"
 
+using blender::WM_operatortype_append;
+
 namespace blender::ed::greasepencil {
 
 /* -------------------------------------------------------------------- */

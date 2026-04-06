@@ -70,13 +70,13 @@
 namespace blender::ed::object {
 
 /* prototypes */
-static void bake_set_props(wmOperator *op, Scene *scene);
+static void bake_set_props(wmOperator *op, ::Scene *scene);
 
 struct BakeAPIRender {
   /* Data to work on. */
-  Main *main;
-  Scene *scene;
-  ViewLayer *view_layer;
+  ::Main *main;
+  ::Scene *scene;
+  ::ViewLayer *view_layer;
   Object *ob;
   Vector<PointerRNA> selected_objects;
 
@@ -110,7 +110,7 @@ struct BakeAPIRender {
   const char *identifier;
 
   /* Baking render session. */
-  Render *render;
+  ::Render *render;
 
   /* Progress Callbacks. */
   float *progress;
@@ -464,7 +464,7 @@ static bool is_noncolor_pass(eScenePassType pass_type)
 }
 
 /* if all is good tag image and return true */
-static bool bake_object_check(const Scene *scene,
+static bool bake_object_check(const ::Scene *scene,
                               ViewLayer *view_layer,
                               Object *ob,
                               const eBakeTarget target,
@@ -647,7 +647,7 @@ static bool bake_pass_filter_check(eScenePassType pass_type,
 
 /* before even getting in the bake function we check for some basic errors */
 static bool bake_objects_check(Main *bmain,
-                               const Scene *scene,
+                               const ::Scene *scene,
                                ViewLayer *view_layer,
                                Object *ob,
                                Span<PointerRNA> selected_objects,
@@ -1407,9 +1407,9 @@ static wmOperatorStatus bake(const BakeAPIRender *bkr,
                              const Span<PointerRNA> selected_objects,
                              ReportList *reports)
 {
-  Render *re = bkr->render;
-  Main *bmain = bkr->main;
-  Scene *scene = bkr->scene;
+  ::Render *re = bkr->render;
+  ::Main *bmain = bkr->main;
+  ::Scene *scene = bkr->scene;
   ViewLayer *view_layer = bkr->view_layer;
 
   /* We build a depsgraph for the baking,
@@ -1919,7 +1919,7 @@ static void bake_init_api_data(wmOperator *op, bContext *C, BakeAPIRender *bkr)
 
   bkr->result = OPERATOR_CANCELLED;
 
-  bkr->render = RE_NewSceneRender(bkr->scene);
+  bkr->render = RE_NewSceneRender(static_cast<const ::Scene *>(bkr->scene));
 
   /* XXX hack to force saving to always be internal. Whether (and how) to support
    * external saving will be addressed later */
@@ -1939,7 +1939,7 @@ static wmOperatorStatus bake_exec(bContext *C, wmOperator *op)
   Render *re;
   wmOperatorStatus result = OPERATOR_CANCELLED;
   BakeAPIRender bkr = {nullptr};
-  Scene *scene = CTX_data_scene(C);
+  ::Scene *scene = CTX_data_scene(C);
 
   G.is_break = false;
   G.is_rendering = true;
@@ -2067,7 +2067,7 @@ static void bake_freejob(void *bkv)
   G.is_rendering = false;
 }
 
-static void bake_set_props(wmOperator *op, Scene *scene)
+static void bake_set_props(wmOperator *op, ::Scene *scene)
 {
   PropertyRNA *prop;
   BakeData *bake = &scene->r.bake;
@@ -2178,7 +2178,7 @@ static wmOperatorStatus bake_invoke(bContext *C, wmOperator *op, const wmEvent *
 {
   wmJob *wm_job;
   Render *re;
-  Scene *scene = CTX_data_scene(C);
+  ::Scene *scene = CTX_data_scene(C);
 
   bake_set_props(op, scene);
 

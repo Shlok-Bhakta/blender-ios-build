@@ -47,6 +47,12 @@
 #endif
 
 using blender::Vector;
+using blender::WM_gesture_straightline_active_side_invoke;
+using blender::WM_gesture_straightline_invoke;
+using blender::WM_gesture_straightline_modal;
+using blender::WM_gesture_straightline_cancel;
+using blender::WM_operator_properties_gesture_straightline;
+using blender::WM_operator_last_redo;
 
 static wmOperatorStatus mesh_bisect_exec(bContext *C, wmOperator *op);
 

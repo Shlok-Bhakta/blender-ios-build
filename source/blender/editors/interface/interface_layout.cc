@@ -50,6 +50,8 @@
 
 using blender::StringRef;
 using blender::StringRefNull;
+using blender::WM_menutype_poll;
+using blender::WM_operator_pystring_ex;
 struct uiButtonItem;
 
 /* Show an icon button after each RNA button to use to quickly set keyframes,

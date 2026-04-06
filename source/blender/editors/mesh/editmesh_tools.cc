@@ -78,6 +78,11 @@
 #include "bmesh_tools.hh"
 
 using blender::Vector;
+using blender::WM_menu_invoke;
+using blender::WM_cursor_wait;
+using blender::WM_operatortype_props_advanced_begin;
+using blender::WM_operator_type_modal_from_exec_for_object_edit_coords;
+using blender::WM_event_add_modal_handler;
 
 #define USE_FACE_CREATE_SEL_EXTEND
 

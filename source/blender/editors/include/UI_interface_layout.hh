@@ -803,6 +803,8 @@ inline int uiLayout::width() const
 }
 
 namespace blender::ui {
+using Layout = ::uiLayout;
+
 enum class LayoutDirection : int8_t {
   Horizontal = 0,
   Vertical = 1,

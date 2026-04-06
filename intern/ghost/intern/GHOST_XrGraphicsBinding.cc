@@ -33,10 +33,6 @@
 #  include "GHOST_XrGraphicsBindingVulkan.hh"
 #endif
 
-#include "GHOST_C-api.h"
-#include "GHOST_XrException.hh"
-#include "GHOST_Xr_intern.hh"
-
 #include "GHOST_IXrGraphicsBinding.hh"
 
 #if defined(WITH_OPENGL_BACKEND)

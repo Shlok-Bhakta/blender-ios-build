@@ -45,6 +45,12 @@
 
 #include "interface_intern.hh"
 
+using blender::WM_event_add_keymap_handler_priority;
+using blender::WM_event_add_mousemove;
+using blender::WM_event_remove_keymap_handler;
+using blender::WM_event_set_keymap_handler_post_callback;
+using blender::WM_paneltype_find;
+
 /* -------------------------------------------------------------------- */
 /** \name Popup Menu with Callback or String
  * \{ */

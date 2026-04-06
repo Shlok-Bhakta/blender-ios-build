@@ -28,6 +28,8 @@
 #include "WM_message.hh"
 #include "WM_toolsystem.hh"
 
+using blender::WM_operatortype_append;
+
 namespace blender::ed::greasepencil {
 
 /* -------------------------------------------------------------------- */

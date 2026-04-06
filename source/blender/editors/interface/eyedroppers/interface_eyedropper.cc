@@ -22,6 +22,8 @@
 
 #include "eyedropper_intern.hh" /* own include */
 
+using blender::WM_window_find_under_cursor;
+
 /* -------------------------------------------------------------------- */
 /* Keymap
  */

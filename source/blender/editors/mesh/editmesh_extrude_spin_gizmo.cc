@@ -40,6 +40,8 @@
 #include "ED_gizmo_library.hh"
 #include "ED_undo.hh"
 
+using blender::WM_operator_last_redo;
+
 /**
  * Orient the handles towards the selection (can be slow with high-poly mesh!).
  */

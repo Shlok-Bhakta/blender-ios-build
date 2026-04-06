@@ -709,7 +709,7 @@ static wmOperatorStatus change_frame_invoke(bContext *C, wmOperator *op, const w
   change_frame_apply(C, op, true);
 
   /* add temp handler */
-  WM_event_add_modal_handler(C, op);
+  blender::WM_event_add_modal_handler(C, op);
 
   return OPERATOR_RUNNING_MODAL;
 }
@@ -1019,7 +1019,7 @@ static wmOperatorStatus previewrange_define_exec(bContext *C, wmOperator *op)
   rcti rect;
 
   /* get min/max values from box select rect (already in region coordinates, not screen) */
-  WM_operator_properties_border_to_rcti(op, &rect);
+  blender::WM_operator_properties_border_to_rcti(op, &rect);
 
   /* convert min/max values to frames (i.e. region to 'tot' rect) */
   sfra = UI_view2d_region_to_view_x(&region->v2d, rect.xmin);
@@ -1051,10 +1051,10 @@ static void ANIM_OT_previewrange_set(wmOperatorType *ot)
   ot->description = "Interactively define frame range used for playback";
 
   /* API callbacks. */
-  ot->invoke = WM_gesture_box_invoke;
+  ot->invoke = blender::WM_gesture_box_invoke;
   ot->exec = previewrange_define_exec;
-  ot->modal = WM_gesture_box_modal;
-  ot->cancel = WM_gesture_box_cancel;
+  ot->modal = blender::WM_gesture_box_modal;
+  ot->cancel = blender::WM_gesture_box_cancel;
 
   ot->poll = ED_operator_animview_active;
 
@@ -1397,56 +1397,56 @@ static void ANIM_OT_merge_animation(wmOperatorType *ot)
 void ED_operatortypes_anim()
 {
   /* Animation Editors only -------------------------- */
-  WM_operatortype_append(ANIM_OT_change_frame);
+  blender::WM_operatortype_append(ANIM_OT_change_frame);
 
-  WM_operatortype_append(ANIM_OT_start_frame_set);
-  WM_operatortype_append(ANIM_OT_end_frame_set);
+  blender::WM_operatortype_append(ANIM_OT_start_frame_set);
+  blender::WM_operatortype_append(ANIM_OT_end_frame_set);
 
-  WM_operatortype_append(ANIM_OT_previewrange_set);
-  WM_operatortype_append(ANIM_OT_previewrange_clear);
+  blender::WM_operatortype_append(ANIM_OT_previewrange_set);
+  blender::WM_operatortype_append(ANIM_OT_previewrange_clear);
 
-  WM_operatortype_append(ANIM_OT_scene_range_frame);
+  blender::WM_operatortype_append(ANIM_OT_scene_range_frame);
 
 #ifndef NDEBUG
-  WM_operatortype_append(ANIM_OT_debug_channel_list);
+  blender::WM_operatortype_append(ANIM_OT_debug_channel_list);
 #endif
 
   /* Entire UI --------------------------------------- */
-  WM_operatortype_append(ANIM_OT_keyframe_insert);
-  WM_operatortype_append(ANIM_OT_keyframe_delete);
-  WM_operatortype_append(ANIM_OT_keyframe_insert_menu);
-  WM_operatortype_append(ANIM_OT_keyframe_delete_v3d);
-  WM_operatortype_append(ANIM_OT_keyframe_delete_vse);
-  WM_operatortype_append(ANIM_OT_keyframe_clear_v3d);
-  WM_operatortype_append(ANIM_OT_keyframe_clear_vse);
-  WM_operatortype_append(ANIM_OT_keyframe_insert_button);
-  WM_operatortype_append(ANIM_OT_keyframe_delete_button);
-  WM_operatortype_append(ANIM_OT_keyframe_clear_button);
-  WM_operatortype_append(ANIM_OT_keyframe_insert_by_name);
-  WM_operatortype_append(ANIM_OT_keyframe_delete_by_name);
+  blender::WM_operatortype_append(ANIM_OT_keyframe_insert);
+  blender::WM_operatortype_append(ANIM_OT_keyframe_delete);
+  blender::WM_operatortype_append(ANIM_OT_keyframe_insert_menu);
+  blender::WM_operatortype_append(ANIM_OT_keyframe_delete_v3d);
+  blender::WM_operatortype_append(ANIM_OT_keyframe_delete_vse);
+  blender::WM_operatortype_append(ANIM_OT_keyframe_clear_v3d);
+  blender::WM_operatortype_append(ANIM_OT_keyframe_clear_vse);
+  blender::WM_operatortype_append(ANIM_OT_keyframe_insert_button);
+  blender::WM_operatortype_append(ANIM_OT_keyframe_delete_button);
+  blender::WM_operatortype_append(ANIM_OT_keyframe_clear_button);
+  blender::WM_operatortype_append(ANIM_OT_keyframe_insert_by_name);
+  blender::WM_operatortype_append(ANIM_OT_keyframe_delete_by_name);
 
-  WM_operatortype_append(ANIM_OT_driver_button_add);
-  WM_operatortype_append(ANIM_OT_driver_button_remove);
-  WM_operatortype_append(ANIM_OT_driver_button_edit);
-  WM_operatortype_append(ANIM_OT_copy_driver_button);
-  WM_operatortype_append(ANIM_OT_paste_driver_button);
+  blender::WM_operatortype_append(ANIM_OT_driver_button_add);
+  blender::WM_operatortype_append(ANIM_OT_driver_button_remove);
+  blender::WM_operatortype_append(ANIM_OT_driver_button_edit);
+  blender::WM_operatortype_append(ANIM_OT_copy_driver_button);
+  blender::WM_operatortype_append(ANIM_OT_paste_driver_button);
 
-  WM_operatortype_append(ANIM_OT_keyingset_button_add);
-  WM_operatortype_append(ANIM_OT_keyingset_button_remove);
+  blender::WM_operatortype_append(ANIM_OT_keyingset_button_add);
+  blender::WM_operatortype_append(ANIM_OT_keyingset_button_remove);
 
-  WM_operatortype_append(ANIM_OT_keying_set_add);
-  WM_operatortype_append(ANIM_OT_keying_set_remove);
-  WM_operatortype_append(ANIM_OT_keying_set_path_add);
-  WM_operatortype_append(ANIM_OT_keying_set_path_remove);
+  blender::WM_operatortype_append(ANIM_OT_keying_set_add);
+  blender::WM_operatortype_append(ANIM_OT_keying_set_remove);
+  blender::WM_operatortype_append(ANIM_OT_keying_set_path_add);
+  blender::WM_operatortype_append(ANIM_OT_keying_set_path_remove);
 
-  WM_operatortype_append(ANIM_OT_keying_set_active_set);
+  blender::WM_operatortype_append(ANIM_OT_keying_set_active_set);
 
-  WM_operatortype_append(ANIM_OT_convert_legacy_action);
-  WM_operatortype_append(ANIM_OT_merge_animation);
+  blender::WM_operatortype_append(ANIM_OT_convert_legacy_action);
+  blender::WM_operatortype_append(ANIM_OT_merge_animation);
 
-  WM_operatortype_append(blender::ed::animrig::POSELIB_OT_create_pose_asset);
-  WM_operatortype_append(blender::ed::animrig::POSELIB_OT_asset_modify);
-  WM_operatortype_append(blender::ed::animrig::POSELIB_OT_asset_delete);
+  blender::WM_operatortype_append(blender::ed::animrig::POSELIB_OT_create_pose_asset);
+  blender::WM_operatortype_append(blender::ed::animrig::POSELIB_OT_asset_modify);
+  blender::WM_operatortype_append(blender::ed::animrig::POSELIB_OT_asset_delete);
 }
 
 void ED_keymap_anim(wmKeyConfig *keyconf)

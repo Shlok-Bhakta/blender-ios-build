@@ -998,9 +998,9 @@ static void GREASE_PENCIL_OT_delete_breakdown(wmOperatorType *ot)
 void ED_operatortypes_grease_pencil_frames()
 {
   using namespace blender::ed::greasepencil;
-  WM_operatortype_append(GREASE_PENCIL_OT_insert_blank_frame);
-  WM_operatortype_append(GREASE_PENCIL_OT_frame_clean_duplicate);
-  WM_operatortype_append(GREASE_PENCIL_OT_frame_duplicate);
-  WM_operatortype_append(GREASE_PENCIL_OT_active_frame_delete);
-  WM_operatortype_append(GREASE_PENCIL_OT_delete_breakdown);
+  blender::WM_operatortype_append(GREASE_PENCIL_OT_insert_blank_frame);
+  blender::WM_operatortype_append(GREASE_PENCIL_OT_frame_clean_duplicate);
+  blender::WM_operatortype_append(GREASE_PENCIL_OT_frame_duplicate);
+  blender::WM_operatortype_append(GREASE_PENCIL_OT_active_frame_delete);
+  blender::WM_operatortype_append(GREASE_PENCIL_OT_delete_breakdown);
 }

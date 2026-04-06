@@ -2055,7 +2055,7 @@ static void annotation_draw_apply_event(
    * add any x,y override position for fake events. */
   if (p->flags & GP_PAINTFLAG_FIRSTRUN) {
     /* The first run may be a drag event, see: #99368. */
-    WM_event_drag_start_mval_fl(event, p->region, p->mval);
+    blender::WM_event_drag_start_mval_fl(event, p->region, p->mval);
     p->mval[0] -= x;
     p->mval[1] -= y;
   }
@@ -2328,7 +2328,7 @@ static wmOperatorStatus annotation_draw_invoke(bContext *C, wmOperator *op, cons
 
   WM_event_add_notifier(C, NC_GPENCIL | NA_EDITED, nullptr);
   /* add a modal handler for this operator, so that we can then draw continuous strokes */
-  WM_event_add_modal_handler(C, op);
+  blender::WM_event_add_modal_handler(C, op);
   return OPERATOR_RUNNING_MODAL;
 }
 
@@ -2479,7 +2479,7 @@ static wmOperatorStatus annotation_draw_modal(bContext *C, wmOperator *op, const
        * - Since this operator is non-modal, we can just call it here, and keep going...
        * - This operator is especially useful when animating
        */
-      WM_operator_name_call(C,
+      blender::WM_operator_name_call(C,
                             "GPENCIL_OT_layer_annotation_add",
                             blender::wm::OpCallContext::ExecDefault,
                             nullptr,

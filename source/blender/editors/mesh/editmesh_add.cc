@@ -29,6 +29,8 @@
 
 #include "mesh_intern.hh" /* own include */
 
+using blender::WM_operator_view3d_unit_defaults;
+
 #define MESH_ADD_VERTS_MAXI 10000000
 
 /* ********* add primitive operators ************* */

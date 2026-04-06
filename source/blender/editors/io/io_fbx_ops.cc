@@ -163,7 +163,7 @@ void WM_OT_fbx_import(wmOperatorType *ot)
 
   ot->invoke = blender::ed::io::filesel_drop_import_invoke;
   ot->exec = wm_fbx_import_exec;
-  ot->poll = WM_operator_winactive;
+  ot->poll = blender::WM_operator_winactive;
   ot->check = wm_fbx_import_check;
   ot->ui = wm_fbx_import_draw;
   ot->flag = OPTYPE_UNDO | OPTYPE_PRESET;
@@ -171,9 +171,9 @@ void WM_OT_fbx_import(wmOperatorType *ot)
   WM_operator_properties_filesel(ot,
                                  FILE_TYPE_FOLDER,
                                  FILE_BLENDER,
-                                 FILE_OPENFILE,
-                                 WM_FILESEL_FILEPATH | WM_FILESEL_FILES | WM_FILESEL_DIRECTORY |
-                                     WM_FILESEL_SHOW_PROPS,
+                                  blender::FILE_OPENFILE,
+                                  blender::WM_FILESEL_FILEPATH | blender::WM_FILESEL_FILES |
+                                      blender::WM_FILESEL_DIRECTORY | blender::WM_FILESEL_SHOW_PROPS,
                                  FILE_DEFAULTDISPLAY,
                                  FILE_SORT_DEFAULT);
 

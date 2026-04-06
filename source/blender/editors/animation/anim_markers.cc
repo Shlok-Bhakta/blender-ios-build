@@ -1018,7 +1018,7 @@ static wmOperatorStatus ed_marker_move_invoke(bContext *C, wmOperator *op, const
     mm->event_val = event->val;
 
     /* add temp handler */
-    WM_event_add_modal_handler(C, op);
+    blender::WM_event_add_modal_handler(C, op);
 
     /* Reset frames delta. */
     RNA_int_set(op->ptr, "frames", 0);
@@ -1113,7 +1113,7 @@ static wmOperatorStatus ed_marker_move_modal(bContext *C, wmOperator *op, const 
       case EVT_PADENTER:
       case LEFTMOUSE:
       case MIDDLEMOUSE:
-        if (WM_event_is_modal_drag_exit(event, mm->event_type, mm->event_val)) {
+        if (blender::WM_event_is_modal_drag_exit(event, mm->event_type, mm->event_val)) {
           ed_marker_move_exit(C, op);
           WM_event_add_notifier(C, NC_SCENE | ND_MARKERS, nullptr);
           WM_event_add_notifier(C, NC_ANIMATION | ND_MARKERS, nullptr);
@@ -1479,13 +1479,13 @@ static void MARKER_OT_select(wmOperatorType *ot)
   /* API callbacks. */
   ot->poll = ed_markers_poll_markers_exist_visible;
   ot->exec = ed_marker_select_exec;
-  ot->invoke = WM_generic_select_invoke;
-  ot->modal = WM_generic_select_modal;
+  ot->invoke = blender::WM_generic_select_invoke;
+  ot->modal = blender::WM_generic_select_modal;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
-  WM_operator_properties_generic_select(ot);
+  blender::WM_operator_properties_generic_select(ot);
   prop = RNA_def_boolean(ot->srna, "extend", false, "Extend", "Extend the selection");
   RNA_def_property_flag(prop, PROP_SKIP_SAVE);
   prop = RNA_def_boolean(ot->srna, "camera", false, "Camera", "Select the camera");
@@ -1535,7 +1535,7 @@ static wmOperatorStatus ed_marker_box_select_invoke(bContext *C,
     return OPERATOR_CANCELLED | OPERATOR_PASS_THROUGH;
   }
 
-  return WM_gesture_box_invoke(C, op, event);
+  return blender::WM_gesture_box_invoke(C, op, event);
 }
 
 static wmOperatorStatus ed_marker_box_select_exec(bContext *C, wmOperator *op)
@@ -1546,7 +1546,7 @@ static wmOperatorStatus ed_marker_box_select_exec(bContext *C, wmOperator *op)
                                      ED_context_get_markers(C);
   rctf rect;
 
-  WM_operator_properties_border_to_rctf(op, &rect);
+  blender::WM_operator_properties_border_to_rctf(op, &rect);
   UI_view2d_region_to_view_rctf(v2d, &rect, &rect);
 
   if (markers == nullptr) {
@@ -1581,8 +1581,8 @@ static void MARKER_OT_select_box(wmOperatorType *ot)
   /* API callbacks. */
   ot->exec = ed_marker_box_select_exec;
   ot->invoke = ed_marker_box_select_invoke;
-  ot->modal = WM_gesture_box_modal;
-  ot->cancel = WM_gesture_box_cancel;
+  ot->modal = blender::WM_gesture_box_modal;
+  ot->cancel = blender::WM_gesture_box_cancel;
 
   ot->poll = ed_markers_poll_markers_exist;
 
@@ -1590,8 +1590,8 @@ static void MARKER_OT_select_box(wmOperatorType *ot)
   ot->flag = OPTYPE_UNDO;
 
   /* properties */
-  WM_operator_properties_gesture_box(ot);
-  WM_operator_properties_select_operation_simple(ot);
+  blender::WM_operator_properties_gesture_box(ot);
+  blender::WM_operator_properties_select_operation_simple(ot);
 
   PropertyRNA *prop = RNA_def_boolean(
       ot->srna, "tweak", false, "Tweak", "Operator has been activated using a click-drag event");
@@ -1637,7 +1637,7 @@ static void MARKER_OT_select_all(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* rna */
-  WM_operator_properties_select_all(ot);
+  blender::WM_operator_properties_select_all(ot);
 }
 
 /** \} */
@@ -1765,7 +1765,7 @@ static wmOperatorStatus ed_marker_delete_invoke(bContext *C,
                                                 const wmEvent * /*event*/)
 {
   if (RNA_boolean_get(op->ptr, "confirm")) {
-    return WM_operator_confirm_ex(C,
+    return blender::WM_operator_confirm_ex(C,
                                   op,
                                   IFACE_("Delete selected markers?"),
                                   nullptr,
@@ -1790,7 +1790,7 @@ static void MARKER_OT_delete(wmOperatorType *ot)
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
-  WM_operator_properties_confirm_or_exec(ot);
+  blender::WM_operator_properties_confirm_or_exec(ot);
 }
 
 /** \} */
@@ -1831,7 +1831,7 @@ static wmOperatorStatus ed_marker_rename_invoke(bContext *C, wmOperator *op, con
     RNA_string_set(op->ptr, "name", marker->name);
   }
 
-  return WM_operator_props_popup_confirm_ex(
+  return blender::WM_operator_props_popup_confirm_ex(
       C, op, event, IFACE_("Rename Selected Time Marker"), IFACE_("Rename"));
 }
 
@@ -1917,7 +1917,7 @@ static void MARKER_OT_make_links_scene(wmOperatorType *ot)
 
   /* API callbacks. */
   ot->exec = ed_marker_make_links_scene_exec;
-  ot->invoke = WM_menu_invoke;
+  ot->invoke = blender::WM_menu_invoke;
   ot->poll = ed_markers_poll_selected_markers;
 
   /* flags */
@@ -2016,17 +2016,17 @@ static void MARKER_OT_camera_bind(wmOperatorType *ot)
 
 void ED_operatortypes_marker()
 {
-  WM_operatortype_append(MARKER_OT_add);
-  WM_operatortype_append(MARKER_OT_move);
-  WM_operatortype_append(MARKER_OT_duplicate);
-  WM_operatortype_append(MARKER_OT_select);
-  WM_operatortype_append(MARKER_OT_select_box);
-  WM_operatortype_append(MARKER_OT_select_all);
-  WM_operatortype_append(MARKER_OT_select_leftright);
-  WM_operatortype_append(MARKER_OT_delete);
-  WM_operatortype_append(MARKER_OT_rename);
-  WM_operatortype_append(MARKER_OT_make_links_scene);
-  WM_operatortype_append(MARKER_OT_camera_bind);
+  blender::WM_operatortype_append(MARKER_OT_add);
+  blender::WM_operatortype_append(MARKER_OT_move);
+  blender::WM_operatortype_append(MARKER_OT_duplicate);
+  blender::WM_operatortype_append(MARKER_OT_select);
+  blender::WM_operatortype_append(MARKER_OT_select_box);
+  blender::WM_operatortype_append(MARKER_OT_select_all);
+  blender::WM_operatortype_append(MARKER_OT_select_leftright);
+  blender::WM_operatortype_append(MARKER_OT_delete);
+  blender::WM_operatortype_append(MARKER_OT_rename);
+  blender::WM_operatortype_append(MARKER_OT_make_links_scene);
+  blender::WM_operatortype_append(MARKER_OT_camera_bind);
 }
 
 void ED_keymap_marker(wmKeyConfig *keyconf)

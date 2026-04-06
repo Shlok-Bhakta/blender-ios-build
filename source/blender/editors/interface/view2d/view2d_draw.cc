@@ -297,7 +297,7 @@ static void draw_horizontal_scale_indicators(const ARegion *region,
   }
 
   GPU_matrix_push_projection();
-  wmOrtho2_region_pixelspace(region);
+  blender::wmOrtho2_region_pixelspace(region);
 
   const int font_id = BLF_set_default();
   UI_FontThemeColor(font_id, colorid);
@@ -372,7 +372,7 @@ static void draw_vertical_scale_indicators(const ARegion *region,
   }
 
   GPU_matrix_push_projection();
-  wmOrtho2_region_pixelspace(region);
+  blender::wmOrtho2_region_pixelspace(region);
 
   const int font_id = BLF_set_default();
   UI_FontThemeColor(font_id, colorid);

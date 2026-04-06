@@ -26,8 +26,6 @@
 #include "mtl_texture.hh"
 #include "mtl_vertex_buffer.hh"
 
-#include "GHOST_C-api.h"
-
 namespace blender::gpu {
 
 /* -------------------------------------------------------------------- */

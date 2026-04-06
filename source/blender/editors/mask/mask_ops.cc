@@ -572,7 +572,7 @@ static wmOperatorStatus slide_point_invoke(bContext *C, wmOperator *op, const wm
   if (slidedata) {
     op->customdata = slidedata;
 
-    WM_event_add_modal_handler(C, op);
+    blender::WM_event_add_modal_handler(C, op);
 
     slidedata->mask_layer->act_spline = slidedata->spline;
     slidedata->mask_layer->act_point = slidedata->point;
@@ -1118,7 +1118,7 @@ static wmOperatorStatus slide_spline_curvature_invoke(bContext *C,
   slide_data = slide_spline_curvature_customdata(C, event);
   if (slide_data != nullptr) {
     op->customdata = slide_data;
-    WM_event_add_modal_handler(C, op);
+    blender::WM_event_add_modal_handler(C, op);
     WM_event_add_notifier(C, NC_MASK | ND_SELECT, mask);
     return OPERATOR_RUNNING_MODAL;
   }
@@ -1741,7 +1741,7 @@ void MASK_OT_handle_type_set(wmOperatorType *ot)
   ot->idname = "MASK_OT_handle_type_set";
 
   /* API callbacks. */
-  ot->invoke = WM_menu_invoke;
+  ot->invoke = blender::WM_menu_invoke;
   ot->exec = set_handle_type_exec;
   ot->poll = ED_maskedit_mask_visible_splines_poll;
 

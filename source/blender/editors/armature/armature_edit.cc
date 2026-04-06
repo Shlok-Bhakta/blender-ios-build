@@ -467,7 +467,7 @@ void ARMATURE_OT_calculate_roll(wmOperatorType *ot)
   ot->description = "Automatically fix alignment of select bones' axes";
 
   /* API callbacks. */
-  ot->invoke = WM_menu_invoke;
+  ot->invoke = blender::WM_menu_invoke;
   ot->exec = armature_calc_roll_exec;
   ot->poll = ED_operator_editarmature;
 

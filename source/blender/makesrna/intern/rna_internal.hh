@@ -32,6 +32,7 @@ struct ReportList;
 struct SDNA;
 struct ViewLayer;
 
+
 /* Data structures used during define */
 
 struct ContainerDefRNA {

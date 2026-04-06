@@ -78,7 +78,7 @@ static bool ui_drop_name_poll(bContext *C, wmDrag *drag, const wmEvent * /*event
 
 static void ui_drop_name_copy(bContext *C, wmDrag *drag, wmDropBox *drop)
 {
-  const ID *id = WM_drag_get_local_ID_or_import_from_asset(C, drag, 0);
+  const ID *id = blender::WM_drag_get_local_ID_or_import_from_asset(C, drag, 0);
   RNA_string_set(drop->ptr, "string", id->name + 2);
 }
 
@@ -101,13 +101,13 @@ static bool ui_drop_material_poll(bContext *C, wmDrag *drag, const wmEvent * /*e
 
   Object *ob = static_cast<Object *>(ob_ptr.data);
 
-  return WM_drag_is_ID_type(drag, ID_MA) && ID_IS_EDITABLE(&ob->id) &&
+  return blender::WM_drag_is_ID_type(drag, ID_MA) && ID_IS_EDITABLE(&ob->id) &&
          !ID_IS_OVERRIDE_LIBRARY(&ob->id);
 }
 
 static void ui_drop_material_copy(bContext *C, wmDrag *drag, wmDropBox *drop)
 {
-  const ID *id = WM_drag_get_local_ID_or_import_from_asset(C, drag, ID_MA);
+  const ID *id = blender::WM_drag_get_local_ID_or_import_from_asset(C, drag, ID_MA);
   RNA_int_set(drop->ptr, "session_uid", int(id->session_uid));
 }
 
@@ -127,7 +127,7 @@ static std::string ui_drop_material_tooltip(bContext *C,
 
   PointerRNA rna_prev_material = RNA_pointer_get(&mat_slot, "material");
   Material *prev_mat_in_slot = (Material *)rna_prev_material.data;
-  const char *dragged_material_name = WM_drag_get_item_name(drag);
+  const char *dragged_material_name = blender::WM_drag_get_item_name(drag);
 
   if (prev_mat_in_slot) {
     return fmt::format(fmt::runtime(TIP_("Drop {} on slot {} (replacing {}) of {}")),
@@ -156,21 +156,27 @@ static std::string ui_drop_material_tooltip(bContext *C,
 
 void ED_dropboxes_ui()
 {
-  ListBase *lb = WM_dropboxmap_find("User Interface", SPACE_EMPTY, RGN_TYPE_WINDOW);
+  ListBase *lb = blender::WM_dropboxmap_find("User Interface", SPACE_EMPTY, RGN_TYPE_WINDOW);
 
-  WM_dropbox_add(lb, "UI_OT_view_drop", ui_view_drop_poll, nullptr, nullptr, ui_view_drop_tooltip);
-  WM_dropbox_add(lb,
-                 "UI_OT_drop_name",
-                 ui_drop_name_poll,
-                 ui_drop_name_copy,
-                 WM_drag_free_imported_drag_ID,
-                 nullptr);
-  WM_dropbox_add(lb,
-                 "UI_OT_drop_material",
-                 ui_drop_material_poll,
-                 ui_drop_material_copy,
-                 WM_drag_free_imported_drag_ID,
-                 ui_drop_material_tooltip);
+  blender::WM_dropbox_add(
+      reinterpret_cast<blender::ListBaseT<wmDropBox> *>(lb),
+      "UI_OT_view_drop",
+      ui_view_drop_poll,
+      nullptr,
+      nullptr,
+      ui_view_drop_tooltip);
+  blender::WM_dropbox_add(reinterpret_cast<blender::ListBaseT<wmDropBox> *>(lb),
+                          "UI_OT_drop_name",
+                          ui_drop_name_poll,
+                          ui_drop_name_copy,
+                          blender::WM_drag_free_imported_drag_ID,
+                          nullptr);
+  blender::WM_dropbox_add(reinterpret_cast<blender::ListBaseT<wmDropBox> *>(lb),
+                          "UI_OT_drop_material",
+                          ui_drop_material_poll,
+                          ui_drop_material_copy,
+                          blender::WM_drag_free_imported_drag_ID,
+                          ui_drop_material_tooltip);
 }
 
 /** \} */

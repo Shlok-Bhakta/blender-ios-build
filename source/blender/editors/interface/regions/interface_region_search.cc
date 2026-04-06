@@ -46,6 +46,10 @@
 #include "interface_regions_intern.hh"
 
 using blender::StringRef;
+using blender::WM_tooltip_clear;
+using blender::WM_tooltip_timer_init;
+using blender::WM_window_native_pixel_x;
+using blender::wmOrtho2_region_pixelspace;
 
 /* -------------------------------------------------------------------- */
 /** \name Search Box Creation

@@ -16,3 +16,7 @@ enum eGPUBackendType {
   GPU_BACKEND_VULKAN = 1 << 3,
   GPU_BACKEND_ANY = 0xFFFFFFFFu
 };
+
+#ifdef __cplusplus
+using GPUBackendType = eGPUBackendType;
+#endif

@@ -43,6 +43,7 @@
 #include "DEG_depsgraph.hh"
 
 using blender::Vector;
+using blender::WM_event_add_mousemove;
 
 /* -------------------------------------------------------------------- */
 /** \name Local Utilities

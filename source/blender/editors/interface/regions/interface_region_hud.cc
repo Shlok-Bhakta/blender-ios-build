@@ -36,6 +36,12 @@
 #include "GPU_framebuffer.hh"
 #include "interface_intern.hh"
 
+using blender::WM_operator_check_ui_enabled;
+using blender::WM_operator_last_redo;
+using blender::WM_operator_repeat_check;
+using blender::WM_operator_ui_poll;
+using blender::wmOrtho2_region_pixelspace;
+
 /* -------------------------------------------------------------------- */
 /** \name Utilities
  * \{ */

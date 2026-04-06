@@ -40,6 +40,8 @@
 
 #include "mesh_intern.hh" /* own include */
 
+using blender::WM_operator_last_redo;
+
 /* -------------------------------------------------------------------- */
 /** \name Helper Functions
  * \{ */

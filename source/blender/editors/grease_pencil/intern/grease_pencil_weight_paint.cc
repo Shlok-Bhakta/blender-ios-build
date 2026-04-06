@@ -31,6 +31,8 @@
 #include "ED_grease_pencil.hh"
 #include "ED_view3d.hh"
 
+using blender::WM_operatortype_append;
+
 #include "DEG_depsgraph_query.hh"
 
 #include "GEO_smooth_curves.hh"

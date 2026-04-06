@@ -252,13 +252,13 @@ void GREASE_PENCIL_OT_stroke_trim(wmOperatorType *ot)
   ot->idname = "GREASE_PENCIL_OT_stroke_trim";
   ot->description = "Delete stroke points in between intersecting strokes";
 
-  ot->invoke = WM_gesture_lasso_invoke;
-  ot->modal = WM_gesture_lasso_modal;
+  ot->invoke = blender::WM_gesture_lasso_invoke;
+  ot->modal = blender::WM_gesture_lasso_modal;
   ot->exec = grease_pencil_stroke_trim_exec;
   ot->poll = grease_pencil_painting_poll;
-  ot->cancel = WM_gesture_lasso_cancel;
+  ot->cancel = blender::WM_gesture_lasso_cancel;
 
   ot->flag = OPTYPE_UNDO | OPTYPE_REGISTER;
 
-  WM_operator_properties_gesture_lasso(ot);
+  blender::WM_operator_properties_gesture_lasso(ot);
 }

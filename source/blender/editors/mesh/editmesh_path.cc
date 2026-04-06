@@ -46,6 +46,10 @@
 #include "mesh_intern.hh" /* own include */
 
 using blender::Vector;
+using blender::CheckerIntervalParams;
+using blender::WM_operator_properties_checker_interval;
+using blender::WM_operator_properties_checker_interval_from_op;
+using blender::WM_operator_properties_checker_interval_test;
 
 /* -------------------------------------------------------------------- */
 /** \name Path Select Struct & Properties

@@ -93,7 +93,7 @@ static wmOperatorStatus lattice_select_random_exec(bContext *C, wmOperator *op)
 {
   const bool select = (RNA_enum_get(op->ptr, "action") == SEL_SELECT);
   const float randfac = RNA_float_get(op->ptr, "ratio");
-  const int seed = WM_operator_properties_select_random_seed_increment_get(op);
+  const int seed = blender::WM_operator_properties_select_random_seed_increment_get(op);
 
   const Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
@@ -154,7 +154,7 @@ void LATTICE_OT_select_random(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  WM_operator_properties_select_random(ot);
+  blender::WM_operator_properties_select_random(ot);
 }
 
 /** \} */
@@ -465,7 +465,7 @@ void LATTICE_OT_select_all(wmOperatorType *ot)
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  WM_operator_properties_select_all(ot);
+  blender::WM_operator_properties_select_all(ot);
 }
 
 /** \} */

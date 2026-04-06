@@ -672,7 +672,7 @@ static EditBone *get_nearest_editbonepoint(
   }
 
   if (use_cycle) {
-    use_cycle = !WM_cursor_test_motion_and_update(vc->mval);
+    use_cycle = !blender::WM_cursor_test_motion_and_update(vc->mval);
   }
 
   const bool do_nearest = !(XRAY_ACTIVE(vc->v3d) || use_cycle);
@@ -1402,7 +1402,7 @@ void ARMATURE_OT_select_all(wmOperatorType *ot)
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  WM_operator_properties_select_all(ot);
+  blender::WM_operator_properties_select_all(ot);
 }
 
 /** \} */
@@ -2014,7 +2014,7 @@ void ARMATURE_OT_select_similar(wmOperatorType *ot)
   ot->idname = "ARMATURE_OT_select_similar";
 
   /* callback functions */
-  ot->invoke = WM_menu_invoke;
+  ot->invoke = blender::WM_menu_invoke;
   ot->exec = armature_select_similar_exec;
   ot->poll = ED_operator_editarmature;
   ot->description = "Select similar bones by property types";

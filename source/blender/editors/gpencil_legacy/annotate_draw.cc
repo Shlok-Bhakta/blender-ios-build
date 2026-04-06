@@ -805,7 +805,7 @@ void ED_annotation_draw_2dimage(const bContext *C)
       sizex = region->winx;
       sizey = region->winy;
 
-      wmOrtho2(
+      blender::wmOrtho2(
           region->v2d.cur.xmin, region->v2d.cur.xmax, region->v2d.cur.ymin, region->v2d.cur.ymax);
 
       dflag |= GP_DRAWDATA_ONLYV2D | GP_DRAWDATA_IEDITHACK;

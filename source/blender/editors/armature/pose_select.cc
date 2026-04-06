@@ -609,7 +609,7 @@ void POSE_OT_select_all(wmOperatorType *ot)
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  WM_operator_properties_select_all(ot);
+  blender::WM_operator_properties_select_all(ot);
 }
 
 /* -------------------------------------- */
@@ -1269,7 +1269,7 @@ void POSE_OT_select_grouped(wmOperatorType *ot)
   ot->idname = "POSE_OT_select_grouped";
 
   /* API callbacks. */
-  ot->invoke = WM_menu_invoke;
+  ot->invoke = blender::WM_menu_invoke;
   ot->exec = pose_select_grouped_exec;
   ot->poll = ED_operator_posemode; /* TODO: expand to support edit mode as well. */
 

@@ -3223,7 +3223,8 @@ static void rna_Node_image_layer_update(Main *bmain, Scene *scene, PointerRNA *p
   }
 }
 
-static const EnumPropertyItem *renderresult_layers_add_enum(RenderLayer *rl)
+template<typename T>
+static const EnumPropertyItem *renderresult_layers_add_enum(const T *rl)
 {
   EnumPropertyItem *item = nullptr;
   EnumPropertyItem tmp = {0};
@@ -3278,7 +3279,8 @@ static const EnumPropertyItem *rna_Node_image_layer_itemf(bContext * /*C*/,
   bNode *node = ptr->data_as<bNode>();
   Image *ima = reinterpret_cast<Image *>(node->id);
   const EnumPropertyItem *item = nullptr;
-  RenderLayer *rl;
+  blender::RenderResult *rr;
+  blender::RenderLayer *rl;
 
   if (node->type_legacy == CMP_NODE_CRYPTOMATTE &&
       node->custom1 != CMP_NODE_CRYPTOMATTE_SOURCE_IMAGE)
@@ -3291,7 +3293,8 @@ static const EnumPropertyItem *rna_Node_image_layer_itemf(bContext * /*C*/,
     return rna_enum_dummy_NULL_items;
   }
 
-  rl = static_cast<RenderLayer *>(ima->rr->layers.first);
+  rr = reinterpret_cast<blender::RenderResult *>(ima->rr);
+  rl = static_cast<blender::RenderLayer *>(rr->layers.first);
   item = renderresult_layers_add_enum(rl);
 
   *r_free = true;
@@ -3314,13 +3317,14 @@ static bool rna_Node_image_has_layers_get(PointerRNA *ptr)
     return false;
   }
 
-  return RE_layers_have_name(ima->rr);
+  return blender::RE_layers_have_name(reinterpret_cast<blender::RenderResult *>(ima->rr));
 }
 
 static bool rna_Node_image_has_views_get(PointerRNA *ptr)
 {
   bNode *node = ptr->data_as<bNode>();
   Image *ima = reinterpret_cast<Image *>(node->id);
+  blender::RenderResult *rr;
 
   if (node->type_legacy == CMP_NODE_CRYPTOMATTE &&
       node->custom1 != CMP_NODE_CRYPTOMATTE_SOURCE_IMAGE)
@@ -3332,10 +3336,12 @@ static bool rna_Node_image_has_views_get(PointerRNA *ptr)
     return false;
   }
 
-  return BLI_listbase_count_at_most(&ima->rr->views, 2) > 1;
+  rr = reinterpret_cast<blender::RenderResult *>(ima->rr);
+  return BLI_listbase_count_at_most(&rr->views, 2) > 1;
 }
 
-static const EnumPropertyItem *renderresult_views_add_enum(RenderView *rv)
+template<typename T>
+static const EnumPropertyItem *renderresult_views_add_enum(const T *rv)
 {
   EnumPropertyItem *item = nullptr;
   EnumPropertyItem tmp = {0, "ALL", 0, "All", ""};
@@ -3365,14 +3371,15 @@ static const EnumPropertyItem *renderresult_views_add_enum(RenderView *rv)
 }
 
 static const EnumPropertyItem *rna_Node_image_view_itemf(bContext * /*C*/,
-                                                         PointerRNA *ptr,
-                                                         PropertyRNA * /*prop*/,
-                                                         bool *r_free)
+                                                          PointerRNA *ptr,
+                                                          PropertyRNA * /*prop*/,
+                                                          bool *r_free)
 {
   bNode *node = ptr->data_as<bNode>();
   Image *ima = reinterpret_cast<Image *>(node->id);
   const EnumPropertyItem *item = nullptr;
-  RenderView *rv;
+  blender::RenderResult *rr;
+  blender::RenderView *rv;
 
   if (node->type_legacy == CMP_NODE_CRYPTOMATTE &&
       node->custom1 != CMP_NODE_CRYPTOMATTE_SOURCE_IMAGE)
@@ -3385,7 +3392,8 @@ static const EnumPropertyItem *rna_Node_image_view_itemf(bContext * /*C*/,
     return rna_enum_dummy_NULL_items;
   }
 
-  rv = static_cast<RenderView *>(ima->rr->views.first);
+  rr = reinterpret_cast<blender::RenderResult *>(ima->rr);
+  rv = static_cast<blender::RenderView *>(rr->views.first);
   item = renderresult_views_add_enum(rv);
 
   *r_free = true;
@@ -3401,14 +3409,14 @@ static const EnumPropertyItem *rna_Node_view_layer_itemf(bContext * /*C*/,
   bNode *node = ptr->data_as<bNode>();
   Scene *sce = reinterpret_cast<Scene *>(node->id);
   const EnumPropertyItem *item = nullptr;
-  RenderLayer *rl;
+  ViewLayer *rl;
 
   if (sce == nullptr) {
     *r_free = false;
     return rna_enum_dummy_NULL_items;
   }
 
-  rl = static_cast<RenderLayer *>(sce->view_layers.first);
+  rl = static_cast<ViewLayer *>(sce->view_layers.first);
   item = renderresult_layers_add_enum(rl);
 
   *r_free = true;

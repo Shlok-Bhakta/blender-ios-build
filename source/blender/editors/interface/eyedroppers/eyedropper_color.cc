@@ -14,6 +14,7 @@
 #include "MEM_guardedalloc.h"
 
 #include "DNA_material_types.h"
+#include "DNA_layer_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_screen_types.h"
 #include "DNA_space_types.h"
@@ -44,6 +45,16 @@
 
 #include "WM_api.hh"
 #include "WM_types.hh"
+
+using blender::WM_event_add_modal_handler;
+using blender::WM_draw_cb_activate;
+using blender::WM_draw_cb_exit;
+using blender::WM_capabilities_flag;
+using blender::WM_desktop_cursor_sample_read;
+using blender::WM_window_find_under_cursor;
+using blender::WM_window_get_active_screen;
+using blender::WM_window_pixels_read_sample;
+using blender::WM_window_pixels_read_sample_from_offscreen;
 
 #include "interface_intern.hh"
 
@@ -217,7 +228,7 @@ static bool eyedropper_cryptomatte_sample_view3d_fl(bContext *C,
   return true;
 }
 
-static bool eyedropper_cryptomatte_sample_renderlayer_fl(RenderLayer *render_layer,
+static bool eyedropper_cryptomatte_sample_renderlayer_fl(blender::RenderLayer *render_layer,
                                                          const char *prefix,
                                                          const float fpos[2],
                                                          float r_col[3])
@@ -241,7 +252,7 @@ static bool eyedropper_cryptomatte_sample_renderlayer_fl(RenderLayer *render_lay
                                             prefix + 1 + render_layer_name_len :
                                             prefix;
 
-  LISTBASE_FOREACH (RenderPass *, render_pass, &render_layer->passes) {
+      LISTBASE_FOREACH (blender::RenderPass *, render_pass, &render_layer->passes) {
     if (STRPREFIX(render_pass->name, render_pass_name_prefix) &&
         !STREQLEN(render_pass->name, render_pass_name_prefix, sizeof(render_pass->name)))
     {
@@ -270,22 +281,22 @@ static bool eyedropper_cryptomatte_sample_render_fl(const bNode *node,
                                                     float r_col[3])
 {
   bool success = false;
-  Scene *scene = (Scene *)node->id;
+  const Scene *scene = (const Scene *)node->id;
   BLI_assert(GS(scene->id.name) == ID_SCE);
-  Render *re = RE_GetSceneRender(scene);
+  Render *re = blender::RE_GetSceneRender(reinterpret_cast<const blender::Scene *>(scene));
 
   if (re) {
-    RenderResult *rr = RE_AcquireResultRead(re);
+    blender::RenderResult *rr = blender::RE_AcquireResultRead(re);
     if (rr) {
       LISTBASE_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
-        RenderLayer *render_layer = RE_GetRenderLayer(rr, view_layer->name);
+        blender::RenderLayer *render_layer = blender::RE_GetRenderLayer(rr, view_layer->name);
         success = eyedropper_cryptomatte_sample_renderlayer_fl(render_layer, prefix, fpos, r_col);
         if (success) {
           break;
         }
       }
     }
-    RE_ReleaseResult(re);
+    blender::RE_ReleaseResult(re);
   }
   return success;
 }
@@ -309,7 +320,8 @@ static bool eyedropper_cryptomatte_sample_image_fl(bContext *C,
   if (image && image->type == IMA_TYPE_MULTILAYER) {
     ImBuf *ibuf = BKE_image_acquire_ibuf(image, &image_user_for_frame, nullptr);
     if (image->rr) {
-      LISTBASE_FOREACH (RenderLayer *, render_layer, &image->rr->layers) {
+      blender::RenderResult *rr = reinterpret_cast<blender::RenderResult *>(image->rr);
+      LISTBASE_FOREACH (blender::RenderLayer *, render_layer, &rr->layers) {
         success = eyedropper_cryptomatte_sample_renderlayer_fl(render_layer, prefix, fpos, r_col);
         if (success) {
           break;
@@ -501,7 +513,7 @@ bool eyedropper_color_sample_fl(bContext *C,
   }
 
   /* Outside the Blender window if we support it. */
-  if (WM_capabilities_flag() & WM_CAPABILITY_DESKTOP_SAMPLE) {
+  if (WM_capabilities_flag() & blender::WM_CAPABILITY_DESKTOP_SAMPLE) {
     if (WM_desktop_cursor_sample_read(r_col)) {
       IMB_colormanagement_srgb_to_scene_linear_v3(r_col, r_col);
       return true;

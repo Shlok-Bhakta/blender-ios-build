@@ -36,6 +36,15 @@
 
 #include "curve_intern.hh"
 
+using blender::CheckerIntervalParams;
+using blender::WM_menu_invoke;
+using blender::WM_operator_properties_checker_interval;
+using blender::WM_operator_properties_checker_interval_from_op;
+using blender::WM_operator_properties_checker_interval_test;
+using blender::WM_operator_properties_select_all;
+using blender::WM_operator_properties_select_random;
+using blender::WM_operator_properties_select_random_seed_increment_get;
+
 #include "RNA_access.hh"
 #include "RNA_define.hh"
 

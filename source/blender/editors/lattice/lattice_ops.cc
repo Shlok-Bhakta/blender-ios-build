@@ -19,14 +19,14 @@
 
 void ED_operatortypes_lattice()
 {
-  WM_operatortype_append(LATTICE_OT_select_all);
-  WM_operatortype_append(LATTICE_OT_select_more);
-  WM_operatortype_append(LATTICE_OT_select_less);
-  WM_operatortype_append(LATTICE_OT_select_ungrouped);
-  WM_operatortype_append(LATTICE_OT_select_random);
-  WM_operatortype_append(LATTICE_OT_select_mirror);
-  WM_operatortype_append(LATTICE_OT_make_regular);
-  WM_operatortype_append(LATTICE_OT_flip);
+  blender::WM_operatortype_append(LATTICE_OT_select_all);
+  blender::WM_operatortype_append(LATTICE_OT_select_more);
+  blender::WM_operatortype_append(LATTICE_OT_select_less);
+  blender::WM_operatortype_append(LATTICE_OT_select_ungrouped);
+  blender::WM_operatortype_append(LATTICE_OT_select_random);
+  blender::WM_operatortype_append(LATTICE_OT_select_mirror);
+  blender::WM_operatortype_append(LATTICE_OT_make_regular);
+  blender::WM_operatortype_append(LATTICE_OT_flip);
 }
 
 void ED_keymap_lattice(wmKeyConfig *keyconf)

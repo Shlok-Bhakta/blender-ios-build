@@ -346,7 +346,7 @@ void LATTICE_OT_flip(wmOperatorType *ot)
 
   /* API callbacks. */
   ot->poll = ED_operator_editlattice;
-  ot->invoke = WM_menu_invoke;
+  ot->invoke = blender::WM_menu_invoke;
   ot->exec = lattice_flip_exec;
 
   /* flags */

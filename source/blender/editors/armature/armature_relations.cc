@@ -701,7 +701,7 @@ static wmOperatorStatus separate_armature_exec(bContext *C, wmOperator *op)
   bool ok = false;
 
   /* set wait cursor in case this takes a while */
-  WM_cursor_wait(true);
+  blender::WM_cursor_wait(true);
 
   Vector<Base *> bases = BKE_view_layer_array_from_bases_in_edit_mode_unique_data(
       scene, view_layer, CTX_wm_view3d(C));
@@ -783,7 +783,7 @@ static wmOperatorStatus separate_armature_exec(bContext *C, wmOperator *op)
   }
 
   /* Recalculate/redraw + cleanup */
-  WM_cursor_wait(false);
+  blender::WM_cursor_wait(false);
 
   if (ok) {
     BKE_report(op->reports, RPT_INFO, "Separated bones");

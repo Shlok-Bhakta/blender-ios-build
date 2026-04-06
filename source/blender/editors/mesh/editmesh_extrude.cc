@@ -34,6 +34,7 @@
 #include "mesh_intern.hh" /* own include */
 
 using blender::Vector;
+using blender::WM_operator_flag_only_pass_through_on_press;
 
 /* -------------------------------------------------------------------- */
 /** \name Extrude Internal Utilities

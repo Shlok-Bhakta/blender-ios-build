@@ -52,7 +52,7 @@
 
 #include "BLT_translation.hh"
 
-#include "GHOST_C-api.h"
+#include "GHOST_ISystem.hh"
 
 #include "IMB_colormanagement.hh"
 
@@ -76,6 +76,15 @@
 #include "WM_api.hh"
 #include "WM_types.hh"
 #include "wm_event_system.hh"
+
+using blender::WM_event_absolute_delta_y;
+using blender::WM_event_add_mousemove;
+using blender::WM_operator_name_call_ptr_with_depends_on_cursor;
+using blender::WM_operator_properties_create_ptr;
+using blender::WM_operator_properties_free;
+using blender::WM_operator_pystring_ex;
+using blender::WM_operator_stack_clear;
+using blender::WM_prop_pystring_assign;
 
 #ifdef WITH_INPUT_IME
 #  include "wm_window.hh"
@@ -1864,11 +1873,11 @@ static int ui_handler_region_drag_toggle(bContext *C, const wmEvent *event, void
       ui_apply_but_undo(but);
     }
 
-    WM_event_remove_ui_handler(&win->modalhandlers,
-                               ui_handler_region_drag_toggle,
-                               ui_handler_region_drag_toggle_remove,
-                               drag_info,
-                               false);
+    blender::WM_event_remove_ui_handler(reinterpret_cast<blender::ListBaseT<wmEventHandler> *>(&win->modalhandlers),
+                                        ui_handler_region_drag_toggle,
+                                        ui_handler_region_drag_toggle_remove,
+                                        drag_info,
+                                        false);
     ui_handler_region_drag_toggle_remove(C, drag_info);
 
     WM_event_add_mousemove(win);
@@ -2141,12 +2150,12 @@ static bool ui_but_drag_init(bContext *C,
                              const wmEvent *event)
 {
   /* prevent other WM gestures to start while we try to drag */
-  WM_gestures_remove(CTX_wm_window(C));
+  blender::WM_gestures_remove(CTX_wm_window(C));
 
   /* Clamp the maximum to half the UI unit size so a high user preference
    * doesn't require the user to drag more than half the default button height. */
   const int drag_threshold = min_ii(
-      WM_event_drag_threshold(event),
+      blender::WM_event_drag_threshold(event),
       int((UI_UNIT_Y / 2) * ui_block_to_window_scale(data->region, but->block)));
 
   if (abs(data->dragstartx - event->xy[0]) + abs(data->dragstarty - event->xy[1]) > drag_threshold)
@@ -2172,12 +2181,13 @@ static bool ui_but_drag_init(bContext *C,
       region_prev = CTX_wm_region(C);
       CTX_wm_region_set(C, data->region);
 
-      WM_event_add_ui_handler(C,
-                              &data->window->modalhandlers,
-                              ui_handler_region_drag_toggle,
-                              ui_handler_region_drag_toggle_remove,
-                              drag_info,
-                              WM_HANDLER_BLOCKING);
+      blender::WM_event_add_ui_handler(C,
+                                       reinterpret_cast<blender::ListBaseT<wmEventHandler> *>(
+                                           &data->window->modalhandlers),
+                                       ui_handler_region_drag_toggle,
+                                       ui_handler_region_drag_toggle_remove,
+                                       drag_info,
+                                        blender::WM_HANDLER_BLOCKING);
 
       CTX_wm_region_set(C, region_prev);
 
@@ -2233,7 +2243,7 @@ static bool ui_but_drag_init(bContext *C,
       }
 
       if (valid) {
-        WM_event_start_drag(C, ICON_COLOR, WM_DRAG_COLOR, drag_info, WM_DRAG_FREE_DATA);
+        blender::WM_event_start_drag(C, ICON_COLOR, WM_DRAG_COLOR, drag_info, WM_DRAG_FREE_DATA);
       }
       else {
         MEM_freeN(drag_info);
@@ -2531,7 +2541,7 @@ static void ui_but_get_pasted_text_from_clipboard(const bool ensure_utf8,
 {
   /* get only first line even if the clipboard contains multiple lines */
   int length;
-  char *text = WM_clipboard_text_get_firstline(false, ensure_utf8, &length);
+  char *text = blender::WM_clipboard_text_get_firstline(false, ensure_utf8, &length);
 
   if (text) {
     *r_buf_paste = text;
@@ -2897,7 +2907,7 @@ static bool ui_but_copy(bContext *C, uiBut *but, const bool copy_array)
   }
 
   if (is_buf_set) {
-    WM_clipboard_text_set(buf, false);
+    blender::WM_clipboard_text_set(buf, false);
   }
   return is_buf_set;
 }
@@ -3403,7 +3413,7 @@ static bool ui_textedit_copypaste(uiBut *but, uiTextEdit &text_edit, const int m
   if (mode == UI_TEXTEDIT_PASTE) {
     /* extract the first line from the clipboard */
     int buf_len;
-    char *pbuf = WM_clipboard_text_get_firstline(false, UI_but_is_utf8(but), &buf_len);
+    char *pbuf = blender::WM_clipboard_text_get_firstline(false, UI_but_is_utf8(but), &buf_len);
 
     if (pbuf) {
       ui_textedit_insert_buf(but, text_edit, pbuf, buf_len);
@@ -3422,7 +3432,7 @@ static bool ui_textedit_copypaste(uiBut *but, uiTextEdit &text_edit, const int m
     memcpy(buf, text_edit.edit_string + but->selsta, sellen);
     buf[sellen] = '\0';
 
-    WM_clipboard_text_set(buf, false);
+    blender::WM_clipboard_text_set(buf, false);
     MEM_freeN(buf);
 
     /* for cut only, delete the selection afterwards */
@@ -3647,13 +3657,15 @@ static void ui_textedit_begin(bContext *C, uiBut *but, uiHandleButtonData *data)
   keyboard_properties.tip_text = but->tip.data();
   keyboard_properties.text_string = text_edit.edit_string;
 
-  GHOST_popupOnScreenKeyboard(static_cast<GHOST_WindowHandle>(win->ghostwin), keyboard_properties);
+  GHOST_ISystem::getSystem()->popupOnScreenKeyboard(
+      static_cast<GHOST_IWindow *>(win->ghostwin), keyboard_properties);
 #endif
 
   WM_cursor_modal_set(win, WM_CURSOR_TEXT_EDIT);
 
   /* Temporarily turn off window auto-focus on platforms that support it. */
-  GHOST_SetAutoFocus(false);
+  GHOST_ISystem *ghost_system = GHOST_ISystem::getSystem();
+  ghost_system->setAutoFocus(false);
 
 #ifdef WITH_INPUT_IME
   if (!is_num_but) {
@@ -3671,9 +3683,10 @@ static void ui_textedit_end(bContext *C, uiBut *but, uiHandleButtonData *data)
 
 #if (WITH_APPLE_CROSSPLATFORM)
   /* Hide keyboard and retrieve keyboard text */
-  GHOST_hideOnScreenKeyboard(static_cast<GHOST_WindowHandle>(win->ghostwin));
-  const char *keyboard_string = GHOST_getKeyboardInput(
-      static_cast<GHOST_WindowHandle>(win->ghostwin));
+  GHOST_ISystem::getSystem()->hideOnScreenKeyboard(
+      static_cast<GHOST_IWindow *>(win->ghostwin));
+  const char *keyboard_string = GHOST_ISystem::getSystem()->getKeyboardInput(
+      static_cast<GHOST_IWindow *>(win->ghostwin));
 
   /*
    * IOS_FIXME:
@@ -3720,7 +3733,7 @@ static void ui_textedit_end(bContext *C, uiBut *but, uiHandleButtonData *data)
           data->escapecancel = true;
 
           WM_global_reportf(RPT_ERROR, "Failed to find '%s'", but->editstr);
-          WM_report_banner_show(CTX_wm_manager(C), win);
+          blender::WM_report_banner_show(CTX_wm_manager(C), win);
         }
       }
 
@@ -3735,7 +3748,8 @@ static void ui_textedit_end(bContext *C, uiBut *but, uiHandleButtonData *data)
   WM_cursor_modal_restore(win);
 
   /* Turn back on the auto-focusing of windows. */
-  GHOST_SetAutoFocus(true);
+  GHOST_ISystem *ghost_system = GHOST_ISystem::getSystem();
+  ghost_system->setAutoFocus(true);
 
   /* Free text undo history text blocks. */
   ui_textedit_undo_stack_destroy(text_edit.undo_stack_text);
@@ -4145,8 +4159,8 @@ static int ui_do_but_textedit(
 #if (WITH_APPLE_CROSSPLATFORM)
       case EVT_TEXTEDIT: {
         if (but) {
-          const char *keyboard_string = GHOST_getKeyboardInput(
-              static_cast<GHOST_WindowHandle>(win->ghostwin));
+          const char *keyboard_string = GHOST_ISystem::getSystem()->getKeyboardInput(
+              static_cast<GHOST_IWindow *>(win->ghostwin));
           if (but->active->text_edit.edit_string) {
             ui_textedit_string_set(but, but->active->text_edit, keyboard_string);
           }
@@ -4163,7 +4177,7 @@ static int ui_do_but_textedit(
 
     if ((event->utf8_buf[0]) && (retval == WM_UI_HANDLER_CONTINUE)
 #ifdef WITH_INPUT_IME
-        && !is_ime_composing && !WM_event_is_ime_switch(event)
+        && !is_ime_composing && !blender::WM_event_is_ime_switch(event)
 #endif
     )
     {
@@ -4516,7 +4530,7 @@ static void ui_block_open_begin(bContext *C, uiBut *but, uiHandleButtonData *dat
       BLI_assert(but->menu_create_func);
       if (ui_but_menu_draw_as_popover(but)) {
         const char *idname = static_cast<const char *>(but->func_argN);
-        popover_panel_type = WM_paneltype_find(idname, false);
+        popover_panel_type = blender::WM_paneltype_find(idname, false);
       }
 
       if (popover_panel_type) {
@@ -4539,7 +4553,7 @@ static void ui_block_open_begin(bContext *C, uiBut *but, uiHandleButtonData *dat
 
       if (ui_but_menu_draw_as_popover(but)) {
         const char *idname = static_cast<const char *>(but->func_argN);
-        popover_panel_type = WM_paneltype_find(idname, false);
+        popover_panel_type = blender::WM_paneltype_find(idname, false);
       }
 
       if (popover_panel_type) {
@@ -5741,7 +5755,7 @@ static int ui_do_but_NUM(
   const int screen_mx = event->xy[0];
 
   /* Defer evaluation as it's rarely needed. */
-  auto drag_threshold_fn = [event]() -> int { return WM_event_drag_threshold(event); };
+  auto drag_threshold_fn = [event]() -> int { return blender::WM_event_drag_threshold(event); };
 
   BLI_assert(but->type == ButType::Num);
 
@@ -6106,7 +6120,7 @@ static int ui_do_but_SLI(
   ui_window_to_block(data->region, block, &mx, &my);
 
   /* Defer evaluation as it's rarely needed. */
-  auto drag_threshold_fn = [event]() -> int { return WM_event_drag_threshold(event); };
+  auto drag_threshold_fn = [event]() -> int { return blender::WM_event_drag_threshold(event); };
 
   if (data->state == BUTTON_STATE_HIGHLIGHT) {
     int type = event->type, val = event->val;
@@ -6336,7 +6350,7 @@ static int ui_do_but_SCROLL(
   ui_window_to_block(data->region, block, &mx, &my);
 
   /* Defer evaluation as it's rarely needed. */
-  auto drag_threshold_fn = [event]() -> int { return WM_event_drag_threshold(event); };
+  auto drag_threshold_fn = [event]() -> int { return blender::WM_event_drag_threshold(event); };
 
   if (data->state == BUTTON_STATE_HIGHLIGHT) {
     if (event->val == KM_PRESS) {
@@ -8679,7 +8693,7 @@ void UI_but_tooltip_refresh(bContext *C, uiBut *but)
   if (data) {
     bScreen *screen = WM_window_get_active_screen(data->window);
     if (screen->tool_tip && screen->tool_tip->region) {
-      WM_tooltip_refresh(C, data->window);
+  blender::WM_tooltip_refresh(C, data->window);
     }
   }
 }
@@ -8694,7 +8708,7 @@ void UI_but_tooltip_timer_remove(bContext *C, uiBut *but)
     }
 
     if (data->window) {
-      WM_tooltip_clear(C, data->window);
+  blender::WM_tooltip_clear(C, data->window);
     }
   }
 }
@@ -8726,14 +8740,14 @@ static void button_tooltip_timer_reset(bContext *C, uiBut *but)
   wmWindowManager *wm = CTX_wm_manager(C);
   uiHandleButtonData *data = but->active;
 
-  WM_tooltip_timer_clear(C, data->window);
+  blender::WM_tooltip_timer_clear(C, data->window);
 
   if ((U.flag & USER_TOOLTIPS) || (data->tooltip_force)) {
     if (!but->block->tooltipdisabled) {
       if (!wm->runtime->drags.first) {
         const bool is_quick_tip = UI_but_has_quick_tooltip(but);
         const double delay = is_quick_tip ? UI_TOOLTIP_DELAY_QUICK : UI_TOOLTIP_DELAY;
-        WM_tooltip_timer_init_ex(
+        blender::WM_tooltip_timer_init_ex(
             C, data->window, data->area, data->region, ui_but_tooltip_init, delay);
         if (is_quick_tip) {
           bScreen *screen = WM_window_get_active_screen(data->window);
@@ -8832,10 +8846,10 @@ static void button_activate_state(bContext *C, uiBut *but, uiHandleButtonState s
         ui_block_to_window_rctf(data->region, but->block, &rectf, &but->rect);
         rcti bounds;
         BLI_rcti_rctf_copy(&bounds, &rectf);
-        WM_cursor_grab_enable(CTX_wm_window(C), WM_CURSOR_WRAP_XY, &bounds, true);
+    blender::WM_cursor_grab_enable(CTX_wm_window(C), WM_CURSOR_WRAP_XY, &bounds, true);
       }
       else {
-        WM_cursor_grab_enable(CTX_wm_window(C), WM_CURSOR_WRAP_XY, nullptr, true);
+    blender::WM_cursor_grab_enable(CTX_wm_window(C), WM_CURSOR_WRAP_XY, nullptr, true);
       }
       WorkspaceStatus status(C);
       status.item(IFACE_("Cancel"), ICON_EVENT_ESC);
@@ -8869,17 +8883,17 @@ static void button_activate_state(bContext *C, uiBut *but, uiHandleButtonState s
 
 #ifdef USE_CONT_MOUSE_CORRECT
       /* stereo3d has issues with changing cursor location so rather avoid */
-      if (data->ungrab_mval[0] != FLT_MAX && !WM_stereo3d_enabled(data->window, false)) {
+      if (data->ungrab_mval[0] != FLT_MAX && !blender::WM_stereo3d_enabled(data->window, false)) {
         int mouse_ungrab_xy[2];
         ui_block_to_window_fl(
             data->region, but->block, &data->ungrab_mval[0], &data->ungrab_mval[1]);
         mouse_ungrab_xy[0] = data->ungrab_mval[0];
         mouse_ungrab_xy[1] = data->ungrab_mval[1];
 
-        WM_cursor_grab_disable(data->window, mouse_ungrab_xy);
+        blender::WM_cursor_grab_disable(data->window, mouse_ungrab_xy);
       }
       else {
-        WM_cursor_grab_disable(data->window, nullptr);
+        blender::WM_cursor_grab_disable(data->window, nullptr);
       }
 #else
       WM_cursor_grab_disable(data->window, nullptr);
@@ -8918,19 +8932,24 @@ static void button_activate_state(bContext *C, uiBut *but, uiHandleButtonState s
   if (!(but->block->handle && but->block->handle->popup)) {
     if (button_modal_state(state)) {
       if (!button_modal_state(data->state)) {
-        WM_event_add_ui_handler(C,
-                                &data->window->modalhandlers,
-                                ui_handler_region_menu,
-                                nullptr,
-                                data,
-                                eWM_EventHandlerFlag(0));
+        blender::WM_event_add_ui_handler(C,
+                                         reinterpret_cast<blender::ListBaseT<wmEventHandler> *>(
+                                             &data->window->modalhandlers),
+                                         ui_handler_region_menu,
+                                         nullptr,
+                                         data,
+                                         eWM_EventHandlerFlag(0));
       }
     }
     else {
       if (button_modal_state(data->state)) {
         /* true = postpone free */
-        WM_event_remove_ui_handler(
-            &data->window->modalhandlers, ui_handler_region_menu, nullptr, data, true);
+        blender::WM_event_remove_ui_handler(
+            reinterpret_cast<blender::ListBaseT<wmEventHandler> *>(&data->window->modalhandlers),
+            ui_handler_region_menu,
+            nullptr,
+            data,
+            true);
       }
     }
   }
@@ -9057,8 +9076,8 @@ static void button_activate_init(bContext *C,
   if (UI_but_has_quick_tooltip(but)) {
     /* Show a label for this button. */
     bScreen *screen = WM_window_get_active_screen(data->window);
-    if ((BLI_time_now_seconds() - WM_tooltip_time_closed()) < 0.1) {
-      WM_tooltip_immediate_init(C, CTX_wm_window(C), data->area, region, ui_but_tooltip_init);
+    if ((BLI_time_now_seconds() - blender::WM_tooltip_time_closed()) < 0.1) {
+      blender::WM_tooltip_immediate_init(C, CTX_wm_window(C), data->area, region, ui_but_tooltip_init);
       if (screen->tool_tip) {
         screen->tool_tip->pass = 1;
       }
@@ -9547,7 +9566,7 @@ void ui_but_activate_event(bContext *C, ARegion *region, uiBut *but)
   button_activate_init(C, region, but, BUTTON_ACTIVATE_OVER);
 
   wmEvent event;
-  wm_event_init_from_window(win, &event);
+  blender::wm_event_init_from_window(win, &event);
   event.type = EVT_BUT_OPEN;
   event.val = KM_PRESS;
   event.flag = eWM_EventFlag(0);
@@ -9797,7 +9816,7 @@ static int ui_handle_button_event(bContext *C, const wmEvent *event, uiBut *but)
           bScreen *screen = CTX_wm_screen(C);
           if (screen && screen->tool_tip) {
             /* Allow some movement once the tooltip timer has started. */
-            const int threshold = WM_event_drag_threshold(event);
+            const int threshold = blender::WM_event_drag_threshold(event);
             const int movement = len_manhattan_v2v2_int(event->xy, screen->tool_tip->event_xy);
             reenable_tooltip = (movement > threshold);
           }
@@ -9873,7 +9892,7 @@ static int ui_handle_button_event(bContext *C, const wmEvent *event, uiBut *but)
           /* Drag on a hold button (used in the toolbar) now opens it immediately. */
           if (data->hold_action_timer) {
             if (but->flag & UI_SELECT) {
-              const int threshold = WM_event_drag_threshold(event);
+              const int threshold = blender::WM_event_drag_threshold(event);
               const int movement = len_manhattan_v2v2_int(event->xy, event->prev_press_xy);
               if (movement <= threshold) {
                 /* pass */
@@ -12303,10 +12322,11 @@ static int ui_popup_handler(bContext *C, const wmEvent *event, void *userdata)
 
 #ifdef USE_DRAG_TOGGLE
     {
-      WM_event_free_ui_handler_all(C,
-                                   &win->modalhandlers,
-                                   ui_handler_region_drag_toggle,
-                                   ui_handler_region_drag_toggle_remove);
+      blender::WM_event_free_ui_handler_all(
+          C,
+          reinterpret_cast<blender::ListBaseT<wmEventHandler> *>(&win->modalhandlers),
+          ui_handler_region_drag_toggle,
+          ui_handler_region_drag_toggle_remove);
     }
 #endif
 
@@ -12368,14 +12388,18 @@ static void ui_popup_handler_remove(bContext *C, void *userdata)
 
 void UI_region_handlers_add(ListBase *handlers)
 {
-  WM_event_remove_ui_handler(
-      handlers, ui_region_handler, ui_region_handler_remove, nullptr, false);
-  WM_event_add_ui_handler(nullptr,
-                          handlers,
-                          ui_region_handler,
-                          ui_region_handler_remove,
-                          nullptr,
-                          eWM_EventHandlerFlag(0));
+  blender::WM_event_remove_ui_handler(
+      static_cast<blender::ListBaseT<wmEventHandler> *>(handlers),
+      ui_region_handler,
+      ui_region_handler_remove,
+      nullptr,
+      false);
+  blender::WM_event_add_ui_handler(nullptr,
+                                   static_cast<blender::ListBaseT<wmEventHandler> *>(handlers),
+                                   ui_region_handler,
+                                   ui_region_handler_remove,
+                                   nullptr,
+                                   eWM_EventHandlerFlag(0));
 }
 
 void UI_popup_handlers_add(bContext *C,
@@ -12383,8 +12407,12 @@ void UI_popup_handlers_add(bContext *C,
                            uiPopupBlockHandle *popup,
                            const char flag)
 {
-  WM_event_add_ui_handler(
-      C, handlers, ui_popup_handler, ui_popup_handler_remove, popup, eWM_EventHandlerFlag(flag));
+  blender::WM_event_add_ui_handler(C,
+                                   static_cast<blender::ListBaseT<wmEventHandler> *>(handlers),
+                                   ui_popup_handler,
+                                   ui_popup_handler_remove,
+                                   popup,
+                                   eWM_EventHandlerFlag(flag));
 }
 
 void UI_popup_handlers_remove(ListBase *handlers, uiPopupBlockHandle *popup)
@@ -12411,12 +12439,21 @@ void UI_popup_handlers_remove(ListBase *handlers, uiPopupBlockHandle *popup)
     }
   }
 
-  WM_event_remove_ui_handler(handlers, ui_popup_handler, ui_popup_handler_remove, popup, false);
+  blender::WM_event_remove_ui_handler(
+      static_cast<blender::ListBaseT<wmEventHandler> *>(handlers),
+      ui_popup_handler,
+      ui_popup_handler_remove,
+      popup,
+      false);
 }
 
 void UI_popup_handlers_remove_all(bContext *C, ListBase *handlers)
 {
-  WM_event_free_ui_handler_all(C, handlers, ui_popup_handler, ui_popup_handler_remove);
+  blender::WM_event_free_ui_handler_all(
+      C,
+      reinterpret_cast<blender::ListBaseT<wmEventHandler> *>(handlers),
+      ui_popup_handler,
+      ui_popup_handler_remove);
 }
 
 bool UI_textbutton_activate_rna(const bContext *C,

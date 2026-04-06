@@ -267,7 +267,7 @@ void WM_OT_obj_export(wmOperatorType *ot)
 
   ot->invoke = wm_obj_export_invoke;
   ot->exec = wm_obj_export_exec;
-  ot->poll = WM_operator_winactive;
+  ot->poll = blender::WM_operator_winactive;
   ot->ui = wm_obj_export_draw;
   ot->check = wm_obj_export_check;
 
@@ -276,8 +276,8 @@ void WM_OT_obj_export(wmOperatorType *ot)
   WM_operator_properties_filesel(ot,
                                  FILE_TYPE_FOLDER,
                                  FILE_BLENDER,
-                                 FILE_SAVE,
-                                 WM_FILESEL_FILEPATH | WM_FILESEL_SHOW_PROPS,
+                                 blender::FILE_SAVE,
+                                 blender::WM_FILESEL_FILEPATH | blender::WM_FILESEL_SHOW_PROPS,
                                  FILE_DEFAULTDISPLAY,
                                  FILE_SORT_DEFAULT);
 
@@ -510,15 +510,15 @@ void WM_OT_obj_import(wmOperatorType *ot)
 
   ot->invoke = blender::ed::io::filesel_drop_import_invoke;
   ot->exec = wm_obj_import_exec;
-  ot->poll = WM_operator_winactive;
+  ot->poll = blender::WM_operator_winactive;
   ot->ui = wm_obj_import_draw;
 
   WM_operator_properties_filesel(ot,
                                  FILE_TYPE_FOLDER,
                                  FILE_BLENDER,
-                                 FILE_OPENFILE,
-                                 WM_FILESEL_FILEPATH | WM_FILESEL_SHOW_PROPS |
-                                     WM_FILESEL_DIRECTORY | WM_FILESEL_FILES,
+                                 blender::FILE_OPENFILE,
+                                 blender::WM_FILESEL_FILEPATH | blender::WM_FILESEL_SHOW_PROPS |
+                                     blender::WM_FILESEL_DIRECTORY | blender::WM_FILESEL_FILES,
                                  FILE_DEFAULTDISPLAY,
                                  FILE_SORT_DEFAULT);
 

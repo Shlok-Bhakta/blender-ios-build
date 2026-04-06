@@ -23,6 +23,7 @@
 #include "rna_internal.hh"
 
 #include "RE_engine.h"
+#include "RE_pipeline.h"
 
 /* Deprecated, only provided for API compatibility. */
 const EnumPropertyItem rna_enum_render_pass_type_items[] = {
@@ -313,7 +314,7 @@ static bool rna_RenderEngine_unregister(Main *bmain, StructRNA *type)
 
   /* Stop all renders in case we were using this one. */
   ED_render_engine_changed(bmain, false);
-  RE_FreeAllPersistentData();
+  blender::RE_FreeAllPersistentData();
 
   RNA_struct_free_extension(type, &et->rna_ext);
   RNA_struct_free(&BLENDER_RNA, type);
@@ -445,7 +446,7 @@ static PointerRNA rna_RenderEngine_camera_override_get(PointerRNA *ptr)
   RenderEngine *engine = (RenderEngine *)ptr->data;
   /* TODO(sergey): Shouldn't engine point to an evaluated datablocks already? */
   if (engine->re) {
-    Object *cam = RE_GetCamera(engine->re);
+    Object *cam = blender::RE_GetCamera(reinterpret_cast<blender::Render *>(engine->re));
     Object *cam_eval = DEG_get_evaluated(engine->depsgraph, cam);
     return RNA_id_pointer_create(reinterpret_cast<ID *>(cam_eval));
   }
@@ -469,45 +470,51 @@ static void rna_RenderEngine_engine_frame_set(RenderEngine *engine, int frame, f
 
 static void rna_RenderResult_views_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
-  RenderResult *rr = (RenderResult *)ptr->data;
-  rna_iterator_listbase_begin(iter, ptr, &rr->views, nullptr);
+  ::RenderResult *rr = static_cast<::RenderResult *>(ptr->data);
+  blender::RenderResult *rr_blender = reinterpret_cast<blender::RenderResult *>(rr);
+  rna_iterator_listbase_begin(iter, ptr, &rr_blender->views, nullptr);
 }
 
 static void rna_RenderResult_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
-  RenderResult *rr = (RenderResult *)ptr->data;
-  rna_iterator_listbase_begin(iter, ptr, &rr->layers, nullptr);
+  ::RenderResult *rr = static_cast<::RenderResult *>(ptr->data);
+  blender::RenderResult *rr_blender = reinterpret_cast<blender::RenderResult *>(rr);
+  rna_iterator_listbase_begin(iter, ptr, &rr_blender->layers, nullptr);
 }
 
-static void rna_RenderResult_stamp_data_add_field(RenderResult *rr,
+static void rna_RenderResult_stamp_data_add_field(::RenderResult *rr,
                                                   const char *field,
                                                   const char *value)
 {
-  BKE_render_result_stamp_data(rr, field, value);
+  BKE_render_result_stamp_data(reinterpret_cast<::RenderResult *>(rr), field, value);
 }
 
 static void rna_RenderLayer_passes_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
-  RenderLayer *rl = (RenderLayer *)ptr->data;
-  rna_iterator_listbase_begin(iter, ptr, &rl->passes, nullptr);
+  ::RenderLayer *rl = static_cast<::RenderLayer *>(ptr->data);
+  blender::RenderLayer *rl_blender = reinterpret_cast<blender::RenderLayer *>(rl);
+  rna_iterator_listbase_begin(iter, ptr, &rl_blender->passes, nullptr);
 }
 
 static int rna_RenderPass_rect_get_length(const PointerRNA *ptr,
                                           int length[RNA_MAX_ARRAY_DIMENSION])
 {
-  const RenderPass *rpass = (RenderPass *)ptr->data;
+  const ::RenderPass *rpass = static_cast<const ::RenderPass *>(ptr->data);
+  const blender::RenderPass *rpass_blender = reinterpret_cast<const blender::RenderPass *>(rpass);
 
-  length[0] = rpass->rectx * rpass->recty;
-  length[1] = rpass->channels;
+  length[0] = rpass_blender->rectx * rpass_blender->recty;
+  length[1] = rpass_blender->channels;
 
   return length[0] * length[1];
 }
 
 static void rna_RenderPass_rect_get(PointerRNA *ptr, float *values)
 {
-  RenderPass *rpass = (RenderPass *)ptr->data;
-  const size_t size_in_bytes = sizeof(float) * rpass->rectx * rpass->recty * rpass->channels;
-  const float *buffer = rpass->ibuf ? rpass->ibuf->float_buffer.data : nullptr;
+  ::RenderPass *rpass = static_cast<::RenderPass *>(ptr->data);
+  blender::RenderPass *rpass_blender = reinterpret_cast<blender::RenderPass *>(rpass);
+  const size_t size_in_bytes = sizeof(float) * rpass_blender->rectx * rpass_blender->recty *
+                               rpass_blender->channels;
+  const float *buffer = rpass_blender->ibuf ? rpass_blender->ibuf->float_buffer.data : nullptr;
 
   if (!buffer) {
     /* No float buffer to read from, initialize to all zeroes. */
@@ -520,26 +527,36 @@ static void rna_RenderPass_rect_get(PointerRNA *ptr, float *values)
 
 void rna_RenderPass_rect_set(PointerRNA *ptr, const float *values)
 {
-  RenderPass *rpass = (RenderPass *)ptr->data;
-  float *buffer = rpass->ibuf ? rpass->ibuf->float_buffer.data : nullptr;
+  ::RenderPass *rpass = static_cast<::RenderPass *>(ptr->data);
+  blender::RenderPass *rpass_blender = reinterpret_cast<blender::RenderPass *>(rpass);
+  float *buffer = rpass_blender->ibuf ? rpass_blender->ibuf->float_buffer.data : nullptr;
 
   if (!buffer) {
     /* Only writing to an already existing buffer is supported. */
     return;
   }
 
-  const size_t size_in_bytes = sizeof(float) * rpass->rectx * rpass->recty * rpass->channels;
+  const size_t size_in_bytes = sizeof(float) * rpass_blender->rectx * rpass_blender->recty *
+                               rpass_blender->channels;
   memcpy(buffer, values, size_in_bytes);
 }
 
-static RenderPass *rna_RenderPass_find_by_type(RenderLayer *rl, int passtype, const char *view)
+static ::RenderPass *rna_RenderPass_find_by_type(::RenderLayer *rl,
+                                                 int passtype,
+                                                 const char *view)
 {
-  return RE_pass_find_by_type(rl, passtype, view);
+  blender::RenderLayer *rl_blender = reinterpret_cast<blender::RenderLayer *>(rl);
+  return reinterpret_cast<::RenderPass *>(blender::RE_pass_find_by_type(rl_blender,
+                                                                         passtype,
+                                                                         view));
 }
 
-static RenderPass *rna_RenderPass_find_by_name(RenderLayer *rl, const char *name, const char *view)
+static ::RenderPass *rna_RenderPass_find_by_name(::RenderLayer *rl,
+                                                 const char *name,
+                                                 const char *view)
 {
-  return RE_pass_find_by_name(rl, name, view);
+  blender::RenderLayer *rl_blender = reinterpret_cast<blender::RenderLayer *>(rl);
+  return reinterpret_cast<::RenderPass *>(blender::RE_pass_find_by_name(rl_blender, name, view));
 }
 
 #else /* RNA_RUNTIME */

@@ -49,7 +49,7 @@
 #include "IMB_imbuf.hh"
 #include "IMB_imbuf_types.hh"
 
-#include "GHOST_Types.h"
+#include "GHOST_Types.hh"
 
 #include "UI_interface.hh"
 #include "UI_interface_icons.hh"

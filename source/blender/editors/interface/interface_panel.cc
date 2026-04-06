@@ -53,6 +53,9 @@
 
 #include "interface_intern.hh"
 
+using blender::WM_tooltip_clear;
+using blender::eWM_EventHandlerFlag;
+
 /* -------------------------------------------------------------------- */
 /** \name Defines & Structs
  * \{ */
@@ -2221,7 +2224,7 @@ static int ui_panel_drag_collapse_handler(bContext *C, const wmEvent *event, voi
     case LEFTMOUSE:
       if (event->val == KM_RELEASE) {
         /* Done! */
-        WM_event_remove_ui_handler(&win->modalhandlers,
+        WM_event_remove_ui_handler(reinterpret_cast<blender::ListBaseT<wmEventHandler> *>(&win->modalhandlers),
                                    ui_panel_drag_collapse_handler,
                                    ui_panel_drag_collapse_handler_remove,
                                    dragcol_data,
@@ -2249,7 +2252,8 @@ void ui_panel_drag_collapse_handler_add(const bContext *C, const bool was_open)
   copy_v2_v2_int(dragcol_data->xy_init, event->xy);
 
   WM_event_add_ui_handler(C,
-                          &win->modalhandlers,
+                          reinterpret_cast<blender::ListBaseT<wmEventHandler> *>(
+                              &win->modalhandlers),
                           ui_panel_drag_collapse_handler,
                           ui_panel_drag_collapse_handler_remove,
                           dragcol_data,
@@ -2847,7 +2851,8 @@ static void panel_handle_data_ensure(const bContext *C,
   if (panel->activedata == nullptr) {
     panel->activedata = MEM_callocN(sizeof(uiHandlePanelData), __func__);
     WM_event_add_ui_handler(C,
-                            &win->modalhandlers,
+                            reinterpret_cast<blender::ListBaseT<wmEventHandler> *>(
+                                &win->modalhandlers),
                             ui_handler_panel,
                             ui_handler_remove_panel,
                             panel,
@@ -2917,8 +2922,11 @@ static void panel_activate_state(const bContext *C, Panel *panel, const uiHandle
     MEM_freeN(data);
     panel->activedata = nullptr;
 
-    WM_event_remove_ui_handler(
-        &win->modalhandlers, ui_handler_panel, ui_handler_remove_panel, panel, false);
+    WM_event_remove_ui_handler(reinterpret_cast<blender::ListBaseT<wmEventHandler> *>(&win->modalhandlers),
+                               ui_handler_panel,
+                               ui_handler_remove_panel,
+                               panel,
+                               false);
   }
 
   ED_region_tag_redraw(region);

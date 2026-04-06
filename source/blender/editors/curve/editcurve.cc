@@ -1400,7 +1400,7 @@ static wmOperatorStatus separate_exec(bContext *C, wmOperator *op)
     int error_generic;
   } status = {0};
 
-  WM_cursor_wait(true);
+  blender::WM_cursor_wait(true);
 
   Vector<Base *> bases = BKE_view_layer_array_from_bases_in_edit_mode_unique_data(
       scene, view_layer, CTX_wm_view3d(C));
@@ -1464,7 +1464,7 @@ static wmOperatorStatus separate_exec(bContext *C, wmOperator *op)
     WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, newob);
     status.changed++;
   }
-  WM_cursor_wait(false);
+  blender::WM_cursor_wait(false);
 
   if (status.unselected == bases.size()) {
     BKE_report(op->reports, RPT_ERROR, "No point was selected");
@@ -3999,7 +3999,7 @@ void CURVE_OT_spline_type_set(wmOperatorType *ot)
 
   /* API callbacks. */
   ot->exec = set_spline_type_exec;
-  ot->invoke = WM_menu_invoke;
+  ot->invoke = blender::WM_menu_invoke;
   ot->poll = ED_operator_editcurve;
 
   /* flags */
@@ -4066,7 +4066,7 @@ void CURVE_OT_handle_type_set(wmOperatorType *ot)
   ot->idname = "CURVE_OT_handle_type_set";
 
   /* API callbacks. */
-  ot->invoke = WM_menu_invoke;
+  ot->invoke = blender::WM_menu_invoke;
   ot->exec = set_handle_type_exec;
   ot->poll = ED_operator_editcurve;
 
@@ -5748,7 +5748,7 @@ static wmOperatorStatus add_vertex_invoke(bContext *C, wmOperator *op, const wmE
   if (retval & OPERATOR_FINISHED) {
     retval |= OPERATOR_PASS_THROUGH;
   }
-  return WM_operator_flag_only_pass_through_on_press(retval, event);
+  return blender::WM_operator_flag_only_pass_through_on_press(retval, event);
 }
 
 void CURVE_OT_vertex_add(wmOperatorType *ot)
@@ -6610,7 +6610,7 @@ void CURVE_OT_delete(wmOperatorType *ot)
 
   /* API callbacks. */
   ot->exec = curve_delete_exec;
-  ot->invoke = WM_menu_invoke;
+  ot->invoke = blender::WM_menu_invoke;
   ot->poll = ED_operator_editsurfcurve;
 
   /* flags */

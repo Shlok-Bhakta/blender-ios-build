@@ -42,6 +42,7 @@
 #include "mesh_intern.hh" /* own include */
 
 using blender::Vector;
+using blender::WM_menu_invoke;
 
 /* -------------------------------------------------------------------- */
 /** \name Select Similar (Vert/Edge/Face) Operator - common

@@ -10,6 +10,11 @@
 
 #include "WM_api.hh"
 
+using blender::eWM_EventHandlerFlag;
+using blender::wmEventHandler_KeymapDynamicFn;
+using blender::wmUIHandlerFunc;
+using blender::wmUIHandlerRemoveFunc;
+
 struct ARegion;
 struct bToolRef;
 struct GHOST_TabletData;

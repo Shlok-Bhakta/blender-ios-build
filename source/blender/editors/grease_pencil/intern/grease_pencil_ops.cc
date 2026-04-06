@@ -26,6 +26,9 @@
 
 #include "RNA_access.hh"
 
+using blender::WM_operatortype_append_macro;
+using blender::WM_operatortype_macro_define;
+
 namespace blender::ed::greasepencil {
 
 bool grease_pencil_context_poll(bContext *C)

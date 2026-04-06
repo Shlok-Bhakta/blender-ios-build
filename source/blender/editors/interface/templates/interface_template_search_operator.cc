@@ -52,7 +52,7 @@ static void operator_search_update_fn(const bContext *C,
   const int words_len = BLI_string_find_split_words(
       str, str_len, ' ', (int(*)[2])words.data(), words_max);
 
-  for (wmOperatorType *ot : WM_operatortypes_registered_get()) {
+  for (wmOperatorType *ot : blender::WM_operatortypes_registered_get()) {
     const char *ot_ui_name = CTX_IFACE_(ot->translation_context, ot->name);
 
     if ((ot->flag & OPTYPE_INTERNAL) && (G.debug & G_DEBUG_WM) == 0) {

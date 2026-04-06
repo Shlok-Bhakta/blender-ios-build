@@ -994,7 +994,7 @@ static wmOperatorStatus add_driver_button_menu_invoke(bContext *C,
   /* Show menu */
   /* TODO: This should get filtered by the enum filter. */
   /* important to execute in the region we're currently in. */
-  return WM_menu_invoke_ex(C, op, blender::wm::OpCallContext::InvokeDefault);
+  return blender::WM_menu_invoke_ex(C, op, blender::wm::OpCallContext::InvokeDefault);
 }
 
 static void UNUSED_FUNCTION(ANIM_OT_driver_button_add_menu)(wmOperatorType *ot)

@@ -1053,7 +1053,7 @@ static wmOperatorStatus pose_slide_invoke_common(bContext *C, wmOperator *op, co
   pose_slide_draw_status(C, pso);
 
   /* Add a modal handler for this operator. */
-  WM_event_add_modal_handler(C, op);
+  blender::WM_event_add_modal_handler(C, op);
 
   return OPERATOR_RUNNING_MODAL;
 }

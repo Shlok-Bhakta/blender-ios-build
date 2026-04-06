@@ -195,7 +195,7 @@ void MBALL_OT_select_all(wmOperatorType *ot)
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  WM_operator_properties_select_all(ot);
+  blender::WM_operator_properties_select_all(ot);
 }
 
 /** \} */
@@ -435,7 +435,7 @@ void MBALL_OT_select_similar(wmOperatorType *ot)
   ot->idname = "MBALL_OT_select_similar";
 
   /* callback functions */
-  ot->invoke = WM_menu_invoke;
+  ot->invoke = blender::WM_menu_invoke;
   ot->exec = mball_select_similar_exec;
   ot->poll = ED_operator_editmball;
   ot->description = "Select similar metaballs by property types";
@@ -459,7 +459,7 @@ static wmOperatorStatus select_random_metaelems_exec(bContext *C, wmOperator *op
 {
   const bool select = (RNA_enum_get(op->ptr, "action") == SEL_SELECT);
   const float randfac = RNA_float_get(op->ptr, "ratio");
-  const int seed = WM_operator_properties_select_random_seed_increment_get(op);
+  const int seed = blender::WM_operator_properties_select_random_seed_increment_get(op);
 
   const Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
@@ -514,7 +514,7 @@ void MBALL_OT_select_random_metaelems(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* properties */
-  WM_operator_properties_select_random(ot);
+  blender::WM_operator_properties_select_random(ot);
 }
 
 /** \} */

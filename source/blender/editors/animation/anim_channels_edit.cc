@@ -3263,7 +3263,7 @@ static void ANIM_OT_channels_setting_enable(wmOperatorType *ot)
   ot->description = "Enable specified setting on all selected animation channels";
 
   /* API callbacks. */
-  ot->invoke = WM_menu_invoke;
+  ot->invoke = blender::WM_menu_invoke;
   ot->exec = animchannels_setflag_exec;
   ot->poll = animedit_poll_channels_active;
 
@@ -3289,7 +3289,7 @@ static void ANIM_OT_channels_setting_disable(wmOperatorType *ot)
   ot->description = "Disable specified setting on all selected animation channels";
 
   /* API callbacks. */
-  ot->invoke = WM_menu_invoke;
+  ot->invoke = blender::WM_menu_invoke;
   ot->exec = animchannels_setflag_exec;
   ot->poll = animedit_poll_channels_active;
 
@@ -3315,7 +3315,7 @@ static void ANIM_OT_channels_setting_toggle(wmOperatorType *ot)
   ot->description = "Toggle specified setting on all selected animation channels";
 
   /* API callbacks. */
-  ot->invoke = WM_menu_invoke;
+  ot->invoke = blender::WM_menu_invoke;
   ot->exec = animchannels_setflag_exec;
   ot->poll = animedit_poll_channels_active;
 
@@ -3691,7 +3691,7 @@ static wmOperatorStatus animchannels_select_filter_invoke(bContext *C,
     ED_region_tag_redraw(region_channels);
   }
 
-  WM_event_add_modal_handler(C, op);
+  blender::WM_event_add_modal_handler(C, op);
 
   CTX_wm_region_set(C, region_ctx);
   return OPERATOR_RUNNING_MODAL;
@@ -3786,7 +3786,7 @@ static void ANIM_OT_channels_select_all(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* properties */
-  WM_operator_properties_select_all(ot);
+  blender::WM_operator_properties_select_all(ot);
 }
 
 /** \} */
@@ -3933,7 +3933,7 @@ static wmOperatorStatus animchannels_box_select_exec(bContext *C, wmOperator *op
   }
 
   /* get settings from operator */
-  WM_operator_properties_border_to_rcti(op, &rect);
+  blender::WM_operator_properties_border_to_rcti(op, &rect);
 
   if (!extend) {
     ANIM_anim_channels_select_set(&ac, ACHANNEL_SETFLAG_CLEAR);
@@ -3963,10 +3963,10 @@ static void ANIM_OT_channels_select_box(wmOperatorType *ot)
   ot->description = "Select all animation channels within the specified region";
 
   /* API callbacks. */
-  ot->invoke = WM_gesture_box_invoke;
+  ot->invoke = blender::WM_gesture_box_invoke;
   ot->exec = animchannels_box_select_exec;
-  ot->modal = WM_gesture_box_modal;
-  ot->cancel = WM_gesture_box_cancel;
+  ot->modal = blender::WM_gesture_box_modal;
+  ot->cancel = blender::WM_gesture_box_cancel;
 
   ot->poll = animedit_poll_channels_nla_tweakmode_off;
 
@@ -3974,7 +3974,7 @@ static void ANIM_OT_channels_select_box(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* rna */
-  WM_operator_properties_gesture_box_select(ot);
+  blender::WM_operator_properties_gesture_box_select(ot);
 }
 
 /** \} */
@@ -4879,8 +4879,9 @@ static wmOperatorStatus animchannels_mouseclick_invoke(bContext *C,
   /* set notifier that things have changed */
   WM_event_add_notifier(C, NC_ANIMATION | notifierFlags, nullptr);
 
-  return WM_operator_flag_only_pass_through_on_press(OPERATOR_FINISHED | OPERATOR_PASS_THROUGH,
-                                                     event);
+  return blender::WM_operator_flag_only_pass_through_on_press(OPERATOR_FINISHED |
+                                                                  OPERATOR_PASS_THROUGH,
+                                                              event);
 }
 
 static void ANIM_OT_channels_click(wmOperatorType *ot)
@@ -5112,7 +5113,7 @@ static wmOperatorStatus graphkeys_view_selected_channels_exec(bContext *C, wmOpe
     bounds.ymax = window_region->v2d.cur.ymax;
   }
 
-  const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
+  const int smooth_viewtx = blender::WM_operator_smooth_viewtx_get(op);
   UI_view2d_smooth_view(C, window_region, &bounds, smooth_viewtx);
 
   ANIM_animdata_freelist(&anim_data);
@@ -5203,7 +5204,7 @@ static wmOperatorStatus graphkeys_channel_view_pick_invoke(bContext *C,
     bounds.ymax = window_region->v2d.cur.ymax;
   }
 
-  const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
+  const int smooth_viewtx = blender::WM_operator_smooth_viewtx_get(op);
   UI_view2d_smooth_view(C, window_region, &bounds, smooth_viewtx);
 
   ANIM_animdata_freelist(&anim_data);
@@ -5866,7 +5867,7 @@ static wmOperatorStatus view_curve_in_graph_editor_exec(bContext *C, wmOperator 
         ScrArea *area = wm_context_temp.area;
         add_region_padding(C, region, &bounds);
 
-        const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
+        const int smooth_viewtx = blender::WM_operator_smooth_viewtx_get(op);
         UI_view2d_smooth_view(C, region, &bounds, smooth_viewtx);
 
         /* This ensures the channel list updates. */
@@ -5913,44 +5914,44 @@ static void ANIM_OT_view_curve_in_graph_editor(wmOperatorType *ot)
 
 void ED_operatortypes_animchannels()
 {
-  WM_operatortype_append(ANIM_OT_channels_select_all);
-  WM_operatortype_append(ANIM_OT_channels_select_box);
+  blender::WM_operatortype_append(ANIM_OT_channels_select_all);
+  blender::WM_operatortype_append(ANIM_OT_channels_select_box);
 
-  WM_operatortype_append(ANIM_OT_channels_click);
-  WM_operatortype_append(ANIM_OT_channel_select_keys);
-  WM_operatortype_append(ANIM_OT_channels_rename);
+  blender::WM_operatortype_append(ANIM_OT_channels_click);
+  blender::WM_operatortype_append(ANIM_OT_channel_select_keys);
+  blender::WM_operatortype_append(ANIM_OT_channels_rename);
 
-  WM_operatortype_append(ANIM_OT_channels_select_filter);
+  blender::WM_operatortype_append(ANIM_OT_channels_select_filter);
 
-  WM_operatortype_append(ANIM_OT_channels_setting_enable);
-  WM_operatortype_append(ANIM_OT_channels_setting_disable);
-  WM_operatortype_append(ANIM_OT_channels_setting_toggle);
+  blender::WM_operatortype_append(ANIM_OT_channels_setting_enable);
+  blender::WM_operatortype_append(ANIM_OT_channels_setting_disable);
+  blender::WM_operatortype_append(ANIM_OT_channels_setting_toggle);
 
-  WM_operatortype_append(ANIM_OT_channel_view_pick);
-  WM_operatortype_append(ANIM_OT_channels_view_selected);
-  WM_operatortype_append(ANIM_OT_view_curve_in_graph_editor);
+  blender::WM_operatortype_append(ANIM_OT_channel_view_pick);
+  blender::WM_operatortype_append(ANIM_OT_channels_view_selected);
+  blender::WM_operatortype_append(ANIM_OT_view_curve_in_graph_editor);
 
-  WM_operatortype_append(ANIM_OT_channels_delete);
+  blender::WM_operatortype_append(ANIM_OT_channels_delete);
 
   /* XXX does this need to be a separate operator? */
-  WM_operatortype_append(ANIM_OT_channels_editable_toggle);
+  blender::WM_operatortype_append(ANIM_OT_channels_editable_toggle);
 
-  WM_operatortype_append(ANIM_OT_channels_move);
+  blender::WM_operatortype_append(ANIM_OT_channels_move);
 
-  WM_operatortype_append(ANIM_OT_channels_expand);
-  WM_operatortype_append(ANIM_OT_channels_collapse);
+  blender::WM_operatortype_append(ANIM_OT_channels_expand);
+  blender::WM_operatortype_append(ANIM_OT_channels_collapse);
 
-  WM_operatortype_append(ANIM_OT_channels_fcurves_enable);
+  blender::WM_operatortype_append(ANIM_OT_channels_fcurves_enable);
 
-  WM_operatortype_append(ANIM_OT_channels_clean_empty);
+  blender::WM_operatortype_append(ANIM_OT_channels_clean_empty);
 
-  WM_operatortype_append(ANIM_OT_channels_group);
-  WM_operatortype_append(ANIM_OT_channels_ungroup);
+  blender::WM_operatortype_append(ANIM_OT_channels_group);
+  blender::WM_operatortype_append(ANIM_OT_channels_ungroup);
 
-  WM_operatortype_append(ANIM_OT_channels_bake);
+  blender::WM_operatortype_append(ANIM_OT_channels_bake);
 
-  WM_operatortype_append(ANIM_OT_slot_channels_move_to_new_action);
-  WM_operatortype_append(ANIM_OT_separate_slots);
+  blender::WM_operatortype_append(ANIM_OT_slot_channels_move_to_new_action);
+  blender::WM_operatortype_append(ANIM_OT_separate_slots);
 }
 
 void ED_keymap_animchannels(wmKeyConfig *keyconf)

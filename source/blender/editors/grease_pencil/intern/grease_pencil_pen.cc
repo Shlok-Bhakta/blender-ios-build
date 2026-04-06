@@ -288,7 +288,7 @@ static void GREASE_PENCIL_OT_pen(wmOperatorType *ot)
 
 void ED_operatortypes_grease_pencil_pen()
 {
-  WM_operatortype_append(blender::ed::greasepencil::GREASE_PENCIL_OT_pen);
+  blender::WM_operatortype_append(blender::ed::greasepencil::GREASE_PENCIL_OT_pen);
 }
 
 void ED_grease_pencil_pentool_modal_keymap(wmKeyConfig *keyconf)

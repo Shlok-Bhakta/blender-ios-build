@@ -85,7 +85,7 @@ struct MultiresBakerJobData {
 
 /* data passing to multires-baker job */
 struct MultiresBakeJob {
-  Scene *scene;
+  ::Scene *scene;
   ListBase data;
   /** Clear the images before baking */
   bool bake_clear;
@@ -102,7 +102,7 @@ struct MultiresBakeJob {
 
 static bool multiresbake_check(bContext *C, wmOperator *op)
 {
-  Scene *scene = CTX_data_scene(C);
+  ::Scene *scene = CTX_data_scene(C);
   Object *ob;
   Mesh *mesh;
   MultiresModifierData *mmd;
@@ -270,7 +270,7 @@ static void clear_images_poly(const Span<Image *> ob_image_array, const ClearFla
 
 static wmOperatorStatus multiresbake_image_exec_locked(bContext *C, wmOperator *op)
 {
-  Scene *scene = CTX_data_scene(C);
+  ::Scene *scene = CTX_data_scene(C);
   int objects_baked = 0;
 
   if (!multiresbake_check(C, op)) {
@@ -342,7 +342,7 @@ static wmOperatorStatus multiresbake_image_exec_locked(bContext *C, wmOperator *
  */
 static void init_multiresbake_job(bContext *C, MultiresBakeJob *bkj)
 {
-  Scene *scene = CTX_data_scene(C);
+  ::Scene *scene = CTX_data_scene(C);
 
   /* backup scene settings, so their changing in UI would take no effect on baker */
   bkj->scene = scene;
@@ -451,7 +451,7 @@ static void multiresbake_freejob(void *bkv)
 
 static wmOperatorStatus multiresbake_image_exec(bContext *C, wmOperator *op)
 {
-  Scene *scene = CTX_data_scene(C);
+  ::Scene *scene = CTX_data_scene(C);
 
   if (!multiresbake_check(C, op)) {
     return OPERATOR_CANCELLED;
@@ -511,7 +511,7 @@ static wmOperatorStatus objects_bake_render_modal(bContext *C,
   return OPERATOR_PASS_THROUGH;
 }
 
-static bool is_multires_bake(Scene *scene)
+static bool is_multires_bake(::Scene *scene)
 {
   if (ELEM(scene->r.bake.type,
            R_BAKE_NORMALS,
@@ -529,7 +529,7 @@ static wmOperatorStatus objects_bake_render_invoke(bContext *C,
                                                    wmOperator *op,
                                                    const wmEvent * /*event*/)
 {
-  Scene *scene = CTX_data_scene(C);
+  ::Scene *scene = CTX_data_scene(C);
   wmOperatorStatus result = OPERATOR_CANCELLED;
 
   result = multiresbake_image_exec(C, op);
@@ -541,7 +541,7 @@ static wmOperatorStatus objects_bake_render_invoke(bContext *C,
 
 static wmOperatorStatus bake_image_exec(bContext *C, wmOperator *op)
 {
-  Scene *scene = CTX_data_scene(C);
+  ::Scene *scene = CTX_data_scene(C);
   wmOperatorStatus result = OPERATOR_CANCELLED;
 
   if (!is_multires_bake(scene)) {

@@ -21,6 +21,7 @@
 void ED_operatortypes_mesh()
 {
   using namespace blender::ed::mesh;
+  using blender::WM_operatortype_append;
   WM_operatortype_append(MESH_OT_select_all);
   WM_operatortype_append(MESH_OT_select_interior_faces);
   WM_operatortype_append(MESH_OT_select_more);
@@ -210,6 +211,8 @@ static int operator_editmesh_face_select(bContext *C)
 
 void ED_operatormacros_mesh()
 {
+  using blender::WM_operatortype_append_macro;
+  using blender::WM_operatortype_macro_define;
   wmOperatorType *ot;
   wmOperatorTypeMacro *otmacro;
 

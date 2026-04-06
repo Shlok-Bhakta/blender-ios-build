@@ -97,66 +97,66 @@ bool ED_maskedit_mask_visible_splines_poll(bContext *C)
 
 void ED_operatortypes_mask()
 {
-  WM_operatortype_append(MASK_OT_new);
+  blender::WM_operatortype_append(MASK_OT_new);
 
   /* mask layers */
-  WM_operatortype_append(MASK_OT_layer_new);
-  WM_operatortype_append(MASK_OT_layer_remove);
+  blender::WM_operatortype_append(MASK_OT_layer_new);
+  blender::WM_operatortype_append(MASK_OT_layer_remove);
 
   /* add */
-  WM_operatortype_append(MASK_OT_add_vertex);
-  WM_operatortype_append(MASK_OT_add_feather_vertex);
-  WM_operatortype_append(MASK_OT_primitive_circle_add);
-  WM_operatortype_append(MASK_OT_primitive_square_add);
+  blender::WM_operatortype_append(MASK_OT_add_vertex);
+  blender::WM_operatortype_append(MASK_OT_add_feather_vertex);
+  blender::WM_operatortype_append(MASK_OT_primitive_circle_add);
+  blender::WM_operatortype_append(MASK_OT_primitive_square_add);
 
   /* geometry */
-  WM_operatortype_append(MASK_OT_switch_direction);
-  WM_operatortype_append(MASK_OT_normals_make_consistent);
-  WM_operatortype_append(MASK_OT_delete);
+  blender::WM_operatortype_append(MASK_OT_switch_direction);
+  blender::WM_operatortype_append(MASK_OT_normals_make_consistent);
+  blender::WM_operatortype_append(MASK_OT_delete);
 
   /* select */
-  WM_operatortype_append(MASK_OT_select);
-  WM_operatortype_append(MASK_OT_select_all);
-  WM_operatortype_append(MASK_OT_select_box);
-  WM_operatortype_append(MASK_OT_select_lasso);
-  WM_operatortype_append(MASK_OT_select_circle);
-  WM_operatortype_append(MASK_OT_select_linked_pick);
-  WM_operatortype_append(MASK_OT_select_linked);
-  WM_operatortype_append(MASK_OT_select_more);
-  WM_operatortype_append(MASK_OT_select_less);
+  blender::WM_operatortype_append(MASK_OT_select);
+  blender::WM_operatortype_append(MASK_OT_select_all);
+  blender::WM_operatortype_append(MASK_OT_select_box);
+  blender::WM_operatortype_append(MASK_OT_select_lasso);
+  blender::WM_operatortype_append(MASK_OT_select_circle);
+  blender::WM_operatortype_append(MASK_OT_select_linked_pick);
+  blender::WM_operatortype_append(MASK_OT_select_linked);
+  blender::WM_operatortype_append(MASK_OT_select_more);
+  blender::WM_operatortype_append(MASK_OT_select_less);
 
   /* hide/reveal */
-  WM_operatortype_append(MASK_OT_hide_view_clear);
-  WM_operatortype_append(MASK_OT_hide_view_set);
+  blender::WM_operatortype_append(MASK_OT_hide_view_clear);
+  blender::WM_operatortype_append(MASK_OT_hide_view_set);
 
   /* feather */
-  WM_operatortype_append(MASK_OT_feather_weight_clear);
+  blender::WM_operatortype_append(MASK_OT_feather_weight_clear);
 
   /* shape */
-  WM_operatortype_append(MASK_OT_slide_point);
-  WM_operatortype_append(MASK_OT_slide_spline_curvature);
-  WM_operatortype_append(MASK_OT_cyclic_toggle);
-  WM_operatortype_append(MASK_OT_handle_type_set);
+  blender::WM_operatortype_append(MASK_OT_slide_point);
+  blender::WM_operatortype_append(MASK_OT_slide_spline_curvature);
+  blender::WM_operatortype_append(MASK_OT_cyclic_toggle);
+  blender::WM_operatortype_append(MASK_OT_handle_type_set);
 
   /* relationships */
-  WM_operatortype_append(MASK_OT_parent_set);
-  WM_operatortype_append(MASK_OT_parent_clear);
+  blender::WM_operatortype_append(MASK_OT_parent_set);
+  blender::WM_operatortype_append(MASK_OT_parent_clear);
 
   /* Shape-keys. */
-  WM_operatortype_append(MASK_OT_shape_key_insert);
-  WM_operatortype_append(MASK_OT_shape_key_clear);
-  WM_operatortype_append(MASK_OT_shape_key_feather_reset);
-  WM_operatortype_append(MASK_OT_shape_key_rekey);
+  blender::WM_operatortype_append(MASK_OT_shape_key_insert);
+  blender::WM_operatortype_append(MASK_OT_shape_key_clear);
+  blender::WM_operatortype_append(MASK_OT_shape_key_feather_reset);
+  blender::WM_operatortype_append(MASK_OT_shape_key_rekey);
 
   /* layers */
-  WM_operatortype_append(MASK_OT_layer_move);
+  blender::WM_operatortype_append(MASK_OT_layer_move);
 
   /* duplicate */
-  WM_operatortype_append(MASK_OT_duplicate);
+  blender::WM_operatortype_append(MASK_OT_duplicate);
 
   /* clipboard */
-  WM_operatortype_append(MASK_OT_copy_splines);
-  WM_operatortype_append(MASK_OT_paste_splines);
+  blender::WM_operatortype_append(MASK_OT_copy_splines);
+  blender::WM_operatortype_append(MASK_OT_paste_splines);
 }
 
 void ED_keymap_mask(wmKeyConfig *keyconf)
@@ -170,30 +170,30 @@ void ED_operatormacros_mask()
   wmOperatorType *ot;
   wmOperatorTypeMacro *otmacro;
 
-  ot = WM_operatortype_append_macro("MASK_OT_add_vertex_slide",
-                                    "Add Vertex and Slide",
-                                    "Add new vertex and slide it",
-                                    OPTYPE_UNDO | OPTYPE_REGISTER);
+  ot = blender::WM_operatortype_append_macro("MASK_OT_add_vertex_slide",
+                                             "Add Vertex and Slide",
+                                             "Add new vertex and slide it",
+                                             OPTYPE_UNDO | OPTYPE_REGISTER);
   ot->description = "Add new vertex and slide it";
-  WM_operatortype_macro_define(ot, "MASK_OT_add_vertex");
-  otmacro = WM_operatortype_macro_define(ot, "MASK_OT_slide_point");
+  blender::WM_operatortype_macro_define(ot, "MASK_OT_add_vertex");
+  otmacro = blender::WM_operatortype_macro_define(ot, "MASK_OT_slide_point");
   RNA_boolean_set(otmacro->ptr, "is_new_point", true);
 
-  ot = WM_operatortype_append_macro("MASK_OT_add_feather_vertex_slide",
-                                    "Add Feather Vertex and Slide",
-                                    "Add new vertex to feather and slide it",
-                                    OPTYPE_UNDO | OPTYPE_REGISTER);
+  ot = blender::WM_operatortype_append_macro("MASK_OT_add_feather_vertex_slide",
+                                             "Add Feather Vertex and Slide",
+                                             "Add new vertex to feather and slide it",
+                                             OPTYPE_UNDO | OPTYPE_REGISTER);
   ot->description = "Add new feather vertex and slide it";
-  WM_operatortype_macro_define(ot, "MASK_OT_add_feather_vertex");
-  otmacro = WM_operatortype_macro_define(ot, "MASK_OT_slide_point");
+  blender::WM_operatortype_macro_define(ot, "MASK_OT_add_feather_vertex");
+  otmacro = blender::WM_operatortype_macro_define(ot, "MASK_OT_slide_point");
   RNA_boolean_set(otmacro->ptr, "slide_feather", true);
 
-  ot = WM_operatortype_append_macro("MASK_OT_duplicate_move",
-                                    "Add Duplicate",
-                                    "Duplicate mask and move",
-                                    OPTYPE_UNDO | OPTYPE_REGISTER);
-  WM_operatortype_macro_define(ot, "MASK_OT_duplicate");
-  otmacro = WM_operatortype_macro_define(ot, "TRANSFORM_OT_translate");
+  ot = blender::WM_operatortype_append_macro("MASK_OT_duplicate_move",
+                                             "Add Duplicate",
+                                             "Duplicate mask and move",
+                                             OPTYPE_UNDO | OPTYPE_REGISTER);
+  blender::WM_operatortype_macro_define(ot, "MASK_OT_duplicate");
+  otmacro = blender::WM_operatortype_macro_define(ot, "TRANSFORM_OT_translate");
   RNA_boolean_set(otmacro->ptr, "use_proportional_edit", false);
   RNA_boolean_set(otmacro->ptr, "mirror", false);
 }

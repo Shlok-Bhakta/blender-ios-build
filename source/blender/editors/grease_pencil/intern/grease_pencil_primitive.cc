@@ -50,6 +50,8 @@
 
 #include "UI_resources.hh"
 
+using blender::WM_operatortype_append;
+
 namespace blender::ed::greasepencil {
 
 enum class PrimitiveType : int8_t {

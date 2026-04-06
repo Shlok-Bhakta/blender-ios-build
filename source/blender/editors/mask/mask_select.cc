@@ -229,7 +229,7 @@ void MASK_OT_select_all(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* properties */
-  WM_operator_properties_select_all(ot);
+  blender::WM_operator_properties_select_all(ot);
 }
 
 /** \} */
@@ -387,7 +387,7 @@ static wmOperatorStatus select_invoke(bContext *C, wmOperator *op, const wmEvent
 
   const wmOperatorStatus retval = select_exec(C, op);
 
-  return WM_operator_flag_only_pass_through_on_press(retval, event);
+  return blender::WM_operator_flag_only_pass_through_on_press(retval, event);
 }
 
 void MASK_OT_select(wmOperatorType *ot)
@@ -407,7 +407,7 @@ void MASK_OT_select(wmOperatorType *ot)
   ot->flag = OPTYPE_UNDO;
 
   /* properties */
-  WM_operator_properties_mouse_select(ot);
+  blender::WM_operator_properties_mouse_select(ot);
 
   RNA_def_float_vector(ot->srna,
                        "location",
@@ -448,7 +448,7 @@ static wmOperatorStatus box_select_exec(bContext *C, wmOperator *op)
   }
 
   /* get rectangle from operator */
-  WM_operator_properties_border_to_rcti(op, &rect);
+  blender::WM_operator_properties_border_to_rcti(op, &rect);
 
   ED_mask_point_pos(area, region, rect.xmin, rect.ymin, &rectf.xmin, &rectf.ymin);
   ED_mask_point_pos(area, region, rect.xmax, rect.ymax, &rectf.xmax, &rectf.ymax);
@@ -505,17 +505,17 @@ void MASK_OT_select_box(wmOperatorType *ot)
   ot->idname = "MASK_OT_select_box";
 
   /* API callbacks. */
-  ot->invoke = WM_gesture_box_invoke;
+  ot->invoke = blender::WM_gesture_box_invoke;
   ot->exec = box_select_exec;
-  ot->modal = WM_gesture_box_modal;
+  ot->modal = blender::WM_gesture_box_modal;
   ot->poll = ED_maskedit_mask_visible_splines_poll;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
   /* properties */
-  WM_operator_properties_gesture_box(ot);
-  WM_operator_properties_select_operation_simple(ot);
+  blender::WM_operator_properties_gesture_box(ot);
+  blender::WM_operator_properties_select_operation_simple(ot);
 }
 
 /** \} */
@@ -606,7 +606,7 @@ static bool do_lasso_select_mask(bContext *C, const Span<int2> mcoords, const eS
 
 static wmOperatorStatus clip_lasso_select_exec(bContext *C, wmOperator *op)
 {
-  const Array<int2> mcoords = WM_gesture_lasso_path_to_array(C, op);
+  const Array<int2> mcoords = blender::WM_gesture_lasso_path_to_array(C, op);
   if (mcoords.is_empty()) {
     return OPERATOR_PASS_THROUGH;
   }
@@ -625,18 +625,18 @@ void MASK_OT_select_lasso(wmOperatorType *ot)
   ot->idname = "MASK_OT_select_lasso";
 
   /* API callbacks. */
-  ot->invoke = WM_gesture_lasso_invoke;
-  ot->modal = WM_gesture_lasso_modal;
+  ot->invoke = blender::WM_gesture_lasso_invoke;
+  ot->modal = blender::WM_gesture_lasso_modal;
   ot->exec = clip_lasso_select_exec;
   ot->poll = ED_maskedit_mask_visible_splines_poll;
-  ot->cancel = WM_gesture_lasso_cancel;
+  ot->cancel = blender::WM_gesture_lasso_cancel;
 
   /* flags */
   ot->flag = OPTYPE_UNDO | OPTYPE_DEPENDS_ON_CURSOR;
 
   /* properties */
-  WM_operator_properties_gesture_lasso(ot);
-  WM_operator_properties_select_operation_simple(ot);
+  blender::WM_operator_properties_gesture_lasso(ot);
+  blender::WM_operator_properties_select_operation_simple(ot);
 }
 
 /** \} */
@@ -688,7 +688,7 @@ static wmOperatorStatus circle_select_exec(bContext *C, wmOperator *op)
 
   const eSelectOp sel_op = ED_select_op_modal(
       eSelectOp(RNA_enum_get(op->ptr, "mode")),
-      WM_gesture_is_modal_first(static_cast<wmGesture *>(op->customdata)));
+      blender::WM_gesture_is_modal_first(static_cast<wmGesture *>(op->customdata)));
   const bool select = (sel_op != SEL_OP_SUB);
   if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
     ED_mask_select_toggle_all(mask_orig, SEL_DESELECT);
@@ -746,8 +746,8 @@ void MASK_OT_select_circle(wmOperatorType *ot)
   ot->idname = "MASK_OT_select_circle";
 
   /* API callbacks. */
-  ot->invoke = WM_gesture_circle_invoke;
-  ot->modal = WM_gesture_circle_modal;
+  ot->invoke = blender::WM_gesture_circle_invoke;
+  ot->modal = blender::WM_gesture_circle_modal;
   ot->exec = circle_select_exec;
   ot->poll = ED_maskedit_mask_visible_splines_poll;
   ot->get_name = ED_select_circle_get_name;
@@ -756,8 +756,8 @@ void MASK_OT_select_circle(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* properties */
-  WM_operator_properties_gesture_circle(ot);
-  WM_operator_properties_select_operation_simple(ot);
+  blender::WM_operator_properties_gesture_circle(ot);
+  blender::WM_operator_properties_select_operation_simple(ot);
 }
 
 /** \} */

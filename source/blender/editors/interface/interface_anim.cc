@@ -40,6 +40,12 @@
 
 #include "interface_intern.hh"
 
+using blender::WM_operator_name_call;
+using blender::WM_operator_name_call_ptr;
+using blender::WM_operatortype_find;
+using blender::WM_operator_properties_create_ptr;
+using blender::WM_operator_properties_free;
+
 static FCurve *ui_but_get_fcurve(
     uiBut *but, AnimData **adt, bAction **action, bool *r_driven, bool *r_special)
 {

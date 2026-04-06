@@ -68,6 +68,14 @@
 using blender::float3;
 using blender::Span;
 using blender::Vector;
+using blender::WM_cursor_test_motion_and_update;
+using blender::WM_operator_properties_select_all;
+using blender::CheckerIntervalParams;
+using blender::WM_operator_properties_checker_interval;
+using blender::WM_operator_properties_checker_interval_from_op;
+using blender::WM_operator_properties_checker_interval_test;
+using blender::WM_operator_properties_select_random_seed_increment_get;
+using blender::WM_operator_properties_select_random;
 
 /* -------------------------------------------------------------------- */
 /** \name Generic Poll Functions

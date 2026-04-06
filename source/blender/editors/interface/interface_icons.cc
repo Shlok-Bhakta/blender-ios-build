@@ -50,6 +50,15 @@
 
 #include "WM_api.hh"
 
+using blender::WM_JOB_TYPE_STUDIOLIGHT;
+using blender::WM_jobs_callbacks;
+using blender::WM_jobs_customdata_set;
+using blender::WM_jobs_get;
+using blender::WM_jobs_kill_type;
+using blender::WM_jobs_start;
+using blender::WM_jobs_timer;
+using blender::eWM_JobFlag;
+
 #include "CLG_log.h"
 
 #include "interface_intern.hh"

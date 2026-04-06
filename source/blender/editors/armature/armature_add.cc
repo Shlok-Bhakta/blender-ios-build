@@ -267,7 +267,7 @@ static wmOperatorStatus armature_click_extrude_invoke(bContext *C,
   if (retval & OPERATOR_FINISHED) {
     retval |= OPERATOR_PASS_THROUGH;
   }
-  return WM_operator_flag_only_pass_through_on_press(retval, event);
+  return blender::WM_operator_flag_only_pass_through_on_press(retval, event);
 }
 
 void ARMATURE_OT_click_extrude(wmOperatorType *ot)

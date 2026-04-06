@@ -1157,7 +1157,7 @@ static wmOperatorStatus curve_draw_invoke(bContext *C, wmOperator *op, const wmE
   }
 
   /* add temp handler */
-  WM_event_add_modal_handler(C, op);
+  blender::WM_event_add_modal_handler(C, op);
 
   return OPERATOR_RUNNING_MODAL;
 }

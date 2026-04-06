@@ -508,7 +508,7 @@ static wmOperatorStatus curvesurf_prim_add(bContext *C, wmOperator *op, int type
   float loc[3], rot[3];
   float mat[4][4];
 
-  WM_operator_view3d_unit_defaults(C, op);
+  blender::WM_operator_view3d_unit_defaults(C, op);
 
   blender::ed::object::add_generic_get_opts(
       C, op, 'Z', loc, rot, nullptr, &enter_editmode, &local_view_bits, nullptr);

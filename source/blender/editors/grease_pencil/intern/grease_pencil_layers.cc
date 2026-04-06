@@ -33,6 +33,8 @@
 #include "WM_api.hh"
 #include "WM_message.hh"
 
+using blender::WM_operatortype_append;
+
 namespace blender::ed::greasepencil {
 
 /* This utility function is modified from `BKE_object_get_parent_matrix()`. */

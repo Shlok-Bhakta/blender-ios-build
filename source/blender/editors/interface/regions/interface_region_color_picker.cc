@@ -34,6 +34,8 @@
 
 #include "interface_intern.hh"
 
+using blender::WM_event_absolute_delta_y;
+
 enum ePickerType {
   PICKER_TYPE_LINEAR_RGB = 0,
   PICKER_TYPE_PERCEPTUAL_RGB = 1,

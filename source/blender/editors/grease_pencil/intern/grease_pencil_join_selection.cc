@@ -622,5 +622,5 @@ void ED_operatortypes_grease_pencil_join()
 {
   using namespace blender::ed::greasepencil;
 
-  WM_operatortype_append(GREASE_PENCIL_OT_join_selection);
+  blender::WM_operatortype_append(GREASE_PENCIL_OT_join_selection);
 }

@@ -36,6 +36,7 @@
 #include "interface_regions_intern.hh"
 
 using blender::StringRef;
+using blender::wmGetProjectionMatrix;
 
 /* -------------------------------------------------------------------- */
 /** \name Utility Functions

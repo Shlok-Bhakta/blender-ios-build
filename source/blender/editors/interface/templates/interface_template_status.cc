@@ -188,7 +188,7 @@ static bool uiTemplateInputStatusBorder(wmWindow *win, uiLayout *row)
   /* On a gap between editors. */
   rcti win_rect;
   const int pad = int((3.0f * UI_SCALE_FAC) + U.pixelsize);
-  WM_window_screen_rect_calc(win, &win_rect);
+  blender::WM_window_screen_rect_calc(win, &win_rect);
   BLI_rcti_pad(&win_rect, pad * -2, pad);
   if (BLI_rcti_isect_pt_v(&win_rect, win->eventstate->xy)) {
     /* Show options but not along left and right edges. */
@@ -347,9 +347,9 @@ void uiTemplateInputStatus(uiLayout *layout, bContext *C)
     row->alignment_set(blender::ui::LayoutAlign::Left);
 
     const char *msg = CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT,
-                                 WM_window_cursor_keymap_status_get(win, i, 0));
+                                  blender::WM_window_cursor_keymap_status_get(win, i, 0));
     const char *msg_drag = CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT,
-                                      WM_window_cursor_keymap_status_get(win, i, 1));
+                                      blender::WM_window_cursor_keymap_status_get(win, i, 1));
 
     if (msg) {
       row->label("", (ICON_MOUSE_LMB + i));

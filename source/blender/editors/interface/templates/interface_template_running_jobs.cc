@@ -26,6 +26,32 @@
 #include "UI_interface_layout.hh"
 #include "interface_intern.hh"
 
+using blender::WM_JOB_TYPE_ANY;
+using blender::WM_JOB_TYPE_ASSET_LIBRARY_LOAD;
+using blender::WM_JOB_TYPE_CLIP_BUILD_PROXY;
+using blender::WM_JOB_TYPE_CLIP_PREFETCH;
+using blender::WM_JOB_TYPE_CLIP_SOLVE_CAMERA;
+using blender::WM_JOB_TYPE_CLIP_TRACK_MARKERS;
+using blender::WM_JOB_TYPE_COMPOSITE;
+using blender::WM_JOB_TYPE_DPAINT_BAKE;
+using blender::WM_JOB_TYPE_FILESEL_READDIR;
+using blender::WM_JOB_TYPE_OBJECT_BAKE;
+using blender::WM_JOB_TYPE_OBJECT_BAKE_TEXTURE;
+using blender::WM_JOB_TYPE_OBJECT_SIM_FLUID;
+using blender::WM_JOB_TYPE_OBJECT_SIM_OCEAN;
+using blender::WM_JOB_TYPE_POINTCACHE;
+using blender::WM_JOB_TYPE_RENDER;
+using blender::WM_JOB_TYPE_SEQ_BUILD_PREVIEW;
+using blender::WM_JOB_TYPE_SEQ_BUILD_PROXY;
+using blender::WM_JOB_TYPE_SEQ_DRAW_THUMBNAIL;
+using blender::WM_jobs_is_stopped;
+using blender::WM_jobs_name;
+using blender::WM_jobs_progress;
+using blender::WM_jobs_starttime;
+using blender::WM_jobs_stop_all_from_owner;
+using blender::WM_jobs_test;
+using blender::WM_operator_name_call;
+
 #define B_STOPRENDER 1
 #define B_STOPCAST 2
 #define B_STOPANIM 3

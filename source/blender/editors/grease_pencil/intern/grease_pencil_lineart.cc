@@ -334,7 +334,7 @@ static void lineart_bake_endjob(void *customdata)
 {
   LineartBakeJob *bj = static_cast<LineartBakeJob *>(customdata);
 
-  WM_locked_interface_set(CTX_wm_manager(bj->C), false);
+  blender::WM_locked_interface_set(CTX_wm_manager(bj->C), false);
 
   WM_main_add_notifier(NC_SCENE | ND_FRAME, bj->scene);
 
@@ -393,18 +393,18 @@ static wmOperatorStatus lineart_bake_common(bContext *C,
                                 CTX_wm_window(C),
                                 scene,
                                 "Baking Line Art...",
-                                WM_JOB_PROGRESS,
-                                WM_JOB_TYPE_LINEART);
+                                blender::WM_JOB_PROGRESS,
+                                blender::WM_JOB_TYPE_LINEART);
 
-    WM_jobs_customdata_set(wm_job, bj, lineart_bake_job_free);
-    WM_jobs_timer(wm_job, 0.1, NC_GPENCIL | ND_DATA | NA_EDITED, NC_GPENCIL | ND_DATA | NA_EDITED);
-    WM_jobs_callbacks(wm_job, lineart_bake_startjob, nullptr, nullptr, lineart_bake_endjob);
+    blender::WM_jobs_customdata_set(wm_job, bj, lineart_bake_job_free);
+    blender::WM_jobs_timer(wm_job, 0.1, NC_GPENCIL | ND_DATA | NA_EDITED, NC_GPENCIL | ND_DATA | NA_EDITED);
+    blender::WM_jobs_callbacks(wm_job, lineart_bake_startjob, nullptr, nullptr, lineart_bake_endjob);
 
-    WM_locked_interface_set_with_flags(CTX_wm_manager(C), REGION_DRAW_LOCK_BAKING);
+    blender::WM_locked_interface_set_with_flags(CTX_wm_manager(C), REGION_DRAW_LOCK_BAKING);
 
-    WM_jobs_start(CTX_wm_manager(C), wm_job);
+    blender::WM_jobs_start(CTX_wm_manager(C), wm_job);
 
-    WM_event_add_modal_handler(C, op);
+    blender::WM_event_add_modal_handler(C, op);
 
     return OPERATOR_RUNNING_MODAL;
   }
@@ -440,7 +440,7 @@ static wmOperatorStatus lineart_bake_strokes_common_modal(bContext *C,
   Scene *scene = static_cast<Scene *>(op->customdata);
 
   /* no running blender, remove handler and pass through. */
-  if (WM_jobs_test(CTX_wm_manager(C), scene, WM_JOB_TYPE_LINEART) == 0) {
+  if (blender::WM_jobs_test(CTX_wm_manager(C), scene, blender::WM_JOB_TYPE_LINEART) == 0) {
     return OPERATOR_FINISHED | OPERATOR_PASS_THROUGH;
   }
 
@@ -530,6 +530,6 @@ static void OBJECT_OT_lineart_clear(wmOperatorType *ot)
 
 void ED_operatortypes_grease_pencil_lineart()
 {
-  WM_operatortype_append(OBJECT_OT_lineart_bake_strokes);
-  WM_operatortype_append(OBJECT_OT_lineart_clear);
+  blender::WM_operatortype_append(OBJECT_OT_lineart_bake_strokes);
+  blender::WM_operatortype_append(OBJECT_OT_lineart_clear);
 }

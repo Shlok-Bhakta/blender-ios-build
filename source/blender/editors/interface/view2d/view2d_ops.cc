@@ -192,7 +192,7 @@ static void view_pan_apply_ex(bContext *C, v2dViewPanData *vpd, float dx, float 
   ED_region_tag_redraw_no_rebuild(vpd->region);
 
   /* request updates to be done... */
-  WM_event_add_mousemove(CTX_wm_window(C));
+  blender::WM_event_add_mousemove(CTX_wm_window(C));
 
   UI_view2d_sync(vpd->screen, vpd->area, v2d, V2D_LOCK_COPY);
 }
@@ -269,21 +269,21 @@ static wmOperatorStatus view_pan_invoke(bContext *C, wmOperator *op, const wmEve
   RNA_int_set(op->ptr, "deltax", 0);
   RNA_int_set(op->ptr, "deltay", 0);
 
-  if (WM_cursor_modal_is_set_ok(window)) {
+  if (blender::WM_cursor_modal_is_set_ok(window)) {
     if (v2d->keepofs & V2D_LOCKOFS_X) {
-      WM_cursor_modal_set(window, WM_CURSOR_NS_SCROLL);
+      blender::WM_cursor_modal_set(window, WM_CURSOR_NS_SCROLL);
     }
     else if (v2d->keepofs & V2D_LOCKOFS_Y) {
-      WM_cursor_modal_set(window, WM_CURSOR_EW_SCROLL);
+      blender::WM_cursor_modal_set(window, WM_CURSOR_EW_SCROLL);
     }
     else {
-      WM_cursor_modal_set(window, WM_CURSOR_NSEW_SCROLL);
+      blender::WM_cursor_modal_set(window, WM_CURSOR_NSEW_SCROLL);
     }
     vpd->own_cursor = true;
   }
 
   /* add temp handler */
-  WM_event_add_modal_handler(C, op);
+  blender::WM_event_add_modal_handler(C, op);
 
   return OPERATOR_RUNNING_MODAL;
 }
@@ -406,7 +406,7 @@ static wmOperatorStatus view_edge_pan_invoke(bContext *C,
   View2DEdgePanData *vpd = static_cast<View2DEdgePanData *>(op->customdata);
   UI_view2d_edge_pan_operator_init(C, vpd, op);
 
-  WM_event_add_modal_handler(C, op);
+  blender::WM_event_add_modal_handler(C, op);
 
   return (OPERATOR_RUNNING_MODAL | OPERATOR_PASS_THROUGH);
 }
@@ -417,7 +417,8 @@ static wmOperatorStatus view_edge_pan_modal(bContext *C, wmOperator *op, const w
 
   wmWindow *source_win = CTX_wm_window(C);
   int event_xy_target[2];
-  wmWindow *target_win = WM_window_find_under_cursor(source_win, event->xy, &event_xy_target[0]);
+  wmWindow *target_win =
+      blender::WM_window_find_under_cursor(source_win, event->xy, &event_xy_target[0]);
 
   /* Exit if we release the mouse button, hit escape, or enter a different window. */
   if (event->val == KM_RELEASE || event->type == EVT_ESCKEY || source_win != target_win) {
@@ -1188,8 +1189,8 @@ static wmOperatorStatus view_zoomdrag_invoke(bContext *C, wmOperator *op, const 
     }
 
     if (event->type == MOUSEPAN) {
-      facx = zoomfac * WM_event_absolute_delta_x(event);
-      facy = zoomfac * WM_event_absolute_delta_y(event);
+      facx = zoomfac * blender::WM_event_absolute_delta_x(event);
+      facy = zoomfac * blender::WM_event_absolute_delta_y(event);
 
       if (U.uiflag & USER_ZOOM_INVERT) {
         facx *= -1.0f;
@@ -1197,7 +1198,7 @@ static wmOperatorStatus view_zoomdrag_invoke(bContext *C, wmOperator *op, const 
       }
     }
     else { /* MOUSEZOOM */
-      facx = facy = zoomfac * WM_event_absolute_delta_x(event);
+      facx = facy = zoomfac * blender::WM_event_absolute_delta_x(event);
     }
 
     /* Only respect user setting zoom axis if the view does not have any zoom restrictions
@@ -1244,21 +1245,21 @@ static wmOperatorStatus view_zoomdrag_invoke(bContext *C, wmOperator *op, const 
   /* for modal exit test */
   vzd->invoke_event = event->type;
 
-  if (WM_cursor_modal_is_set_ok(window)) {
+  if (blender::WM_cursor_modal_is_set_ok(window)) {
     if (v2d->keepofs & V2D_LOCKOFS_X) {
-      WM_cursor_modal_set(window, WM_CURSOR_NS_SCROLL);
+      blender::WM_cursor_modal_set(window, WM_CURSOR_NS_SCROLL);
     }
     else if (v2d->keepofs & V2D_LOCKOFS_Y) {
-      WM_cursor_modal_set(window, WM_CURSOR_EW_SCROLL);
+      blender::WM_cursor_modal_set(window, WM_CURSOR_EW_SCROLL);
     }
     else {
-      WM_cursor_modal_set(window, WM_CURSOR_NSEW_SCROLL);
+      blender::WM_cursor_modal_set(window, WM_CURSOR_NSEW_SCROLL);
     }
     vzd->own_cursor = true;
   }
 
   /* add temp handler */
-  WM_event_add_modal_handler(C, op);
+  blender::WM_event_add_modal_handler(C, op);
 
   if (U.viewzoom == USER_ZOOM_CONTINUE) {
     /* needs a timer to continue redrawing */
@@ -1432,7 +1433,7 @@ static void VIEW2D_OT_zoom(wmOperatorType *ot)
   prop = RNA_def_float(ot->srna, "deltay", 0, -FLT_MAX, FLT_MAX, "Delta Y", "", -FLT_MAX, FLT_MAX);
   RNA_def_property_flag(prop, PROP_HIDDEN);
 
-  WM_operator_properties_use_cursor_init(ot);
+  blender::WM_operator_properties_use_cursor_init(ot);
 }
 
 /** \} */
@@ -1455,11 +1456,11 @@ static wmOperatorStatus view_borderzoom_exec(bContext *C, wmOperator *op)
   ARegion *region = CTX_wm_region(C);
   View2D *v2d = &region->v2d;
   rctf cur_new = v2d->cur;
-  const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
+  const int smooth_viewtx = blender::WM_operator_smooth_viewtx_get(op);
 
   /* convert coordinates of rect to `tot` rect coordinates */
   rctf rect;
-  WM_operator_properties_border_to_rctf(op, &rect);
+  blender::WM_operator_properties_border_to_rctf(op, &rect);
   UI_view2d_region_to_view_rctf(v2d, &rect, &rect);
 
   /* check if zooming in/out view */
@@ -1521,15 +1522,15 @@ static void VIEW2D_OT_zoom_border(wmOperatorType *ot)
   ot->idname = "VIEW2D_OT_zoom_border";
 
   /* API callbacks. */
-  ot->invoke = WM_gesture_box_invoke;
+  ot->invoke = blender::WM_gesture_box_invoke;
   ot->exec = view_borderzoom_exec;
-  ot->modal = WM_gesture_box_modal;
-  ot->cancel = WM_gesture_box_cancel;
+  ot->modal = blender::WM_gesture_box_modal;
+  ot->cancel = blender::WM_gesture_box_cancel;
 
   ot->poll = view_zoom_poll;
 
   /* rna */
-  WM_operator_properties_gesture_box_zoom(ot);
+  blender::WM_operator_properties_gesture_box_zoom(ot);
 }
 
 /** \} */
@@ -1747,7 +1748,7 @@ static wmOperatorStatus view2d_smoothview_invoke(bContext *C,
     v2d->smooth_timer = nullptr;
 
     /* Event handling won't know if a UI item has been moved under the pointer. */
-    WM_event_add_mousemove(win);
+    blender::WM_event_add_mousemove(win);
   }
   else {
     /* ease in/out */
@@ -2231,7 +2232,7 @@ static wmOperatorStatus scroller_activate_invoke(bContext *C, wmOperator *op, co
     }
 
     /* still ok, so can add */
-    WM_event_add_modal_handler(C, op);
+    blender::WM_event_add_modal_handler(C, op);
     return OPERATOR_RUNNING_MODAL;
   }
 
@@ -2342,29 +2343,29 @@ static void VIEW2D_OT_reset(wmOperatorType *ot)
 
 void ED_operatortypes_view2d()
 {
-  WM_operatortype_append(VIEW2D_OT_pan);
-  WM_operatortype_append(VIEW2D_OT_edge_pan);
+  blender::WM_operatortype_append(VIEW2D_OT_pan);
+  blender::WM_operatortype_append(VIEW2D_OT_edge_pan);
 
-  WM_operatortype_append(VIEW2D_OT_scroll_left);
-  WM_operatortype_append(VIEW2D_OT_scroll_right);
-  WM_operatortype_append(VIEW2D_OT_scroll_up);
-  WM_operatortype_append(VIEW2D_OT_scroll_down);
+  blender::WM_operatortype_append(VIEW2D_OT_scroll_left);
+  blender::WM_operatortype_append(VIEW2D_OT_scroll_right);
+  blender::WM_operatortype_append(VIEW2D_OT_scroll_up);
+  blender::WM_operatortype_append(VIEW2D_OT_scroll_down);
 
-  WM_operatortype_append(VIEW2D_OT_zoom_in);
-  WM_operatortype_append(VIEW2D_OT_zoom_out);
+  blender::WM_operatortype_append(VIEW2D_OT_zoom_in);
+  blender::WM_operatortype_append(VIEW2D_OT_zoom_out);
 
-  WM_operatortype_append(VIEW2D_OT_zoom);
-  WM_operatortype_append(VIEW2D_OT_zoom_border);
+  blender::WM_operatortype_append(VIEW2D_OT_zoom);
+  blender::WM_operatortype_append(VIEW2D_OT_zoom_border);
 
 #ifdef WITH_INPUT_NDOF
-  WM_operatortype_append(VIEW2D_OT_ndof);
+  blender::WM_operatortype_append(VIEW2D_OT_ndof);
 #endif
 
-  WM_operatortype_append(VIEW2D_OT_smoothview);
+  blender::WM_operatortype_append(VIEW2D_OT_smoothview);
 
-  WM_operatortype_append(VIEW2D_OT_scroller_activate);
+  blender::WM_operatortype_append(VIEW2D_OT_scroller_activate);
 
-  WM_operatortype_append(VIEW2D_OT_reset);
+  blender::WM_operatortype_append(VIEW2D_OT_reset);
 }
 
 void ED_keymap_view2d(wmKeyConfig *keyconf)

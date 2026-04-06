@@ -75,7 +75,7 @@ static eAutoPropButsReturn template_operator_property_buts_draw_single(
 
   /* poll() on this operator may still fail,
    * at the moment there is no nice feedback when this happens just fails silently. */
-  if (!WM_operator_repeat_check(C, op)) {
+  if (!blender::WM_operator_repeat_check(C, op)) {
     UI_block_lock_set(block, true, N_("Operator cannot redo"));
     return return_info;
   }
@@ -287,7 +287,7 @@ void uiTemplateOperatorPropertyButs(
 
 void uiTemplateOperatorRedoProperties(uiLayout *layout, const bContext *C)
 {
-  wmOperator *op = WM_operator_last_redo(C);
+  wmOperator *op = blender::WM_operator_last_redo(C);
   uiBlock *block = layout->block();
 
   if (op == nullptr) {
@@ -304,7 +304,7 @@ void uiTemplateOperatorRedoProperties(uiLayout *layout, const bContext *C)
              0);
 #endif
 
-  if (WM_operator_repeat_check(C, op)) {
+  if (blender::WM_operator_repeat_check(C, op)) {
     int layout_flags = 0;
     if (block->panel == nullptr) {
       layout_flags = UI_TEMPLATE_OP_PROPS_SHOW_TITLE;

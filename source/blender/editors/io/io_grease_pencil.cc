@@ -224,9 +224,10 @@ void WM_OT_grease_pencil_import_svg(wmOperatorType *ot)
   WM_operator_properties_filesel(ot,
                                  FILE_TYPE_FOLDER | FILE_TYPE_OBJECT_IO,
                                  FILE_BLENDER,
-                                 FILE_OPENFILE,
-                                 WM_FILESEL_FILEPATH | WM_FILESEL_RELPATH | WM_FILESEL_SHOW_PROPS |
-                                     WM_FILESEL_DIRECTORY | WM_FILESEL_FILES,
+                                 blender::FILE_OPENFILE,
+                                 blender::WM_FILESEL_FILEPATH | blender::WM_FILESEL_RELPATH |
+                                     blender::WM_FILESEL_SHOW_PROPS |
+                                     blender::WM_FILESEL_DIRECTORY | blender::WM_FILESEL_FILES,
                                  FILE_DEFAULTDISPLAY,
                                  FILE_SORT_DEFAULT);
 
@@ -440,8 +441,8 @@ void WM_OT_grease_pencil_export_svg(wmOperatorType *ot)
   WM_operator_properties_filesel(ot,
                                  FILE_TYPE_FOLDER | FILE_TYPE_OBJECT_IO,
                                  FILE_BLENDER,
-                                 FILE_SAVE,
-                                 WM_FILESEL_FILEPATH | WM_FILESEL_SHOW_PROPS,
+                                 blender::FILE_SAVE,
+                                 blender::WM_FILESEL_FILEPATH | blender::WM_FILESEL_SHOW_PROPS,
                                  FILE_DEFAULTDISPLAY,
                                  FILE_SORT_DEFAULT);
 
@@ -578,8 +579,8 @@ void WM_OT_grease_pencil_export_pdf(wmOperatorType *ot)
   WM_operator_properties_filesel(ot,
                                  FILE_TYPE_FOLDER | FILE_TYPE_OBJECT_IO,
                                  FILE_BLENDER,
-                                 FILE_SAVE,
-                                 WM_FILESEL_FILEPATH | WM_FILESEL_SHOW_PROPS,
+                                 blender::FILE_SAVE,
+                                 blender::WM_FILESEL_FILEPATH | blender::WM_FILESEL_SHOW_PROPS,
                                  FILE_DEFAULTDISPLAY,
                                  FILE_SORT_DEFAULT);
 

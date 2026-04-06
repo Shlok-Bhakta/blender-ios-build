@@ -14,6 +14,14 @@
 
 #include "interface_intern.hh"
 
+using blender::WM_drag_data_free;
+using blender::WM_drag_data_create;
+using blender::WM_event_drag_image;
+using blender::WM_event_drag_preview_icon;
+using blender::WM_event_start_drag;
+using blender::WM_event_start_prepared_drag;
+using blender::WM_event_drag_path_override_poin_data_with_space_file_paths;
+
 void UI_but_drag_set_id(uiBut *but, ID *id)
 {
   but->dragtype = WM_DRAG_ID;

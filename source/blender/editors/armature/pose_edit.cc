@@ -600,7 +600,7 @@ void POSE_OT_autoside_names(wmOperatorType *ot)
       "fall on";
 
   /* API callbacks. */
-  ot->invoke = WM_menu_invoke;
+  ot->invoke = blender::WM_menu_invoke;
   ot->exec = pose_autoside_names_exec;
   ot->poll = ED_operator_posemode;
 
@@ -648,7 +648,7 @@ void POSE_OT_rotation_mode_set(wmOperatorType *ot)
   ot->description = "Set the rotation representation used by selected bones";
 
   /* callbacks */
-  ot->invoke = WM_menu_invoke;
+  ot->invoke = blender::WM_menu_invoke;
   ot->exec = pose_bone_rotmode_exec;
   ot->poll = ED_operator_posemode;
 

@@ -205,7 +205,7 @@ static void edge_pan_apply_delta(bContext *C, View2DEdgePanData *vpd, float dx, 
     ED_region_tag_redraw_no_rebuild(vpd->region);
 
     /* Request updates to be done. */
-    WM_event_add_mousemove(CTX_wm_window(C));
+    blender::WM_event_add_mousemove(CTX_wm_window(C));
 
     UI_view2d_sync(vpd->screen, vpd->area, v2d, V2D_LOCK_COPY);
   }
@@ -295,7 +295,7 @@ void UI_view2d_edge_pan_cancel(bContext *C, View2DEdgePanData *vpd)
   ED_region_tag_redraw_no_rebuild(vpd->region);
 
   /* Request updates to be done. */
-  WM_event_add_mousemove(CTX_wm_window(C));
+  blender::WM_event_add_mousemove(CTX_wm_window(C));
 
   UI_view2d_sync(vpd->screen, vpd->area, v2d, V2D_LOCK_COPY);
 }

@@ -888,7 +888,7 @@ static void template_id_workspace_pin_extra_icon(const TemplateID &template_ui, 
   }
 
   const wmWindow *win = static_cast<const wmWindow *>(template_ui.ptr.data);
-  const WorkSpace *workspace = WM_window_get_active_workspace(win);
+  const WorkSpace *workspace = blender::WM_window_get_active_workspace(win);
   UI_but_extra_operator_icon_add(but,
                                  "WORKSPACE_OT_scene_pin_toggle",
                                  blender::wm::OpCallContext::InvokeDefault,

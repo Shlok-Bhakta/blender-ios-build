@@ -47,6 +47,8 @@ using blender::Array;
 using blender::float3;
 using blender::Span;
 using blender::Vector;
+using blender::WM_event_add_modal_handler;
+using blender::WM_operatortype_props_advanced_begin;
 
 #define SUBD_SMOOTH_MAX 4.0f
 #define SUBD_CUTS_MAX 500

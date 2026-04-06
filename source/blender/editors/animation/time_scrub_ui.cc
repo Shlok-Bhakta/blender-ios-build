@@ -182,7 +182,7 @@ void ED_time_scrub_draw_current_frame(const ARegion *region,
 {
   const View2D *v2d = &region->v2d;
   GPU_matrix_push_projection();
-  wmOrtho2_region_pixelspace(region);
+  blender::wmOrtho2_region_pixelspace(region);
 
   rcti scrub_region_rect;
   ED_time_scrub_region_rect_get(region, &scrub_region_rect);
@@ -200,7 +200,7 @@ void ED_time_scrub_draw(const ARegion *region,
   const View2D *v2d = &region->v2d;
 
   GPU_matrix_push_projection();
-  wmOrtho2_region_pixelspace(region);
+  blender::wmOrtho2_region_pixelspace(region);
 
   rcti scrub_region_rect;
   ED_time_scrub_region_rect_get(region, &scrub_region_rect);
@@ -246,7 +246,7 @@ bool ED_time_scrub_event_in_region_poll(const wmWindow * /*win*/,
 void ED_time_scrub_channel_search_draw(const bContext *C, ARegion *region, bDopeSheet *dopesheet)
 {
   GPU_matrix_push_projection();
-  wmOrtho2_region_pixelspace(region);
+  blender::wmOrtho2_region_pixelspace(region);
 
   rcti rect;
   rect.xmin = 0;

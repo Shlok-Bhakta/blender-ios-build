@@ -555,7 +555,35 @@ extern bool BLI_memory_is_zero(const void *arr, size_t arr_size);
 /* Useful to port C code using enums to C++ where enums are strongly typed.
  * To use after the enum declaration. */
 /* If any enumerator `C` is set to say `A|B`, then `C` would be the max enum value. */
-#  define ENUM_OPERATORS(_enum_type, _max_enum_value) \
+#  define _ENUM_OPERATORS_1(_enum_type) \
+    extern "C++" { \
+    inline constexpr _enum_type operator|(_enum_type a, _enum_type b) \
+    { \
+      return (_enum_type)(uint64_t(a) | uint64_t(b)); \
+    } \
+    inline constexpr _enum_type operator&(_enum_type a, _enum_type b) \
+    { \
+      return (_enum_type)(uint64_t(a) & uint64_t(b)); \
+    } \
+  inline constexpr _enum_type operator~(_enum_type a) \
+    { \
+      return (_enum_type)(~uint64_t(a)); \
+    } \
+    inline _enum_type &operator|=(_enum_type &a, _enum_type b) \
+    { \
+      return a = (_enum_type)(uint64_t(a) | uint64_t(b)); \
+    } \
+    inline _enum_type &operator&=(_enum_type &a, _enum_type b) \
+    { \
+      return a = (_enum_type)(uint64_t(a) & uint64_t(b)); \
+    } \
+    inline _enum_type &operator^=(_enum_type &a, _enum_type b) \
+    { \
+      return a = (_enum_type)(uint64_t(a) ^ uint64_t(b)); \
+    } \
+    } /* extern "C++" */
+
+#  define _ENUM_OPERATORS_2(_enum_type, _max_enum_value) \
     extern "C++" { \
     inline constexpr _enum_type operator|(_enum_type a, _enum_type b) \
     { \
@@ -583,9 +611,12 @@ extern bool BLI_memory_is_zero(const void *arr, size_t arr_size);
     } \
     } /* extern "C++" */
 
+#  define _ENUM_OPERATORS_GET_MACRO(_1, _2, NAME, ...) NAME
+#  define ENUM_OPERATORS(...) _ENUM_OPERATORS_GET_MACRO(__VA_ARGS__, _ENUM_OPERATORS_2, _ENUM_OPERATORS_1)(__VA_ARGS__)
+
 #else
 /* Output nothing. */
-#  define ENUM_OPERATORS(_type, _max)
+#  define ENUM_OPERATORS(...)
 #endif
 
 /** \} */

@@ -47,6 +47,9 @@
 #include "WM_api.hh"
 #include "WM_types.hh"
 
+using blender::WM_context_path_resolve_full;
+using blender::WM_context_path_resolve_property_full;
+
 /* This hack is needed because we don't have a good way to
  * re-reference keymap items once added: #42944 */
 #define USE_KEYMAP_ADD_HACK

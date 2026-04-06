@@ -77,6 +77,14 @@
 #include "ED_screen.hh"
 
 using namespace blender::ui;
+using blender::WM_clipboard_text_set;
+using blender::WM_draw_region_viewport_bind;
+using blender::WM_draw_region_viewport_unbind;
+using blender::WM_event_add_mousemove;
+using blender::WM_operator_properties_free;
+using blender::WM_operator_properties_id_lookup;
+using blender::WM_operator_pystring_ex;
+using blender::WM_operatortype_append;
 
 /* -------------------------------------------------------------------- */
 /** \name Immediate redraw helper

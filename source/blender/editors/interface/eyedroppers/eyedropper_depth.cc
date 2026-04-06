@@ -36,6 +36,8 @@
 #include "WM_api.hh"
 #include "WM_types.hh"
 
+using blender::WM_event_add_modal_handler;
+
 #include "ED_screen.hh"
 #include "ED_space_api.hh"
 #include "ED_view3d.hh"

@@ -983,7 +983,7 @@ static void rna_Scene_camera_update(Main *bmain, Scene * /*scene_unused*/, Point
   wmWindowManager *wm = static_cast<wmWindowManager *>(bmain->wm.first);
   Scene *scene = (Scene *)ptr->data;
 
-  WM_windows_scene_data_sync(&wm->windows, scene);
+  blender::WM_windows_scene_data_sync(&wm->windows, reinterpret_cast<blender::Scene *>(scene));
   DEG_id_tag_update(&scene->id, ID_RECALC_SYNC_TO_EVAL);
   DEG_relations_tag_update(bmain);
 }
@@ -995,9 +995,9 @@ static void rna_Scene_fps_update(Main *bmain, Scene * /*active_scene*/, PointerR
   /* NOTE: Tag via dependency graph will take care of all the updates ion the evaluated domain,
    * however, changes in FPS actually modifies an original skip length,
    * so this we take care about here. */
-  blender::seq::sound_update_length(bmain, scene);
+  blender::seq::sound_update_length(bmain, reinterpret_cast<blender::Scene *>(scene));
   /* Reset simulation states because new frame interval doesn't apply anymore. */
-  blender::bke::bake::scene_simulation_states_reset(*scene);
+  blender::bke::bake::scene_simulation_states_reset(*reinterpret_cast<blender::Scene *>(scene));
 }
 
 static void rna_Scene_listener_update(Main * /*bmain*/, Scene * /*scene*/, PointerRNA *ptr)
@@ -1169,7 +1169,9 @@ static PointerRNA rna_Scene_active_keying_set_get(PointerRNA *ptr)
 {
   Scene *scene = (Scene *)ptr->data;
   return RNA_pointer_create_with_parent(
-      *ptr, &RNA_KeyingSet, blender::animrig::scene_get_active_keyingset(scene));
+      *ptr,
+      &RNA_KeyingSet,
+      blender::animrig::scene_get_active_keyingset(reinterpret_cast<blender::Scene *>(scene)));
 }
 
 static void rna_Scene_active_keying_set_set(PointerRNA *ptr,
@@ -2100,7 +2102,7 @@ static void rna_Scene_editmesh_select_mode_set(PointerRNA *ptr, const bool *valu
     /* Update select mode in all the workspaces in mesh edit mode. */
     wmWindowManager *wm = static_cast<wmWindowManager *>(G_MAIN->wm.first);
     LISTBASE_FOREACH (wmWindow *, win, &wm->windows) {
-      const Scene *scene = WM_window_get_active_scene(win);
+      const Scene *scene = reinterpret_cast<const Scene *>(WM_window_get_active_scene(win));
       ViewLayer *view_layer = WM_window_get_active_view_layer(win);
       if (view_layer) {
         BKE_view_layer_synced_ensure(scene, view_layer);
@@ -2271,7 +2273,7 @@ static void rna_Scene_use_persistent_data_update(Main * /*bmain*/,
   Scene *scene = (Scene *)ptr->owner_id;
 
   if (!(scene->r.mode & R_PERSISTENT_DATA)) {
-    RE_FreePersistentData(scene);
+    blender::RE_FreePersistentData(reinterpret_cast<const blender::Scene *>(scene));
   }
 }
 
@@ -2533,7 +2535,7 @@ static void rna_SceneCamera_update(Main * /*bmain*/, Scene * /*scene*/, PointerR
   Scene *scene = (Scene *)ptr->owner_id;
   Object *camera = scene->camera;
 
-  blender::seq::cache_cleanup(scene);
+  blender::seq::cache_cleanup(reinterpret_cast<blender::Scene *>(scene));
 
   if (camera && (camera->type == OB_CAMERA)) {
     DEG_id_tag_update(&camera->id, ID_RECALC_GEOMETRY);
@@ -2542,7 +2544,7 @@ static void rna_SceneCamera_update(Main * /*bmain*/, Scene * /*scene*/, PointerR
 
 static void rna_SceneSequencer_update(Main * /*bmain*/, Scene * /*scene*/, PointerRNA *ptr)
 {
-  blender::seq::cache_cleanup((Scene *)ptr->owner_id);
+  blender::seq::cache_cleanup(reinterpret_cast<blender::Scene *>(ptr->owner_id));
 }
 
 static std::optional<std::string> rna_ToolSettings_path(const PointerRNA * /*ptr*/)

@@ -47,6 +47,8 @@
 #include "mesh_intern.hh" /* own include */
 
 using blender::Vector;
+using blender::WM_userdef_event_type_from_keymap_type;
+using blender::WM_event_add_modal_handler;
 
 #define MVAL_PIXEL_MARGIN 5.0f
 

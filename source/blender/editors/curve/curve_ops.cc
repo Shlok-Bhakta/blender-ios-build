@@ -20,6 +20,10 @@
 
 /************************* registration ****************************/
 
+using blender::WM_operatortype_append;
+using blender::WM_operatortype_append_macro;
+using blender::WM_operatortype_macro_define;
+
 void ED_operatortypes_curve()
 {
   WM_operatortype_append(FONT_OT_text_insert);

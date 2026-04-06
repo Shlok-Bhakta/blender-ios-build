@@ -127,8 +127,8 @@ void CACHEFILE_OT_open(wmOperatorType *ot)
   WM_operator_properties_filesel(ot,
                                  FILE_TYPE_ALEMBIC | FILE_TYPE_USD | FILE_TYPE_FOLDER,
                                  FILE_BLENDER,
-                                 FILE_OPENFILE,
-                                 WM_FILESEL_FILEPATH | WM_FILESEL_RELPATH,
+                                  blender::FILE_OPENFILE,
+                                  blender::WM_FILESEL_FILEPATH | blender::WM_FILESEL_RELPATH,
                                  FILE_DEFAULTDISPLAY,
                                  FILE_SORT_DEFAULT);
 }
@@ -225,8 +225,8 @@ void CACHEFILE_OT_layer_add(wmOperatorType *ot)
   WM_operator_properties_filesel(ot,
                                  FILE_TYPE_ALEMBIC | FILE_TYPE_USD | FILE_TYPE_FOLDER,
                                  FILE_BLENDER,
-                                 FILE_OPENFILE,
-                                 WM_FILESEL_FILEPATH | WM_FILESEL_RELPATH,
+                                 blender::FILE_OPENFILE,
+                                 blender::WM_FILESEL_FILEPATH | blender::WM_FILESEL_RELPATH,
                                  FILE_DEFAULTDISPLAY,
                                  FILE_SORT_DEFAULT);
 }

@@ -645,7 +645,7 @@ GraphicsInteropDevice BlenderDisplayDriver::graphics_interop_get_device()
 {
   GraphicsInteropDevice interop_device;
 
-  switch (GPU_backend_get_type()) {
+  switch (blender::GPU_backend_get_type()) {
     case GPU_BACKEND_OPENGL:
       interop_device.type = GraphicsInteropDevice::OPENGL;
       break;
@@ -672,7 +672,7 @@ void BlenderDisplayDriver::graphics_interop_update_buffer()
 {
   if (graphics_interop_buffer_.is_empty()) {
     GraphicsInteropDevice::Type type = GraphicsInteropDevice::NONE;
-    switch (GPU_backend_get_type()) {
+    switch (blender::GPU_backend_get_type()) {
       case GPU_BACKEND_OPENGL:
         type = GraphicsInteropDevice::OPENGL;
         break;

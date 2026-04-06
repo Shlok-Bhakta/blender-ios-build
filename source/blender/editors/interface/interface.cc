@@ -78,6 +78,8 @@
 using blender::StringRef;
 using blender::StringRefNull;
 using blender::Vector;
+using blender::wmGetProjectionMatrix;
+using blender::WM_operator_properties_free;
 
 static CLG_LogRef LOG = {"ui"};
 
@@ -2247,7 +2249,7 @@ void UI_block_draw(const bContext *C, uiBlock *block)
   GPU_matrix_push();
   GPU_matrix_identity_set();
 
-  wmOrtho2_region_pixelspace(region);
+  blender::wmOrtho2_region_pixelspace(region);
 
   /* back */
   if (block->flag & UI_BLOCK_PIE_MENU) {
@@ -3431,7 +3433,7 @@ bool ui_but_string_set(bContext *C, uiBut *but, const char *str)
     double value;
 
     if (ui_but_string_eval_number(C, but, str, &value) == false) {
-      WM_report_banner_show(CTX_wm_manager(C), CTX_wm_window(C));
+      blender::WM_report_banner_show(CTX_wm_manager(C), CTX_wm_window(C));
       return false;
     }
 
@@ -4516,7 +4518,8 @@ static void ui_def_but_rna__menu(bContext *C, uiLayout *layout, void *but_p)
 
   /* Calculate the maximum number of rows that can fit in half the height of this window. */
   const float row_height = float(UI_UNIT_Y) / but->block->aspect;
-  const float vertical_space = (float(WM_window_native_pixel_y(win)) / 2.0f) - (UI_UNIT_Y * 3.0f);
+  const float vertical_space =
+      (float(blender::WM_window_native_pixel_y(win)) / 2.0f) - (UI_UNIT_Y * 3.0f);
   const int max_rows = std::max(int(vertical_space / row_height) - 1, 1);
 
   float text_width = 0.0f;
@@ -4570,7 +4573,7 @@ static void ui_def_but_rna__menu(bContext *C, uiLayout *layout, void *but_p)
 
   /* If the estimated width of the menu is wider than the width of
    * this window, then we have to collapse it to a single column. */
-  if (columns > 1 && text_width > WM_window_native_pixel_x(win)) {
+  if (columns > 1 && text_width > blender::WM_window_native_pixel_x(win)) {
     columns = 1;
     rows = totitems;
   }
@@ -6801,7 +6804,7 @@ void UI_but_view_item_draw_size_set(uiBut *but,
 void UI_but_focus_on_enter_event(wmWindow *win, uiBut *but)
 {
   wmEvent event;
-  wm_event_init_from_window(win, &event);
+  blender::wm_event_init_from_window(win, &event);
 
   event.type = EVT_BUT_OPEN;
   event.val = KM_PRESS;
@@ -6809,7 +6812,7 @@ void UI_but_focus_on_enter_event(wmWindow *win, uiBut *but)
   event.customdata = but;
   event.customdata_free = false;
 
-  WM_event_add(win, &event);
+  blender::WM_event_add(win, &event);
 }
 
 void UI_but_func_hold_set(uiBut *but, uiButHandleHoldFunc func, void *argN)
@@ -6990,7 +6993,7 @@ std::string UI_but_string_get_rna_tooltip(bContext &C, uiBut &but)
     PointerRNA *opptr = UI_but_operator_ptr_ensure(&but);
     const bContextStore *previous_ctx = CTX_store_get(&C);
     CTX_store_set(&C, but.context);
-    std::string tmp = WM_operatortype_description(&C, but.optype, opptr);
+    std::string tmp = blender::WM_operatortype_description(&C, but.optype, opptr);
     CTX_store_set(&C, previous_ctx);
     return tmp;
   }
@@ -7006,7 +7009,7 @@ std::string UI_but_string_get_rna_tooltip(bContext &C, uiBut &but)
     }
 
     if (wmOperatorType *ot = UI_but_operatortype_get_from_enum_menu(&but, nullptr)) {
-      return WM_operatortype_description(&C, ot, nullptr);
+      return blender::WM_operatortype_description(&C, ot, nullptr);
     }
   }
 
@@ -7034,7 +7037,7 @@ std::string UI_but_extra_icon_string_get_tooltip(bContext &C, const uiButExtraOp
 {
   wmOperatorType *optype = UI_but_extra_operator_icon_optype_get(&extra_icon);
   PointerRNA *opptr = UI_but_extra_operator_icon_opptr_get(&extra_icon);
-  return WM_operatortype_description(&C, optype, opptr);
+  return blender::WM_operatortype_description(&C, optype, opptr);
 }
 
 std::string UI_but_extra_icon_string_get_operator_keymap(const bContext &C,

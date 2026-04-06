@@ -22,6 +22,8 @@
 #include "ED_curves.hh"
 #include "ED_grease_pencil.hh"
 
+using blender::WM_operatortype_append;
+
 namespace blender::ed::greasepencil {
 
 enum class VertexColorMode : int8_t {

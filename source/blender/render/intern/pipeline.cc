@@ -1023,7 +1023,7 @@ void RE_system_gpu_context_free(Render *re)
   }
 }
 
-void *RE_system_gpu_context_get(Render *re)
+GHOST_IContext *RE_system_gpu_context_get(Render *re)
 {
   return re->system_gpu_context;
 }

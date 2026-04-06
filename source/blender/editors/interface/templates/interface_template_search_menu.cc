@@ -53,6 +53,18 @@
 
 using blender::ResourceScope;
 using blender::StringRef;
+using blender::WM_HANDLER_DO_FREE;
+using blender::WM_event_get_keymaps_from_handler;
+using blender::WM_menutype_find;
+using blender::WM_menutype_poll;
+using blender::WM_menutypes_registered_get;
+using blender::WM_operatortype_name;
+using blender::WM_operatortypes_registered_get;
+using blender::WM_operator_name_call_ptr_with_depends_on_cursor;
+using blender::WM_operator_poll;
+using blender::WM_operator_py_idname;
+using blender::WM_window_get_active_screen;
+using blender::wmEventHandler_KeymapResult;
 
 /* -------------------------------------------------------------------- */
 /** \name Menu Search Template Implementation
@@ -99,7 +111,7 @@ struct MenuSearch_Item {
     ~OperatorData()
     {
       if (this->opptr != nullptr) {
-        WM_operator_properties_free(this->opptr);
+        blender::WM_operator_properties_free(this->opptr);
         MEM_delete(this->opptr);
       }
       MEM_delete(this->context);
@@ -318,7 +330,7 @@ static void menu_types_add_from_keymap_items(bContext *C,
     }
     LISTBASE_FOREACH (wmEventHandler *, handler_base, handlers[handler_index]) {
       /* During this loop, UI handlers for nested menus can tag multiple handlers free. */
-      if (handler_base->flag & WM_HANDLER_DO_FREE) {
+      if (handler_base->flag & blender::WM_HANDLER_DO_FREE) {
         continue;
       }
       if (handler_base->type != WM_HANDLER_TYPE_KEYMAP) {

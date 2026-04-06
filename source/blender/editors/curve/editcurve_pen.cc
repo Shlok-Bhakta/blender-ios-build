@@ -1627,7 +1627,7 @@ static wmOperatorStatus curve_pen_modal(bContext *C, wmOperator *op, const wmEve
 
   if (ISMOUSE_MOTION(event->type)) {
     /* Check if dragging */
-    if (!cpd->dragging && WM_event_drag_test(event, event->prev_press_xy)) {
+    if (!cpd->dragging && blender::WM_event_drag_test(event, event->prev_press_xy)) {
       cpd->dragging = true;
 
       if (cpd->new_point) {
@@ -1822,7 +1822,7 @@ static wmOperatorStatus curve_pen_invoke(bContext *C, wmOperator *op, const wmEv
       }
     }
   }
-  WM_event_add_modal_handler(C, op);
+  blender::WM_event_add_modal_handler(C, op);
 
   return OPERATOR_RUNNING_MODAL;
 }
@@ -1843,7 +1843,7 @@ void CURVE_OT_pen(wmOperatorType *ot)
   ot->flag = OPTYPE_UNDO;
 
   /* properties */
-  WM_operator_properties_mouse_select(ot);
+  blender::WM_operator_properties_mouse_select(ot);
 
   RNA_def_boolean(ot->srna,
                   "extrude_point",

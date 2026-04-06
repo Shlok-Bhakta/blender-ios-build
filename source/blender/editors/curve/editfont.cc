@@ -464,14 +464,14 @@ static void font_select_update_primary_clipboard(Object *obedit)
     return;
   }
 
-  if ((WM_capabilities_flag() & WM_CAPABILITY_CLIPBOARD_PRIMARY) == 0) {
+  if ((blender::WM_capabilities_flag() & blender::WM_CAPABILITY_CLIPBOARD_PRIMARY) == 0) {
     return;
   }
   char *buf = font_select_to_buffer(obedit);
   if (buf == nullptr) {
     return;
   }
-  WM_clipboard_text_set(buf, true);
+  blender::WM_clipboard_text_set(buf, true);
   MEM_freeN(buf);
 }
 
@@ -647,8 +647,8 @@ void FONT_OT_text_paste_from_file(wmOperatorType *ot)
   WM_operator_properties_filesel(ot,
                                  FILE_TYPE_FOLDER | FILE_TYPE_TEXT,
                                  FILE_SPECIAL,
-                                 FILE_OPENFILE,
-                                 WM_FILESEL_FILEPATH,
+                                 blender::FILE_OPENFILE,
+                                 blender::WM_FILESEL_FILEPATH,
                                  FILE_DEFAULTDISPLAY,
                                  FILE_SORT_DEFAULT);
 }
@@ -1105,7 +1105,7 @@ static void copy_selection(Object *obedit)
     buf = MEM_malloc_arrayN<char>(len_utf8 + 1, __func__);
     if (buf) {
       BLI_str_utf32_as_utf8(buf, text_buf, len_utf8 + 1);
-      WM_clipboard_text_set(buf, false);
+      blender::WM_clipboard_text_set(buf, false);
       MEM_freeN(buf);
     }
   }
@@ -1210,7 +1210,7 @@ static wmOperatorStatus paste_text_exec(bContext *C, wmOperator *op)
   } clipboard_system = {nullptr}, clipboard_vfont = {nullptr};
 
   /* No need for UTF8 validation as the conversion handles invalid sequences gracefully. */
-  clipboard_system.buf = WM_clipboard_text_get(selection, false, &clipboard_system.len);
+  clipboard_system.buf = blender::WM_clipboard_text_get(selection, false, &clipboard_system.len);
 
   if (clipboard_system.buf == nullptr) {
     return OPERATOR_CANCELLED;
@@ -2056,7 +2056,7 @@ static wmOperatorStatus font_selection_set_invoke(bContext *C,
   font_cursor_set_apply(C, event);
   ef->selstart = 0;
   ef->selend = 0;
-  WM_event_add_modal_handler(C, op);
+  blender::WM_event_add_modal_handler(C, op);
 
   return OPERATOR_RUNNING_MODAL;
 }
@@ -2516,8 +2516,8 @@ void FONT_OT_open(wmOperatorType *ot)
   WM_operator_properties_filesel(ot,
                                  FILE_TYPE_FOLDER | FILE_TYPE_FTFONT,
                                  FILE_SPECIAL,
-                                 FILE_OPENFILE,
-                                 WM_FILESEL_FILEPATH | WM_FILESEL_RELPATH,
+                                  blender::FILE_OPENFILE,
+                                  blender::WM_FILESEL_FILEPATH | blender::WM_FILESEL_RELPATH,
                                  FILE_IMGDISPLAY,
                                  FILE_SORT_ALPHA);
 }

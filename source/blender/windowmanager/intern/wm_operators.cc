@@ -21,7 +21,7 @@
 #include <fmt/format.h>
 
 #ifdef WIN32
-#  include "GHOST_C-api.h"
+#  include "GHOST_ISystem.hh"
 #endif
 
 #include "MEM_guardedalloc.h"
@@ -727,6 +727,13 @@ std::optional<std::string> WM_prop_pystring_assign(bContext *C,
 
   std::string ret = fmt::format("{} = {}", lhs.value(), rhs);
   return ret;
+}
+
+PointerRNA WM_operator_properties_create_ptr(wmOperatorType *ot)
+{
+  PointerRNA ptr;
+  WM_operator_properties_create_ptr(&ptr, ot);
+  return ptr;
 }
 
 void WM_operator_properties_create_ptr(PointerRNA *ptr, wmOperatorType *ot)
@@ -1753,6 +1760,23 @@ wmOperatorStatus WM_operator_confirm_ex(bContext *C,
                                         const char *title,
                                         const char *message,
                                         const char *confirm_text,
+                                        ui::AlertIcon icon,
+                                        bool cancel_default)
+{
+  return WM_operator_confirm_ex(C,
+                                op,
+                                title,
+                                message,
+                                confirm_text,
+                                int(icon),
+                                cancel_default);
+}
+
+wmOperatorStatus WM_operator_confirm_ex(bContext *C,
+                                        wmOperator *op,
+                                        const char *title,
+                                        const char *message,
+                                        const char *confirm_text,
                                         int icon,
                                         bool cancel_default)
 {
@@ -2457,7 +2481,8 @@ static void WM_OT_quit_blender(wmOperatorType *ot)
 
 static wmOperatorStatus wm_console_toggle_exec(bContext * /*C*/, wmOperator * /*op*/)
 {
-  GHOST_setConsoleWindowState(GHOST_kConsoleWindowStateToggle);
+  GHOST_ISystem *ghost_system = GHOST_ISystem::getSystem();
+  ghost_system->setConsoleWindowState(GHOST_kConsoleWindowStateToggle);
   return OPERATOR_FINISHED;
 }
 

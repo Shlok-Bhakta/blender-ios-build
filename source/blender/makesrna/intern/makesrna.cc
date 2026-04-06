@@ -401,16 +401,33 @@ static void rna_print_c_string(FILE *f, const char *str)
 
 static void rna_print_data_get(FILE *f, PropertyDefRNA *dp)
 {
+  const char *dnastructname = dp->dnastructname;
+
+  if (dnastructname) {
+    if (STREQ(dnastructname, "RenderLayer")) {
+      dnastructname = "blender::RenderLayer";
+    }
+    else if (STREQ(dnastructname, "RenderPass")) {
+      dnastructname = "blender::RenderPass";
+    }
+    else if (STREQ(dnastructname, "RenderResult")) {
+      dnastructname = "blender::RenderResult";
+    }
+    else if (STREQ(dnastructname, "RenderView")) {
+      dnastructname = "blender::RenderView";
+    }
+  }
+
   if (dp->dnastructfromname && dp->dnastructfromprop) {
     fprintf(f,
             "    %s *data = (%s *)(((%s *)ptr->data)->%s);\n",
-            dp->dnastructname,
-            dp->dnastructname,
+            dnastructname,
+            dnastructname,
             dp->dnastructfromname,
             dp->dnastructfromprop);
   }
   else {
-    fprintf(f, "    %s *data = (%s *)(ptr->data);\n", dp->dnastructname, dp->dnastructname);
+    fprintf(f, "    %s *data = (%s *)(ptr->data);\n", dnastructname, dnastructname);
   }
 }
 
@@ -3880,6 +3897,8 @@ static void rna_generate_function_prototypes(BlenderRNA *brna, StructRNA *srna, 
   }
 }
 
+static bool rna_call_needs_blender_namespace(const char *call);
+
 static void rna_generate_static_parameter_prototypes(FILE *f,
                                                      StructRNA *srna,
                                                      FunctionDefRNA *dfunc,
@@ -3921,7 +3940,12 @@ static void rna_generate_static_parameter_prototypes(FILE *f,
 
   /* function name */
   if (name_override == nullptr || name_override[0] == '\0') {
-    fprintf(f, "%s(", dfunc->call);
+    if (rna_call_needs_blender_namespace(dfunc->call)) {
+      fprintf(f, "blender::%s(", dfunc->call);
+    }
+    else {
+      fprintf(f, "%s(", dfunc->call);
+    }
   }
   else {
     fprintf(f, "%s(", name_override);
@@ -4084,6 +4108,13 @@ static void rna_generate_static_function_prototypes(BlenderRNA * /*brna*/,
   }
 
   fprintf(f, "\n");
+}
+
+static bool rna_call_needs_blender_namespace(const char *call)
+{
+  return STREQ(call, "WM_cursor_warp") || STREQ(call, "WM_cursor_set") ||
+         STREQ(call, "WM_cursor_modal_set") || STREQ(call, "WM_cursor_modal_restore") ||
+         STREQ(call, "WM_event_add_fileselect");
 }
 
 static void rna_generate_struct_prototypes(FILE *f)

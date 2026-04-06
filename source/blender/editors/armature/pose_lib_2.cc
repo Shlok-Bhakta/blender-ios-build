@@ -383,11 +383,11 @@ static bAction *flip_pose(bContext *C, blender::Span<Object *> objects, bAction 
    * pose, which can cause unwanted visual glitches. */
   wmWindowManager *wm = CTX_wm_manager(C);
   const bool interface_was_locked = CTX_wm_interface_locked(C);
-  WM_locked_interface_set(wm, true);
+  blender::WM_locked_interface_set(wm, true);
 
   BKE_action_flip_with_pose(action_copy, objects);
 
-  WM_locked_interface_set(wm, interface_was_locked);
+  blender::WM_locked_interface_set(wm, interface_was_locked);
   return action_copy;
 }
 
@@ -463,7 +463,7 @@ static bool poselib_blend_init_data(bContext *C, wmOperator *op, const wmEvent *
 
   if (pbd->release_confirm_info.use_release_confirm) {
     BLI_assert(is_interactive);
-    pbd->release_confirm_info.init_event_type = WM_userdef_event_type_from_keymap_type(
+    pbd->release_confirm_info.init_event_type = blender::WM_userdef_event_type_from_keymap_type(
         event->type);
   }
 
@@ -526,7 +526,7 @@ static void poselib_blend_cleanup(bContext *C, wmOperator *op)
     WM_event_add_notifier(C, NC_OBJECT | ND_POSE, ob);
   }
   /* Update mouse-hover highlights. */
-  WM_event_add_mousemove(win);
+  blender::WM_event_add_mousemove(win);
 }
 
 static void poselib_blend_free(wmOperator *op)
@@ -632,7 +632,7 @@ static wmOperatorStatus poselib_blend_invoke(bContext *C, wmOperator *op, const 
   /* Do initial apply to have something to look at. */
   poselib_blend_apply(C, op);
 
-  WM_event_add_modal_handler(C, op);
+  blender::WM_event_add_modal_handler(C, op);
   return OPERATOR_RUNNING_MODAL;
 }
 

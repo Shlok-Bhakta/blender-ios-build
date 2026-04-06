@@ -204,7 +204,7 @@ static void constraint_reorder(bContext *C, Panel *panel, int new_index)
   /* Set owner to #EDIT_CONSTRAINT_OWNER_OBJECT or #EDIT_CONSTRAINT_OWNER_BONE. */
   RNA_enum_set(&props_ptr, "owner", constraint_from_bone ? 1 : 0);
   WM_operator_name_call_ptr(C, ot, blender::wm::OpCallContext::InvokeDefault, &props_ptr, nullptr);
-  WM_operator_properties_free(&props_ptr);
+  blender::WM_operator_properties_free(&props_ptr);
 }
 
 /**

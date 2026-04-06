@@ -44,6 +44,8 @@
 
 #include "mesh_intern.hh" /* own include */
 
+using blender::WM_operator_props_popup_confirm_ex;
+
 static bool geometry_extract_poll(bContext *C)
 {
   Object *ob = CTX_data_active_object(C);

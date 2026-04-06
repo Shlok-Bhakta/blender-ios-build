@@ -1130,7 +1130,7 @@ void UI_view2d_view_ortho(const View2D *v2d)
   }
 
   /* set matrix on all appropriate axes */
-  wmOrtho2(curmasked.xmin, curmasked.xmax, curmasked.ymin, curmasked.ymax);
+  blender::wmOrtho2(curmasked.xmin, curmasked.xmax, curmasked.ymin, curmasked.ymax);
 }
 
 void UI_view2d_view_orthoSpecial(ARegion *region, View2D *v2d, const bool xaxis)
@@ -1152,10 +1152,10 @@ void UI_view2d_view_orthoSpecial(ARegion *region, View2D *v2d, const bool xaxis)
 
   /* only set matrix with 'cur' coordinates on relevant axes */
   if (xaxis) {
-    wmOrtho2(curmasked.xmin - xofs, curmasked.xmax - xofs, -yofs, region->winy - yofs);
+    blender::wmOrtho2(curmasked.xmin - xofs, curmasked.xmax - xofs, -yofs, region->winy - yofs);
   }
   else {
-    wmOrtho2(-xofs, region->winx - xofs, curmasked.ymin - yofs, curmasked.ymax - yofs);
+    blender::wmOrtho2(-xofs, region->winx - xofs, curmasked.ymin - yofs, curmasked.ymax - yofs);
   }
 }
 
@@ -1165,7 +1165,7 @@ void UI_view2d_view_restore(const bContext *C)
   const int width = BLI_rcti_size_x(&region->winrct) + 1;
   const int height = BLI_rcti_size_y(&region->winrct) + 1;
 
-  wmOrtho2(0.0f, float(width), 0.0f, float(height));
+  blender::wmOrtho2(0.0f, float(width), 0.0f, float(height));
   GPU_matrix_identity_set();
 
   //  ED_region_pixelspace(CTX_wm_region(C));
@@ -2150,7 +2150,7 @@ void UI_view2d_text_cache_draw(ARegion *region)
   BLF_set_default();
   const float default_height = g_v2d_strings ? BLF_height(font_id, "28", 3) : 0.0f;
 
-  wmOrtho2_region_pixelspace(region);
+  blender::wmOrtho2_region_pixelspace(region);
 
   for (v2s = g_v2d_strings; v2s; v2s = v2s->next) {
     int xofs = 0, yofs;

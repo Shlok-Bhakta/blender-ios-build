@@ -27,6 +27,25 @@
 
 #include "rna_internal.hh" /* own include */
 
+using blender::WM_cursor_modal_restore;
+using blender::WM_cursor_progress;
+using blender::WM_enum_search_invoke;
+using blender::WM_event_add_modal_handler_ex;
+using blender::WM_event_add_simulate;
+using blender::WM_event_match_keymap_item;
+using blender::WM_event_timer_add;
+using blender::WM_event_timer_remove;
+using blender::WM_event_tablet_data_default_set;
+using blender::WM_main_add_notifier;
+using blender::WM_operator_bl_idname;
+using blender::WM_operator_confirm_ex;
+using blender::WM_operator_is_repeat;
+using blender::WM_operator_last_properties_ensure;
+using blender::WM_operator_props_dialog_popup;
+using blender::WM_operator_props_popup;
+using blender::WM_operator_ui_popup;
+using blender::WM_script_tag_reload;
+
 /* confusing 2 enums mixed up here */
 const EnumPropertyItem rna_enum_window_cursor_items[] = {
     {WM_CURSOR_DEFAULT, "DEFAULT", 0, "Default", ""},
