@@ -1,0 +1,15 @@
+diff --git a/source/blender/editors/space_view3d/view3d_gizmo_navigate.cc b/source/blender/editors/space_view3d/view3d_gizmo_navigate.cc
+index 9f97367007f..61099576a73 100644
+--- a/source/blender/editors/space_view3d/view3d_gizmo_navigate.cc
++++ b/source/blender/editors/space_view3d/view3d_gizmo_navigate.cc
+@@ -207,6 +207,10 @@ static void WIDGETGROUP_navigate_setup(const bContext *C, wmGizmoGroup *gzgroup)
+           gz->ptr, "draw_options", ED_GIZMO_BUTTON_SHOW_OUTLINE | ED_GIZMO_BUTTON_SHOW_BACKDROP);
+     }
+ 
++    /*
++     IOS_FIXME: This sometimes returns NULL on iOS, stepping into the function in the debugger
++     fixes it. Possible race condition somewhere?
++     */
+     wmOperatorType *ot = WM_operatortype_find(info->opname, true);
+ #ifndef WITH_PYTHON
+     if (ot != nullptr)

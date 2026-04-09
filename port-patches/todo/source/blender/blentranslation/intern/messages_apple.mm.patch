@@ -1,0 +1,17 @@
+diff --git a/source/blender/blentranslation/intern/messages_apple.mm b/source/blender/blentranslation/intern/messages_apple.mm
+index 2d5554d0334..aa07eac062d 100644
+--- a/source/blender/blentranslation/intern/messages_apple.mm
++++ b/source/blender/blentranslation/intern/messages_apple.mm
+@@ -8,7 +8,11 @@
+ 
+ #include "messages.hh"
+ 
+-#import <Cocoa/Cocoa.h>
++#ifdef WITH_APPLE_CROSSPLATFORM
++#  include <Foundation/Foundation.h>
++#else
++#  include <Cocoa/Cocoa.h>
++#endif
+ 
+ #include <cstdlib>
+ #include <string>

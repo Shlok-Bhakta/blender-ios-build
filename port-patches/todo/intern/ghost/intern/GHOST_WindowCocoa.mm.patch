@@ -1,0 +1,18 @@
+diff --git a/intern/ghost/intern/GHOST_WindowCocoa.mm b/intern/ghost/intern/GHOST_WindowCocoa.mm
+index b821fd13c4b..82464ff28f7 100644
+--- a/intern/ghost/intern/GHOST_WindowCocoa.mm
++++ b/intern/ghost/intern/GHOST_WindowCocoa.mm
+@@ -21,7 +21,12 @@
+ #  include "GHOST_ContextVK.hh"
+ #endif
+ 
+-#import <Cocoa/Cocoa.h>
++#ifdef WITH_APPLE_CROSSPLATFORM
++#  include <Foundation/Foundation.h>
++#else
++#  include <Cocoa/Cocoa.h>
++#endif
++
+ #import <Metal/Metal.h>
+ #import <QuartzCore/QuartzCore.h>
+ 

@@ -1,0 +1,14 @@
+diff --git a/source/blender/python/mathutils/mathutils_Matrix.cc b/source/blender/python/mathutils/mathutils_Matrix.cc
+index 4eb81351e86..4f0c01f6415 100644
+--- a/source/blender/python/mathutils/mathutils_Matrix.cc
++++ b/source/blender/python/mathutils/mathutils_Matrix.cc
+@@ -2325,7 +2325,9 @@ static PyObject *Matrix_repr(MatrixObject *self)
+           rows[3]);
+   }
+ 
++#ifndef WITH_APPLE_CROSSPLATFORM
+   Py_FatalError("Matrix(): invalid row size!");
++#endif
+   return nullptr;
+ }
+ 

@@ -1,0 +1,7 @@
+diff --git a/release/ios/Blender.app/blender b/release/ios/Blender.app/blender
+new file mode 100644
+index 00000000000..48cdce85287
+--- /dev/null
++++ b/release/ios/Blender.app/blender
+@@ -0,0 +1 @@
++placeholder

@@ -1,0 +1,13 @@
+diff --git a/build_files/build_environment/cmake/openal.cmake b/build_files/build_environment/cmake/openal.cmake
+index 430f8927d43..884bb29ceb2 100644
+--- a/build_files/build_environment/cmake/openal.cmake
++++ b/build_files/build_environment/cmake/openal.cmake
+@@ -63,6 +63,8 @@ if(BUILD_MODE STREQUAL Release)
+     harvest(external_openal openal/include openal/include "*.h")
+     if(UNIX AND NOT APPLE)
+       harvest(external_openal openal/lib openal/lib "*.a")
++    elseif(WITH_APPLE_CROSSPLATFORM)
++      harvest(external_openal openal/lib openal/lib "*.a")
+     endif()
+   endif()
+ endif()

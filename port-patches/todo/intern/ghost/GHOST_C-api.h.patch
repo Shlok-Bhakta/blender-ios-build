@@ -1,0 +1,33 @@
+diff --git a/intern/ghost/GHOST_C-api.h b/intern/ghost/GHOST_C-api.h
+index 1b78196fd9f..7475bd88d84 100644
+--- a/intern/ghost/GHOST_C-api.h
++++ b/intern/ghost/GHOST_C-api.h
+@@ -8,6 +8,7 @@
+ 
+ #pragma once
+ 
++#include "GHOST_Rect.hh"
+ #include "GHOST_Types.h"
+ 
+ #ifdef __cplusplus
+@@ -64,6 +65,20 @@ extern void GHOST_ShowMessageBox(GHOST_SystemHandle systemhandle,
+                                  const char *link,
+                                  GHOST_DialogOptions dialog_options);
+ 
++#if (WITH_APPLE_CROSSPLATFORM)
++
++extern void GHOST_popupOnScreenKeyboard(GHOST_WindowHandle window_handle,
++                                        const GHOST_KeyboardProperties &keyboard_properties);
++
++extern void GHOST_hideOnScreenKeyboard(GHOST_WindowHandle window_handle);
++
++extern const char *GHOST_getKeyboardInput(GHOST_WindowHandle window_handle);
++
++extern GHOST_TSuccess GHOST_startSecurityScopedFileAccess(const char *filepath);
++extern GHOST_TSuccess GHOST_stopSecurityScopedFileAccess(const char *filepath);
++
++#endif
++
+ /**
+  * Creates an event consumer object
+  * \param eventCallback: The event callback routine.

@@ -1,0 +1,9 @@
+diff --git a/release/ios/Blender.app/Assets/eyedropper.pdf b/release/ios/Blender.app/Assets/eyedropper.pdf
+new file mode 100644
+index 00000000000..ed23428a69e
+--- /dev/null
++++ b/release/ios/Blender.app/Assets/eyedropper.pdf
+@@ -0,0 +1,3 @@
++version https://git-lfs.github.com/spec/v1
++oid sha256:f676a9b30136af1814648e3ba6e726cfb2081493976b5c925d36c87c2b9af85e
++size 4500

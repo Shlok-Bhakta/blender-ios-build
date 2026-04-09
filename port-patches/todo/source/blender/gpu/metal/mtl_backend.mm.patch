@@ -1,0 +1,79 @@
+diff --git a/source/blender/gpu/metal/mtl_backend.mm b/source/blender/gpu/metal/mtl_backend.mm
+index 23741c91306..743d8c08120 100644
+--- a/source/blender/gpu/metal/mtl_backend.mm
++++ b/source/blender/gpu/metal/mtl_backend.mm
+@@ -28,10 +28,15 @@
+ #include "gpu_capabilities_private.hh"
+ #include "gpu_platform_private.hh"
+ 
+-#include <Cocoa/Cocoa.h>
++#ifdef WITH_APPLE_CROSSPLATFORM
++#  include <Foundation/Foundation.h>
++#  include <sys/sysctl.h>
++#else
++#  include <Cocoa/Cocoa.h>
++#endif
++
+ #include <Metal/Metal.h>
+ #include <QuartzCore/QuartzCore.h>
+-#include <sys/sysctl.h>
+ 
+ namespace blender::gpu {
+ 
+@@ -368,6 +373,10 @@ static int get_num_efficiency_cpu_cores(id<MTLDevice> device)
+ 
+ bool MTLBackend::metal_is_supported()
+ {
++#if MTL_BACKEND_ALWAYS_SUPPORTED
++  return true;
++#endif
++
+   /* Device compatibility information using Metal Feature-set tables.
+    * See: https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf */
+ 
+@@ -387,6 +396,7 @@ bool MTLBackend::metal_is_supported()
+ 
+   id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+ 
++#if MTL_BACKEND_LOW_POWER_GPU_SUPPORT
+   /* Debug: Enable low power GPU with Environment Var: METAL_FORCE_INTEL. */
+   static const char *forceIntelStr = getenv("METAL_FORCE_INTEL");
+   bool forceIntel = forceIntelStr ? (atoi(forceIntelStr) != 0) : false;
+@@ -399,6 +409,7 @@ bool MTLBackend::metal_is_supported()
+       }
+     }
+   }
++#endif
+ 
+   /* Metal Viewport requires argument buffer tier-2 support and Barycentric Coordinates.
+    * These are available on most hardware configurations supporting Metal 2.2. */
+@@ -498,7 +509,13 @@ void MTLBackend::capabilities_init(MTLContext *ctx)
+                            128 :
+                            (([device supportsFamily:MTLGPUFamilyApple4]) ? 96 : 31);
+   if (GCaps.max_textures <= 32) {
++    /* The iOS Simulator has an equivalent Metal GPU Family of Apple2, provide partial support
++     * for this extra platform by skipping this check. See:
++     * https://developer.apple.com/documentation/metal/developing-metal-apps-that-run-in-simulator?language=objc#Treat-Simulator-as-a-special-device
++     */
++#ifndef TARGET_OS_SIMULATOR
+     BLI_assert(false);
++#endif
+   }
+   GCaps.max_samplers = (MTLBackend::capabilities.supports_argument_buffers_tier2) ? 1024 : 16;
+ 
+@@ -524,10 +541,15 @@ void MTLBackend::capabilities_init(MTLContext *ctx)
+ 
+   GCaps.geometry_shader_support = false;
+ 
++#ifdef WITH_APPLE_CROSSPLATFORM
++  /* IOS_FIXME: Limit parallel compilation for now. */
++  GCaps.max_parallel_compilations = 2;
++#else
+   /* Compile shaders on performance cores but leave one free so UI is still responsive.
+    * Also respect command line option to reduce number of threads. */
+   GCaps.max_parallel_compilations = std::min(BLI_system_thread_count(),
+                                              MTLBackend::capabilities.num_performance_cores - 1);
++#endif
+ 
+   /* Maximum buffer bindings: 31. Consider required slot for uniforms/UBOs/Vertex attributes.
+    * Can use argument buffers if a higher limit is required. */

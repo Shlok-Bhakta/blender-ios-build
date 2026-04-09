@@ -1,0 +1,11 @@
+diff --git a/release/ios/README.md b/release/ios/README.md
+new file mode 100644
+index 00000000000..f1f02543ff3
+--- /dev/null
++++ b/release/ios/README.md
+@@ -0,0 +1,5 @@
++Buildbot Configuration
++======================
++
++Files used by Buildbot's `package-code-binaires` step for the darwin platform.
++

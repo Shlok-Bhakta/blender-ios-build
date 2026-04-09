@@ -1,0 +1,26 @@
+diff --git a/source/blender/windowmanager/intern/wm_files.cc b/source/blender/windowmanager/intern/wm_files.cc
+index c7f60b2ac13..27ddfd0ebf2 100644
+--- a/source/blender/windowmanager/intern/wm_files.cc
++++ b/source/blender/windowmanager/intern/wm_files.cc
+@@ -1074,6 +1074,10 @@ bool WM_file_read(bContext *C,
+ 
+   WM_cursor_wait(true);
+ 
++#ifdef WITH_APPLE_CROSSPLATFORM
++  GHOST_startSecurityScopedFileAccess(filepath);
++#endif
++
+   /* First try to append data from exotic file formats. */
+   /* It throws error box when file doesn't exist and returns -1. */
+   /* NOTE(ton): it should set some error message somewhere. */
+@@ -1184,6 +1188,10 @@ bool WM_file_read(bContext *C,
+ 
+   BLI_assert(BKE_main_namemap_validate(*CTX_data_main(C)));
+ 
++#ifdef WITH_APPLE_CROSSPLATFORM
++  GHOST_stopSecurityScopedFileAccess(filepath);
++#endif
++
+   return success;
+ }
+ 

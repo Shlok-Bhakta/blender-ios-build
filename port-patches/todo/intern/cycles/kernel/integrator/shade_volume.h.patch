@@ -1,0 +1,30 @@
+diff --git a/intern/cycles/kernel/integrator/shade_volume.h b/intern/cycles/kernel/integrator/shade_volume.h
+index 8b297f4c653..dc0d8893442 100644
+--- a/intern/cycles/kernel/integrator/shade_volume.h
++++ b/intern/cycles/kernel/integrator/shade_volume.h
+@@ -92,7 +92,11 @@ ccl_device_inline Spectrum volume_shader_eval_extinction(KernelGlobals kg,
+ 
+   volume_shader_eval<shadow>(kg, state, sd, path_flag);
+ 
+-  return (sd->flag & SD_EXTINCTION) ? sd->closure_transparent_extinction : zero_spectrum();
++  /* iOS only compiler error: removing this static_cast leds to the following on iOS with
++   * Xcode 16.4: `Conditional expression is ambiguous; 'PackedSpectrum' (aka 'ccl::packed_float3')
++   * can be converted to 'float3' and vice versa` */
++  return (sd->flag & SD_EXTINCTION) ? static_cast<Spectrum>(sd->closure_transparent_extinction) :
++                                      zero_spectrum();
+ }
+ 
+ /* Evaluate shader to get absorption, scattering and emission at P. */
+@@ -109,9 +113,10 @@ ccl_device_inline bool volume_shader_sample(KernelGlobals kg,
+   }
+ 
+   coeff->sigma_s = zero_spectrum();
+-  coeff->sigma_t = (sd->flag & SD_EXTINCTION) ? sd->closure_transparent_extinction :
++  coeff->sigma_t = (sd->flag & SD_EXTINCTION) ? Spectrum(sd->closure_transparent_extinction) :
+                                                 zero_spectrum();
+-  coeff->emission = (sd->flag & SD_EMISSION) ? sd->closure_emission_background : zero_spectrum();
++  coeff->emission = (sd->flag & SD_EMISSION) ? Spectrum(sd->closure_emission_background) :
++                                               zero_spectrum();
+ 
+   if (sd->flag & SD_SCATTER) {
+     for (int i = 0; i < sd->num_closure; i++) {

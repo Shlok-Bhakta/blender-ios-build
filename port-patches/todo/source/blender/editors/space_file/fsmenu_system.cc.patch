@@ -1,0 +1,17 @@
+diff --git a/source/blender/editors/space_file/fsmenu_system.cc b/source/blender/editors/space_file/fsmenu_system.cc
+index ce62b957f05..bc94fec45ea 100644
+--- a/source/blender/editors/space_file/fsmenu_system.cc
++++ b/source/blender/editors/space_file/fsmenu_system.cc
+@@ -43,7 +43,11 @@
+ #include "UI_resources.hh"
+ 
+ #ifdef __APPLE__
+-#  include <Carbon/Carbon.h>
++#  ifdef WITH_APPLE_CROSSPLATFORM
++#    include <Foundation/Foundation.h>
++#  else
++#    include <Carbon/Carbon.h>
++#  endif
+ #endif /* __APPLE__ */
+ 
+ #ifdef __linux__

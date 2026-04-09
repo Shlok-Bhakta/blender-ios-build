@@ -1,0 +1,32 @@
+diff --git a/intern/ghost/intern/GHOST_ISystem.cc b/intern/ghost/intern/GHOST_ISystem.cc
+index 83bb833fbdc..2656d50cd6e 100644
+--- a/intern/ghost/intern/GHOST_ISystem.cc
++++ b/intern/ghost/intern/GHOST_ISystem.cc
+@@ -27,7 +27,11 @@
+ #elif defined(WIN32)
+ #  include "GHOST_SystemWin32.hh"
+ #elif defined(__APPLE__)
+-#  include "GHOST_SystemCocoa.hh"
++#  if defined(WITH_APPLE_CROSSPLATFORM)
++#    include "GHOST_SystemIOS.hh"
++#  else
++#    include "GHOST_SystemCocoa.hh"
++#  endif
+ #endif
+ 
+ #include "CLG_log.h"
+@@ -157,9 +161,14 @@ GHOST_TSuccess GHOST_ISystem::createSystem(bool verbose, [[maybe_unused]] bool b
+     CLOG_INFO(&LOG, "Create Windows system");
+     system_ = new GHOST_SystemWin32();
+ #elif defined(__APPLE__)
++#  if defined(WITH_APPLE_CROSSPLATFORM)
++    backends_attempted.push_back({"IOS"});
++    system_ = new GHOST_SystemIOS();
++#  else
+     backends_attempted.push_back({"COCOA"});
+     CLOG_INFO(&LOG, "Create Cocoa system");
+     system_ = new GHOST_SystemCocoa();
++#  endif
+ #endif
+ 
+     if (system_) {

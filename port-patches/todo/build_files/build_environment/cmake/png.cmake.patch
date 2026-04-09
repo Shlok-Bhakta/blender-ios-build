@@ -1,0 +1,33 @@
+diff --git a/build_files/build_environment/cmake/png.cmake b/build_files/build_environment/cmake/png.cmake
+index 09568d139fe..6d1612a1c96 100644
+--- a/build_files/build_environment/cmake/png.cmake
++++ b/build_files/build_environment/cmake/png.cmake
+@@ -9,12 +9,22 @@ set(PNG_EXTRA_ARGS
+ )
+ 
+ if(BLENDER_PLATFORM_ARM)
+-  set(PNG_EXTRA_ARGS
+-    ${PNG_EXTRA_ARGS}
+-    -DPNG_HARDWARE_OPTIMIZATIONS=ON
+-    -DPNG_ARM_NEON=on
+-    -DCMAKE_SYSTEM_PROCESSOR="aarch64"
+-  )
++  if(WITH_APPLE_CROSSPLATFORM)
++    set(PNG_EXTRA_ARGS 
++      ${PNG_EXTRA_ARGS} 
++      -DPNG_HARDWARE_OPTIMIZATIONS=ON 
++      -DPNG_ARM_NEON=on 
++      -DCMAKE_SYSTEM_PROCESSOR=arm64 
++      -DPNG_SHARED=off
++    )
++  else()
++    set(PNG_EXTRA_ARGS 
++      ${PNG_EXTRA_ARGS} 
++      -DPNG_HARDWARE_OPTIMIZATIONS=ON 
++      -DPNG_ARM_NEON=on 
++      -DCMAKE_SYSTEM_PROCESSOR="aarch64"
++    )
++  endif()
+ endif()
+ 
+ ExternalProject_Add(external_png

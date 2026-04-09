@@ -1,0 +1,88 @@
+diff --git a/intern/ghost/CMakeLists.txt b/intern/ghost/CMakeLists.txt
+index 52081956bc1..ea8a2905adb 100644
+--- a/intern/ghost/CMakeLists.txt
++++ b/intern/ghost/CMakeLists.txt
+@@ -52,6 +52,7 @@ set(SRC
+   intern/GHOST_EventKey.hh
+   intern/GHOST_EventManager.hh
+   intern/GHOST_EventString.hh
++  intern/GHOST_EventTouch.hh
+   intern/GHOST_EventTrackpad.hh
+   intern/GHOST_EventWheel.hh
+   intern/GHOST_ModifierKeys.hh
+@@ -75,6 +76,14 @@ set(LIB
+   PRIVATE bf::intern::clog
+ )
+ 
++if(WITH_APPLE_CROSSPLATFORM)
++  add_definitions(-DWITH_APPLE_CROSSPLATFORM)
++endif()
++
++if(WITH_METAL_BACKEND)
++  add_definitions(-DWITH_METAL_BACKEND)
++endif()
++
+ if(WITH_INPUT_IME)
+   add_definitions(-DWITH_INPUT_IME)
+ endif()
+@@ -167,21 +176,41 @@ elseif(WITH_GHOST_SDL)
+     ${SDL_LIBRARY}
+   )
+ elseif(APPLE AND NOT WITH_GHOST_X11)
+-  list(APPEND SRC
+-    intern/GHOST_SystemCocoa.mm
+-    intern/GHOST_WindowCocoa.mm
++ 
++  if(WITH_APPLE_CROSSPLATFORM)
++    message(STATUS "Configure Ghost for Apple Cross platform: iOS")
++    
++    if(APPLE_TARGET_IOS)
++      # GHOST modules for iPadOS.
++      list(APPEND SRC
++        intern/GHOST_SystemIOS.hh
++        intern/GHOST_WindowIOS.hh
+ 
+-    intern/GHOST_SystemCocoa.hh
+-    intern/GHOST_WindowCocoa.hh
+-    intern/GHOST_WindowViewCocoa.hh
+-  )
++        intern/GHOST_SystemIOS.mm
++        intern/GHOST_WindowIOS.mm
+ 
+-  if(WITH_INPUT_NDOF)
++        intern/GHOST_ContextIOS.mm
++        intern/GHOST_ContextIOS.hh
++      )
++    endif()
++  else()
++    # MacOS
+     list(APPEND SRC
+-      intern/GHOST_NDOFManagerCocoa.mm
++      intern/GHOST_SystemCocoa.mm
++      intern/GHOST_WindowCocoa.mm
+ 
+-      intern/GHOST_NDOFManagerCocoa.hh
++      intern/GHOST_SystemCocoa.hh
++      intern/GHOST_WindowCocoa.hh
++      intern/GHOST_WindowViewCocoa.hh
+     )
++
++    if(WITH_INPUT_NDOF)
++      list(APPEND SRC
++        intern/GHOST_NDOFManagerCocoa.mm
++
++        intern/GHOST_NDOFManagerCocoa.hh
++      )
++    endif()
+   endif()
+ 
+ elseif(WITH_GHOST_X11 OR WITH_GHOST_WAYLAND)
+@@ -504,7 +533,7 @@ if(UNIX AND NOT APPLE)
+   endif()
+ endif()
+ 
+-if(APPLE)
++if(APPLE AND NOT WITH_APPLE_CROSSPLATFORM)
+   if(WITH_METAL_BACKEND)
+     list(APPEND SRC
+       intern/GHOST_ContextMTL.mm

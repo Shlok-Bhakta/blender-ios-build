@@ -1,0 +1,109 @@
+diff --git a/intern/ghost/GHOST_Types.h b/intern/ghost/GHOST_Types.h
+index d8e57ce7712..803f42efc5e 100644
+--- a/intern/ghost/GHOST_Types.h
++++ b/intern/ghost/GHOST_Types.h
+@@ -327,6 +327,17 @@ typedef enum {
+    * \note #GHOST_GetEventData returns #GHOST_TEventTrackpadData.
+    */
+   GHOST_kEventTrackpad,
++  /**
++   * Touch event.
++   *
++   * \note #GHOST_GetEventData returns #GHOST_TEventTouchData.
++   */
++  GHOST_kEventTouch,
++
++  /** Multi touch event. */
++  GHOST_kEventTwoFingerTap,
++  GHOST_kEventThreeFingerTap,
++  GHOST_kEventFourFingerTap,
+ 
+ #ifdef WITH_INPUT_NDOF
+   /**
+@@ -584,6 +595,10 @@ typedef enum {
+   GHOST_kKeyF23,
+   GHOST_kKeyF24,
+ 
++#if (WITH_APPLE_CROSSPLATFORM)
++  GHOST_kKeyTextEdit,
++#endif
++
+   /* Multimedia keypad buttons. */
+   GHOST_kKeyMediaPlay,
+   GHOST_kKeyMediaStop,
+@@ -672,8 +687,29 @@ typedef struct {
+   int32_t deltaY;
+   /** The delta is inverted from the device due to system preferences. */
+   char isDirectionInverted;
++  /** Number of fingers triggering trackpad or touch event. */
++  uint numFingers;
+ } GHOST_TEventTrackpadData;
+ 
++typedef enum {
++  GHOST_kTouchEventUnknown = 0,
++  GHOST_kTouchEventEdgeSwipeInLeft,
++  GHOST_kTouchEventEdgeSwipeOutLeft,
++  GHOST_kTouchEventEdgeSwipeInRight,
++  GHOST_kTouchEventEdgeSwipeOutRight,
++} GHOST_TTouchEventSubTypes;
++
++typedef struct {
++  /** The event subtype */
++  GHOST_TTouchEventSubTypes subtype;
++  /** The x-location of the touch event */
++  int32_t x;
++  /** The y-location of the touch event */
++  int32_t y;
++  /** Number of fingers triggering touch or touch event. */
++  uint numFingers;
++} GHOST_TEventTouchData;
++
+ typedef enum {
+   GHOST_kDragnDropTypeUnknown = 0,
+   GHOST_kDragnDropTypeFilenames, /* Array of strings representing file names (full path). */
+@@ -1320,3 +1356,45 @@ typedef enum {
+   GHOST_NDOF_BUTTON_USER = 0x10000
+ 
+ } GHOST_NDOF_ButtonT;
++
++#if (WITH_APPLE_CROSSPLATFORM)
++
++/** How to setup an onscreen keyboard */
++typedef struct GHOST_KeyboardProperties {
++
++  /* Initial starting state of text box. */
++  enum text_field_state {
++    move_cursor_to_start,
++    move_cursor_to_end,
++    select_all_text,
++    select_text_range
++  };
++  text_field_state inital_text_state;
++  int text_select_range[2];
++
++  /* Type of keyboard to display. */
++  enum keyboard_type_desc {
++    ascii_keyboard_type,
++    decimal_numpad_keyboard_type,
++    numpad_keyboard_type
++  };
++  keyboard_type_desc keyboard_type;
++
++  /* Size is in points. */
++  float font_size;
++  /* Format is RGBA. */
++  float font_color[4];
++
++  /* On-screen location of text box. */
++  float text_box_origin[2];
++  float text_box_size[2];
++
++  /* Any tips to display next to keyboard input. */
++  const char *tip_text;
++
++  /* Initial string. */
++  const char *text_string;
++
++} GHOST_KeyboardProperties;
++
++#endif

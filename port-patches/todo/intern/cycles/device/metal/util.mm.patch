@@ -1,0 +1,24 @@
+diff --git a/intern/cycles/device/metal/util.mm b/intern/cycles/device/metal/util.mm
+index de7dc425f94..c355270bbcc 100644
+--- a/intern/cycles/device/metal/util.mm
++++ b/intern/cycles/device/metal/util.mm
+@@ -88,6 +88,7 @@ const vector<id<MTLDevice>> &MetalInfo::get_usable_devices()
+   }
+ 
+   metal_printf("Usable Metal devices:");
++#  ifndef WITH_APPLE_CROSSPLATFORM
+   for (id<MTLDevice> device in MTLCopyAllDevices()) {
+     string device_name = get_device_name(device);
+     bool usable = false;
+@@ -113,6 +114,11 @@ const vector<id<MTLDevice>> &MetalInfo::get_usable_devices()
+       metal_printf("  (skipping \"%s\")", device_name.c_str());
+     }
+   }
++#  else
++  /* Single GPU device for iOS. */
++  id<MTLDevice> system_default_device = MTLCreateSystemDefaultDevice();
++  usable_devices.push_back(system_default_device);
++#  endif
+   if (usable_devices.empty()) {
+     metal_printf("   No usable Metal devices found");
+   }

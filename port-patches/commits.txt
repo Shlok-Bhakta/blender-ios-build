@@ -1,0 +1,49 @@
+dff9c1c75ac Initial build support for the iOS/iPad platform
+5d7ded2cd26 Cleanup: make format
+c129d785346 IOS: Touch Events: Support 2, 3, 4 finger tap
+1cf99110c3a Support Portrait mode
+8ee907a53bf iOS: Portrait mode cleanup
+d8bbd509030 Merge branch 'main' into ios
+e351133c24a Post-merge fix: GHOST_ContextMTL macro clashes with newly renamed GHOST_ContextMTL class
+f867de5303e Check for iOS availability in `MTLAccelerationStructureUsagePreferFastIntersection` checks
+b3aeff2cc5a Cleanup: Remove prints/TODO
+7dfc668c48e Merge remote-tracking branch 'origin/main' into ios
+45be993c09c IOS: Enable OpenSubdiv build
+ae62cddbf04 Fixes issues with missing screen updates. Also adds support for ProMotion displays (120hz goodness). Authored by Apple: James McCarthy
+3a9e1fb80f6 Merge remote-tracking branch 'origin/main' into ios
+9c63598baa4 IOS: Add/fix missing copyright headers
+91a7ab757c1 Force USD to be off for ipad
+40308c619a9 iOS: Add iPad Simulator Support
+0e9cfc0a554 iOS: Fix cross compile project requiring tweaks for cmake and sbin paths
+bcce1e82520 iOS: Initial support for Pencil tap
+a8fc93e3b09 iOS: fix touch offset in more space display mode
+d4af12d11ac iOS: Adding missing switch case
+db0124268ba Merge remote-tracking branch 'origin/main' into ios
+d2ccb21d086 iOS Simulator: Skip Metal feature assert to provide basic support
+240edda8e55 iOS: Fix `IOS_INPUT_LOG` macro not properly compiling
+8065bd37548 iOS: Fix: View3D wrongly switching out of axis ortho view on dragging
+6df62b1a5e5 make format
+6045d0621f6 Merge remote-tracking branch 'origin/main' into ios
+c304add9f47 Merge branch 'main' into ios
+3998c94d0cf Fix: iOS only compile error in recent Cycles code after merge
+4f61bdd181b iOS: Fix window switching
+4f40068f951 iOS: Require multi-finger scroll in File/Asset Browser
+918ed1da796 iOS: Require multi-finger scroll in the Asset Shelf
+9f8e5860bcb iOS: Enable HDR/EDR rendering support
+262c01cf4c7 iOS: Prefer Auto-Hiding the Home Indicator
+a6788f4e758 Cleanup: make format
+bbd3bb5ce16 iOS: Inward Edge Swipe Gestures
+cc08ff2b7c7 iOS: Refactor iOS entrypoint and app delegate from WindowIOS to SystemIOS
+6f30d1491f6 iOS: Misc include and assert cleanups
+2e6992ce443 iOS: SystemIOS clean-up and fix missing window property
+4fc45c233eb Merge branch 'main' into ios
+7139c4275f9 Cleanup: Unify GHOST iOS headers with current style
+4c6874685d1 iOS: Improve external file support
+860884466d3 Fix: Extraneous change in last external file support commit
+a6cfcb7fc86 Apply make format
+2b3dfad92b1 Cleanup: Unused variables
+487eb40ea23 iOS: Double DPI Hint from 144 to 288
+f3f86474a56 iOS: Add Xcode archiving support for distribution
+db2fc161567 Merge branch 'main' into ios
+9f8754653b9 Format: Fix broken formatting in Cycles kernel.mm
+d9b6fe34ddc iOS: Correct Info.plist CFBundleVersion version string

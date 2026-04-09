@@ -1,0 +1,40 @@
+diff --git a/intern/ghost/intern/GHOST_SystemHeadless.hh b/intern/ghost/intern/GHOST_SystemHeadless.hh
+index 3d53c27b28d..5e329d2352d 100644
+--- a/intern/ghost/intern/GHOST_SystemHeadless.hh
++++ b/intern/ghost/intern/GHOST_SystemHeadless.hh
+@@ -89,6 +89,35 @@ class GHOST_SystemHeadless : public GHOST_System {
+   void putClipboard(const char * /*buffer*/, bool /*selection*/) const override
+   { /* nop */
+   }
++#if (WITH_APPLE_CROSSPLATFORM)
++  GHOST_TSuccess popupOnScreenKeyboard(
++      GHOST_IWindow * /*window*/,
++      const GHOST_KeyboardProperties & /*keyboard_properties*/) override
++  {
++    return GHOST_kSuccess;
++  }
++
++  GHOST_TSuccess hideOnScreenKeyboard(GHOST_IWindow * /*window*/) override
++  {
++    return GHOST_kSuccess;
++  }
++
++  const char *getKeyboardInput(GHOST_IWindow * /*window*/) override
++  {
++    return nullptr;
++  }
++
++  GHOST_TSuccess startSecurityScopedFileAccess(const char * /*filepath*/) override
++  {
++    return GHOST_kSuccess;
++  }
++
++  GHOST_TSuccess stopSecurityScopedFileAccess(const char * /*filepath*/) override
++  {
++    return GHOST_kSuccess;
++  }
++
++#endif
+   uint64_t getMilliSeconds() const override
+   {
+     return 0;

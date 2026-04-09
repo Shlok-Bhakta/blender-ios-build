@@ -1,0 +1,13 @@
+diff --git a/intern/cycles/kernel/closure/bsdf_ray_portal.h b/intern/cycles/kernel/closure/bsdf_ray_portal.h
+index 26b286734cc..0d2d44fa3f3 100644
+--- a/intern/cycles/kernel/closure/bsdf_ray_portal.h
++++ b/intern/cycles/kernel/closure/bsdf_ray_portal.h
+@@ -30,7 +30,7 @@ ccl_device void bsdf_ray_portal_setup(ccl_private ShaderData *sd,
+     return;
+   }
+ 
+-  sd->closure_transparent_extinction += weight;
++  sd->closure_transparent_extinction = Spectrum(sd->closure_transparent_extinction) + weight;
+ 
+   ccl_private RayPortalClosure *pc = (ccl_private RayPortalClosure *)closure_alloc(
+       sd, sizeof(RayPortalClosure), CLOSURE_BSDF_RAY_PORTAL_ID, weight);

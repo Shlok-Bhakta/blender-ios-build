@@ -1,0 +1,7 @@
+diff --git a/lib/ios_arm64 b/lib/ios_arm64
+new file mode 160000
+index 00000000000..393201c7c85
+--- /dev/null
++++ b/lib/ios_arm64
+@@ -0,0 +1 @@
++Subproject commit 393201c7c8525941553f6a96e19b909d6b3bfc4f

@@ -1,0 +1,9 @@
+diff --git a/release/ios/background.tif b/release/ios/background.tif
+new file mode 100644
+index 00000000000..a4bc803f8c0
+--- /dev/null
++++ b/release/ios/background.tif
+@@ -0,0 +1,3 @@
++version https://git-lfs.github.com/spec/v1
++oid sha256:74d7a99b6f0406db4399b0f16c05186a374902a0c7a24b1e38d82e66edbc14af
++size 143624

@@ -1,0 +1,39 @@
+diff --git a/build_files/build_environment/patches/x265_apple_ios.diff b/build_files/build_environment/patches/x265_apple_ios.diff
+new file mode 100644
+index 00000000000..fbe529f0e78
+--- /dev/null
++++ b/build_files/build_environment/patches/x265_apple_ios.diff
+@@ -0,0 +1,33 @@
++diff -Naur multicoreware-x265_git-3cf6c1e53037_original/build/aarch64-darwin/crosscompile.cmake multicoreware-x265_git-3cf6c1e53037/build/aarch64-darwin/crosscompile.cmake
++--- multicoreware-x265_git-3cf6c1e53037_original/build/aarch64-darwin/crosscompile.cmake	2025-07-26 12:45:08
+++++ multicoreware-x265_git-3cf6c1e53037/build/aarch64-darwin/crosscompile.cmake	2025-07-26 12:47:24
++@@ -4,12 +4,12 @@
++ # Run cmake with: cmake -DCMAKE_TOOLCHAIN_FILE=crosscompile.cmake -G "Unix Makefiles" ../../source && ccmake ../../source
++ 
++ set(CROSS_COMPILE_ARM64 1)
++-set(CMAKE_SYSTEM_NAME Darwin)
+++set(CMAKE_SYSTEM_NAME iOS)
++ set(CMAKE_SYSTEM_PROCESSOR aarch64)
++ 
++ # specify the cross compiler
++-set(CMAKE_C_COMPILER gcc-12)
++-set(CMAKE_CXX_COMPILER g++-12)
+++set(CMAKE_C_COMPILER gcc)
+++set(CMAKE_CXX_COMPILER g++)
++ 
++ # specify the target environment
++ SET(CMAKE_FIND_ROOT_PATH  /opt/homebrew/bin/)
++diff -Naur multicoreware-x265_git-3cf6c1e53037_original/source/CMakeLists.txt multicoreware-x265_git-3cf6c1e53037/source/CMakeLists.txt
++--- multicoreware-x265_git-3cf6c1e53037_original/source/CMakeLists.txt	2025-07-26 12:45:08
+++++ multicoreware-x265_git-3cf6c1e53037/source/CMakeLists.txt	2025-07-26 12:48:57
++@@ -478,6 +478,10 @@
++   endif()
++ endif(ARM64)
++ 
+++if(APPLE)
+++  list(APPEND ASM_FLAGS -isysroot ${CMAKE_OSX_SYSROOT} ${APPLE_OS_MINVERSION_CFLAG})
+++endif()
+++
++ option(WARNINGS_AS_ERRORS "Stop compiles on first warning" OFF)
++ if(WARNINGS_AS_ERRORS)
++     if(GCC)

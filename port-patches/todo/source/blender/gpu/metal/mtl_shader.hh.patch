@@ -1,0 +1,12 @@
+diff --git a/source/blender/gpu/metal/mtl_shader.hh b/source/blender/gpu/metal/mtl_shader.hh
+index ecc7488779a..bf27e2e7af4 100644
+--- a/source/blender/gpu/metal/mtl_shader.hh
++++ b/source/blender/gpu/metal/mtl_shader.hh
+@@ -16,7 +16,6 @@
+ #include "GPU_vertex_format.hh"
+ 
+ #include <Metal/Metal.h>
+-#include <QuartzCore/QuartzCore.h>
+ #include <functional>
+ #include <unordered_map>
+ 

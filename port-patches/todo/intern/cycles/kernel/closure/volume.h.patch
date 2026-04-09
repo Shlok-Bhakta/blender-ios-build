@@ -1,0 +1,13 @@
+diff --git a/intern/cycles/kernel/closure/volume.h b/intern/cycles/kernel/closure/volume.h
+index 56f68da40bc..1cf02ac5296 100644
+--- a/intern/cycles/kernel/closure/volume.h
++++ b/intern/cycles/kernel/closure/volume.h
+@@ -18,7 +18,7 @@ CCL_NAMESPACE_BEGIN
+ ccl_device void volume_extinction_setup(ccl_private ShaderData *sd, Spectrum weight)
+ {
+   if (sd->flag & SD_EXTINCTION) {
+-    sd->closure_transparent_extinction += weight;
++    sd->closure_transparent_extinction = Spectrum(sd->closure_transparent_extinction) + weight;
+   }
+   else {
+     sd->flag |= SD_EXTINCTION;

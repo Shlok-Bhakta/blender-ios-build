@@ -1,0 +1,22 @@
+diff --git a/intern/ghost/intern/GHOST_EventTrackpad.hh b/intern/ghost/intern/GHOST_EventTrackpad.hh
+index 497d960e7cc..566b027d2dd 100644
+--- a/intern/ghost/intern/GHOST_EventTrackpad.hh
++++ b/intern/ghost/intern/GHOST_EventTrackpad.hh
+@@ -31,7 +31,8 @@ class GHOST_EventTrackpad : public GHOST_Event {
+                       int32_t y,
+                       int32_t deltaX,
+                       int32_t deltaY,
+-                      bool isDirectionInverted)
++                      bool isDirectionInverted,
++                      uint numFingers = 1)
+       : GHOST_Event(msec, GHOST_kEventTrackpad, window)
+   {
+     trackpad_event_data_.subtype = subtype;
+@@ -40,6 +41,7 @@ class GHOST_EventTrackpad : public GHOST_Event {
+     trackpad_event_data_.deltaX = deltaX;
+     trackpad_event_data_.deltaY = deltaY;
+     trackpad_event_data_.isDirectionInverted = isDirectionInverted;
++    trackpad_event_data_.numFingers = numFingers;
+     data_ = &trackpad_event_data_;
+   }
+ 

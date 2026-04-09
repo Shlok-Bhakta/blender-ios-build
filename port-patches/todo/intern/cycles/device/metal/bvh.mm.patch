@@ -1,0 +1,85 @@
+diff --git a/intern/cycles/device/metal/bvh.mm b/intern/cycles/device/metal/bvh.mm
+index 3506d9ab579..c4af7079ce5 100644
+--- a/intern/cycles/device/metal/bvh.mm
++++ b/intern/cycles/device/metal/bvh.mm
+@@ -45,12 +45,16 @@ struct BVHMetalBuildThrottler {
+ 
+   BVHMetalBuildThrottler()
+   {
++    /* Set a conservative limit, but which will still only throttle in extreme cases. */
++#  ifdef WITH_APPLE_CROSSPLATFORM
++    /* TEMP: lets assume 1GB for now. */
++    safe_wired_limit = 1LL * 1024LL * 1024LL * 1024LL;
++#  else
+     /* The default device will always be the one that supports MetalRT if the machine supports it.
+      */
+     id<MTLDevice> mtlDevice = MTLCreateSystemDefaultDevice();
+-
+-    /* Set a conservative limit, but which will still only throttle in extreme cases. */
+     safe_wired_limit = [mtlDevice recommendedMaxWorkingSetSize] / 4;
++#  endif
+     bvh_throttle_printf("safe_wired_limit = %zu\n", safe_wired_limit);
+   }
+ 
+@@ -292,8 +296,8 @@ bool BVHMetal::build_BLAS_mesh(Progress &progress,
+       accelDesc.usage |= (MTLAccelerationStructureUsageRefit |
+                           MTLAccelerationStructureUsagePreferFastBuild);
+     }
+-#  if defined(MAC_OS_VERSION_26_0)
+-    else if (@available(macos 26.0, *)) {
++#  if defined(MAC_OS_VERSION_26_0) || defined(IPHONE_OS_VERSION_26_0)
++    else if (@available(macos 26.0, ios 26.0, *)) {
+       accelDesc.usage |= MTLAccelerationStructureUsagePreferFastIntersection;
+     }
+ #  endif
+@@ -391,7 +395,7 @@ bool BVHMetal::build_BLAS_hair(Progress &progress,
+                                bool refit)
+ {
+ #  if defined(MAC_OS_VERSION_14_0)
+-  if (@available(macos 14.0, *)) {
++  if (@available(macos 14.0, ios 17.0, *)) {
+     /* Build BLAS for hair curves */
+     Hair *hair = static_cast<Hair *>(geom);
+     if (hair->num_curves() == 0) {
+@@ -637,8 +641,8 @@ bool BVHMetal::build_BLAS_hair(Progress &progress,
+       accelDesc.usage |= (MTLAccelerationStructureUsageRefit |
+                           MTLAccelerationStructureUsagePreferFastBuild);
+     }
+-#    if defined(MAC_OS_VERSION_26_0)
+-    else if (@available(macos 26.0, *)) {
++#    if defined(MAC_OS_VERSION_26_0) || defined(IPHONE_OS_VERSION_26_0)
++    else if (@available(macos 26.0, ios 26.0, *)) {
+       accelDesc.usage |= MTLAccelerationStructureUsagePreferFastIntersection;
+     }
+ #    endif
+@@ -873,8 +877,8 @@ bool BVHMetal::build_BLAS_pointcloud(Progress &progress,
+       accelDesc.usage |= (MTLAccelerationStructureUsageRefit |
+                           MTLAccelerationStructureUsagePreferFastBuild);
+     }
+-#  if defined(MAC_OS_VERSION_26_0)
+-    else if (@available(macos 26.0, *)) {
++#  if defined(MAC_OS_VERSION_26_0) || defined(IPHONE_OS_VERSION_26_0)
++    else if (@available(macos 26.0, ios 26.0, *)) {
+       accelDesc.usage |= MTLAccelerationStructureUsagePreferFastIntersection;
+     }
+ #  endif
+@@ -1336,7 +1340,7 @@ bool BVHMetal::build_TLAS(Progress &progress,
+       accelDesc.motionTransformBuffer = motion_transforms_buf;
+       accelDesc.motionTransformCount = num_motion_transforms;
+ #  if defined(MAC_OS_VERSION_15_0)
+-      if (@available(macos 15.0, *)) {
++      if (@available(macos 15.0, ios 18.00, *)) {
+         accelDesc.motionTransformStride = 0;
+         accelDesc.motionTransformType = use_pcmi ? MTLTransformTypeComponent :
+                                                    MTLTransformTypePackedFloat4x3;
+@@ -1351,8 +1355,8 @@ bool BVHMetal::build_TLAS(Progress &progress,
+       accelDesc.usage |= (MTLAccelerationStructureUsageRefit |
+                           MTLAccelerationStructureUsagePreferFastBuild);
+     }
+-#  if defined(MAC_OS_VERSION_26_0)
+-    else if (@available(macos 26.0, *)) {
++#  if defined(MAC_OS_VERSION_26_0) || defined(IPHONE_OS_VERSION_26_0)
++    else if (@available(macos 26.0, ios 26.0, *)) {
+       accelDesc.usage |= MTLAccelerationStructureUsagePreferFastIntersection;
+     }
+ #  endif

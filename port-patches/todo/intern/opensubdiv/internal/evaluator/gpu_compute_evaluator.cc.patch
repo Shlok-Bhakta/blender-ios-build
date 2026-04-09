@@ -1,0 +1,15 @@
+diff --git a/intern/opensubdiv/internal/evaluator/gpu_compute_evaluator.cc b/intern/opensubdiv/internal/evaluator/gpu_compute_evaluator.cc
+index d6e1de34de3..612a49600d8 100644
+--- a/intern/opensubdiv/internal/evaluator/gpu_compute_evaluator.cc
++++ b/intern/opensubdiv/internal/evaluator/gpu_compute_evaluator.cc
+@@ -2,7 +2,9 @@
+  *
+  * SPDX-License-Identifier: GPL-2.0-or-later */
+ 
+-#include <epoxy/gl.h>
++#ifdef WITH_OPENGL_BACKEND
++#  include <epoxy/gl.h>
++#endif
+ 
+ #include "gpu_compute_evaluator.h"
+ 

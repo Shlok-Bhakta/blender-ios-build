@@ -1,0 +1,17 @@
+diff --git a/intern/opensubdiv/internal/evaluator/eval_output_gpu.h b/intern/opensubdiv/internal/evaluator/eval_output_gpu.h
+index 0637630527d..cf18d95a93f 100644
+--- a/intern/opensubdiv/internal/evaluator/eval_output_gpu.h
++++ b/intern/opensubdiv/internal/evaluator/eval_output_gpu.h
+@@ -11,8 +11,10 @@
+ #include "internal/evaluator/gpu_compute_evaluator.h"
+ #include "internal/evaluator/gpu_patch_table.hh"
+ 
+-#include <opensubdiv/osd/glPatchTable.h>
+-#include <opensubdiv/osd/glVertexBuffer.h>
++#ifdef WITH_OPENGL_BACKEND
++#  include <opensubdiv/osd/glPatchTable.h>
++#  include <opensubdiv/osd/glVertexBuffer.h>
++#endif
+ 
+ #include "gpu_vertex_buffer_wrapper.hh"
+ 

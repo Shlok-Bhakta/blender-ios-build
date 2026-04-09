@@ -1,0 +1,19 @@
+diff --git a/build_files/build_environment/cmake/deflate.cmake b/build_files/build_environment/cmake/deflate.cmake
+index 4b546777400..862ff3d1c4c 100644
+--- a/build_files/build_environment/cmake/deflate.cmake
++++ b/build_files/build_environment/cmake/deflate.cmake
+@@ -9,6 +9,14 @@ set(DEFLATE_EXTRA_ARGS
+   -DLIBDEFLATE_BUILD_SHARED_LIB=OFF
+ )
+ 
++if(WITH_APPLE_CROSSPLATFORM)
++  # Disable binary building for cross-compilation builds.
++  set(DEFLATE_EXTRA_ARGS
++    ${DEFLATE_EXTRA_ARGS}
++    -DLIBDEFLATE_BUILD_GZIP=OFF
++  )
++endif()
++
+ ExternalProject_Add(external_deflate
+   URL file://${PACKAGE_DIR}/${DEFLATE_FILE}
+   DOWNLOAD_DIR ${DOWNLOAD_DIR}

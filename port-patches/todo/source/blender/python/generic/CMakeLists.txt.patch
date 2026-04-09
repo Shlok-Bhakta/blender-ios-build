@@ -1,0 +1,24 @@
+diff --git a/source/blender/python/generic/CMakeLists.txt b/source/blender/python/generic/CMakeLists.txt
+index 0daa887c937..77b71dda8ee 100644
+--- a/source/blender/python/generic/CMakeLists.txt
++++ b/source/blender/python/generic/CMakeLists.txt
+@@ -11,6 +11,7 @@ set(INC_SYS
+   ${PYTHON_INCLUDE_DIRS}
+ )
+ 
++
+ set(SRC
+   bl_math_py_api.cc
+   blf_py_api.cc
+@@ -34,6 +35,11 @@ set(SRC
+   python_utildefines.hh
+ )
+ 
++if(WITH_OPENGL_BACKEND)
++  list(APPEND SRC bgl.cc)
++  list(APPEND SRC bgl.h)
++endif()
++
+ set(LIB
+   ${PYTHON_LINKFLAGS}
+   ${PYTHON_LIBRARIES}

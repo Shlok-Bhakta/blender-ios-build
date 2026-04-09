@@ -1,0 +1,17 @@
+diff --git a/release/ios/entitlements.plist b/release/ios/entitlements.plist
+new file mode 100644
+index 00000000000..372b9475804
+--- /dev/null
++++ b/release/ios/entitlements.plist
+@@ -0,0 +1,11 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<plist version="1.0">
++<dict>
++  <!-- Support higher memory limit and increased address space on supported devices. -->
++  <key>com.apple.developer.kernel.increased-memory-limit</key>
++  <true/>
++   <!-- <key>com.apple.developer.kernel.extended-virtual-addressing</key> -->
++  <!-- <true/> -->
++</dict>
++</plist>

@@ -1,0 +1,14 @@
+diff --git a/source/blender/gpu/metal/mtl_memory.hh b/source/blender/gpu/metal/mtl_memory.hh
+index 566bb7945aa..86a0a914285 100644
+--- a/source/blender/gpu/metal/mtl_memory.hh
++++ b/source/blender/gpu/metal/mtl_memory.hh
+@@ -16,9 +16,7 @@
+ #include <set>
+ #include <unordered_map>
+ 
+-#include <Cocoa/Cocoa.h>
+ #include <Metal/Metal.h>
+-#include <QuartzCore/QuartzCore.h>
+ 
+ @class CAMetalLayer;
+ @class MTLCommandQueue;

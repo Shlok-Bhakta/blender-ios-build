@@ -1,0 +1,13 @@
+diff --git a/intern/cycles/kernel/closure/alloc.h b/intern/cycles/kernel/closure/alloc.h
+index 8dc3e26fedd..1dad1d09d92 100644
+--- a/intern/cycles/kernel/closure/alloc.h
++++ b/intern/cycles/kernel/closure/alloc.h
+@@ -20,7 +20,7 @@ ccl_device ccl_private ShaderClosure *closure_alloc(ccl_private ShaderData *sd,
+     return nullptr;
+   }
+ 
+-  ccl_private ShaderClosure *sc = &sd->closure[sd->num_closure];
++  ccl_private ShaderClosure *sc = sd->get_closure(sd->num_closure);
+ 
+   sc->type = type;
+   sc->weight = weight;

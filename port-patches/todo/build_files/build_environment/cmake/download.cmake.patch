@@ -1,0 +1,12 @@
+diff --git a/build_files/build_environment/cmake/download.cmake b/build_files/build_environment/cmake/download.cmake
+index ae16c37b447..ff45d3cecc2 100644
+--- a/build_files/build_environment/cmake/download.cmake
++++ b/build_files/build_environment/cmake/download.cmake
+@@ -96,6 +96,7 @@ download_source(OPENIMAGEIO)
+ download_source(TIFF)
+ download_source(OSL)
+ download_source(PYTHON)
++download_source(LIBB2)
+ download_source(TBB)
+ download_source(OPENVDB)
+ download_source(CYTHON)

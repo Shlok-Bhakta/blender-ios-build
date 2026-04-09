@@ -1,0 +1,18 @@
+diff --git a/source/blender/editors/space_view3d/view3d_navigate_view_move.cc b/source/blender/editors/space_view3d/view3d_navigate_view_move.cc
+index 1559757567a..bbb12e2e723 100644
+--- a/source/blender/editors/space_view3d/view3d_navigate_view_move.cc
++++ b/source/blender/editors/space_view3d/view3d_navigate_view_move.cc
+@@ -105,6 +105,13 @@ static wmOperatorStatus viewmove_invoke_impl(bContext *C,
+ 
+ static wmOperatorStatus viewmove_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+ {
++#ifdef WITH_APPLE_CROSSPLATFORM
++  /* Only handle inverted events for 3D view interaction on iOS */
++  if (!(event->flag & WM_EVENT_MULTITOUCH_TWO_FINGERS)) {
++    return OPERATOR_FINISHED;
++  }
++#endif
++
+   return view3d_navigate_invoke_impl(C, op, event, &ViewOpsType_move);
+ }
+ 

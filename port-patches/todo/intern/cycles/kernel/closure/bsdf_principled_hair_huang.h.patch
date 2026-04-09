@@ -1,0 +1,17 @@
+diff --git a/intern/cycles/kernel/closure/bsdf_principled_hair_huang.h b/intern/cycles/kernel/closure/bsdf_principled_hair_huang.h
+index cb235a53908..3ca2efcf6fc 100644
+--- a/intern/cycles/kernel/closure/bsdf_principled_hair_huang.h
++++ b/intern/cycles/kernel/closure/bsdf_principled_hair_huang.h
+@@ -23,10 +23,10 @@ struct HuangHairExtra {
+   float R, TT, TRT;
+ 
+   /* Local coordinate system. X is stored as `bsdf->N`. */
+-  float3 Y, Z;
++  packed_float3 Y, Z;
+ 
+   /* Incident direction in local coordinate system. */
+-  float3 wi;
++  packed_float3 wi;
+ 
+   /* Projected radius from the view direction. */
+   float radius;

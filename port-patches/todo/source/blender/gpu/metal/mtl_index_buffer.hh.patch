@@ -1,0 +1,17 @@
+diff --git a/source/blender/gpu/metal/mtl_index_buffer.hh b/source/blender/gpu/metal/mtl_index_buffer.hh
+index 900ebecde10..e7df90af139 100644
+--- a/source/blender/gpu/metal/mtl_index_buffer.hh
++++ b/source/blender/gpu/metal/mtl_index_buffer.hh
+@@ -10,12 +10,9 @@
+ 
+ #include "GPU_index_buffer.hh"
+ #include "MEM_guardedalloc.h"
+-
+ #include "mtl_context.hh"
+ 
+-#include <Cocoa/Cocoa.h>
+ #include <Metal/Metal.h>
+-#include <QuartzCore/QuartzCore.h>
+ 
+ namespace blender::gpu {
+ 

@@ -1,0 +1,12 @@
+diff --git a/source/blender/makesdna/DNA_windowmanager_types.h b/source/blender/makesdna/DNA_windowmanager_types.h
+index 2f7d6005ac3..5a3982f8772 100644
+--- a/source/blender/makesdna/DNA_windowmanager_types.h
++++ b/source/blender/makesdna/DNA_windowmanager_types.h
+@@ -439,6 +439,7 @@ enum {
+   KMI_TYPE_TEXTINPUT = 3,
+   KMI_TYPE_TIMER = 4,
+   KMI_TYPE_NDOF = 5,
++  KMI_TYPE_TOUCH = 6,
+ };
+ 
+ /**

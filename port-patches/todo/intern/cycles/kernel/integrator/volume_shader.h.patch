@@ -1,0 +1,13 @@
+diff --git a/intern/cycles/kernel/integrator/volume_shader.h b/intern/cycles/kernel/integrator/volume_shader.h
+index a0c6a5c889b..2062a2b0947 100644
+--- a/intern/cycles/kernel/integrator/volume_shader.h
++++ b/intern/cycles/kernel/integrator/volume_shader.h
+@@ -45,7 +45,7 @@ ccl_device_inline void volume_shader_merge_closures(ccl_private ShaderData *sd)
+         continue;
+       }
+ 
+-      sci->weight += scj->weight;
++      sci->weight = sci->weight + scj->weight;
+       sci->sample_weight += scj->sample_weight;
+ 
+       const int size = sd->num_closure - (j + 1);

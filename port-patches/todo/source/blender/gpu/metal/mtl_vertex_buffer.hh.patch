@@ -1,0 +1,14 @@
+diff --git a/source/blender/gpu/metal/mtl_vertex_buffer.hh b/source/blender/gpu/metal/mtl_vertex_buffer.hh
+index 533a91aab8c..533e9aad48a 100644
+--- a/source/blender/gpu/metal/mtl_vertex_buffer.hh
++++ b/source/blender/gpu/metal/mtl_vertex_buffer.hh
+@@ -13,9 +13,7 @@
+ 
+ #include "mtl_context.hh"
+ 
+-#include <Cocoa/Cocoa.h>
+ #include <Metal/Metal.h>
+-#include <QuartzCore/QuartzCore.h>
+ 
+ namespace blender::gpu {
+ 
