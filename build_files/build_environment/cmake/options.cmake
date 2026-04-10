@@ -221,9 +221,9 @@ else()
       set(BLENDER_PLATFORM_ARM ON)
     endif()
 
-    set(PLATFORM_CFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} -arch ${CMAKE_OSX_ARCHITECTURES}")
-    set(PLATFORM_CXXFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} -std=c++20 -stdlib=libc++ -arch ${CMAKE_OSX_ARCHITECTURES}")
-    set(PLATFORM_LDFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} -arch ${CMAKE_OSX_ARCHITECTURES} -headerpad_max_install_names")
+    set(PLATFORM_CFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} ${APPLE_OS_MINVERSION_CFLAG} -arch ${CMAKE_OSX_ARCHITECTURES}")
+    set(PLATFORM_CXXFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} ${APPLE_OS_MINVERSION_CFLAG} -std=c++20 -stdlib=libc++ -arch ${CMAKE_OSX_ARCHITECTURES}")
+    set(PLATFORM_LDFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} ${APPLE_OS_MINVERSION_CFLAG} -arch ${CMAKE_OSX_ARCHITECTURES} -headerpad_max_install_names")
     if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
       set(PLATFORM_BUILD_TARGET --build=x86_64-apple-darwin19.0.0) # OS X 10.15
     else()
@@ -234,6 +234,11 @@ else()
       -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${CMAKE_OSX_DEPLOYMENT_TARGET}
       -DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}
     )
+    if(WITH_APPLE_CROSSPLATFORM)
+      list(APPEND PLATFORM_CMAKE_FLAGS
+        -DCMAKE_SYSTEM_NAME:STRING=${CMAKE_SYSTEM_NAME}
+      )
+    endif()
   else()
     set(SHAREDLIBEXT ".so")
 

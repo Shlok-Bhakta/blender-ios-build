@@ -13,9 +13,9 @@ on:
           - ios
           - macos
       dep_target:
-        description: ExternalProject target to build
+        description: `make deps` target to build
         required: true
-        default: external_zlib
+        default: install
   push:
     branches:
       - main-iosport
@@ -39,7 +39,7 @@ permissions:
 
 env:
   TARGET_DEVICE: ${{ github.event.inputs.apple_target_device || 'ios-simulator' }}
-  DEP_TARGET: ${{ github.event.inputs.dep_target || 'external_zlib' }}
+  DEP_TARGET: ${{ github.event.inputs.dep_target || 'install' }}
   HOST_BUILD_DIR: ${{ github.workspace }}/build_darwin
   DEPS_BUILD_DIR: ${{ github.workspace }}/build_deps_${{ github.event.inputs.apple_target_device || 'ios-simulator' }}
   DEPS_INSTALL_DIR: ${{ github.workspace }}/lib/${{ github.event.inputs.apple_target_device || 'ios-simulator' }}_arm64
@@ -177,20 +177,15 @@ jobs:
           restore-keys: |
             deps-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**', '.github/workflows/apple-port-build.yml') }}-
 
-      - name: Configure deps build
+      - name: Build deps via GNUmakefile wrapper
         run: |
-          cmake -S build_files/build_environment \
-            -B "${DEPS_BUILD_DIR}" \
-            -G Ninja \
-            -DAPPLE_TARGET_DEVICE="${TARGET_DEVICE}" \
-            -DHARVEST_TARGET="${DEPS_INSTALL_DIR}" \
-            -DCMAKE_OSX_ARCHITECTURES=arm64 \
-            -DCMAKE_DEPS_CROSSCOMPILE_BUILDDIR="${HOST_BUILD_DIR}" \
-            -DCMAKE_DEPS_CROSSCOMPILE_INSTALLDIR="${HOST_DEPS_INSTALL_DIR}"
-
-      - name: Build selected dependency
-        run: |
-          cmake --build "${DEPS_BUILD_DIR}" --target "${DEP_TARGET}" --parallel 3
+          make deps "${TARGET_DEVICE}" \
+            DEPS_TARGET="${DEP_TARGET}" \
+            DEPS_BUILD_DIR="${DEPS_BUILD_DIR}" \
+            DEPS_INSTALL_DIR="${DEPS_INSTALL_DIR}" \
+            CROSSCOMPILE_BUILD_DIR="${HOST_BUILD_DIR}" \
+            CROSSCOMPILE_DEPS_INSTALL_DIR="${HOST_DEPS_INSTALL_DIR}" \
+            NPROCS=3
 
       - name: Save deps build cache
         if: always()
