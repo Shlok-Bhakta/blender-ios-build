@@ -89,6 +89,34 @@ jobs:
             release/datafiles/startup.blend
           key: ${{ runner.os }}-required-lfs-${{ steps.required-lfs-cache-key.outputs.sha }}-v1
 
+      - name: Compute host libs cache key
+        id: host-libs-cache-key
+        run: |
+          printf 'sha=%s\n' "$(git rev-parse HEAD:lib/macos_arm64)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore host precompiled libs cache
+        id: host-libs-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .git/modules/lib/macos_arm64
+            lib/macos_arm64
+          key: ${{ runner.os }}-host-libs-${{ steps.host-libs-cache-key.outputs.sha }}-v1
+
+      - name: Fetch host precompiled libs
+        if: steps.host-libs-cache.outputs.cache-hit != 'true'
+        run: |
+          python3 ./build_files/utils/make_update.py --no-blender
+
+      - name: Save host precompiled libs cache
+        if: steps.host-libs-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .git/modules/lib/macos_arm64
+            lib/macos_arm64
+          key: ${{ runner.os }}-host-libs-${{ steps.host-libs-cache-key.outputs.sha }}-v1
+
       - name: Show toolchain
         run: |
           sw_vers
