@@ -53,7 +53,41 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          lfs: true
+          lfs: false
+
+      - name: Compute required LFS cache key
+        id: required-lfs-cache-key
+        run: |
+          printf 'sha=%s\n' "$(git rev-parse HEAD:release/datafiles/startup.blend)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore required LFS assets cache
+        id: required-lfs-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .git/lfs/objects
+            release/datafiles/startup.blend
+          key: ${{ runner.os }}-required-lfs-${{ steps.required-lfs-cache-key.outputs.sha }}-v1
+
+      - name: Fetch required LFS source assets
+        run: |
+          if [ "${{ steps.required-lfs-cache.outputs.cache-hit }}" != "true" ]; then
+            git config lfs.remote.searchall true
+            git remote get-url lfs-fallback >/dev/null 2>&1 || \
+              git remote add lfs-fallback https://projects.blender.org/blender/blender.git
+            git remote set-url --push lfs-fallback no_push
+            git lfs fetch lfs-fallback --include="release/datafiles/startup.blend"
+          fi
+          git lfs pull --include="release/datafiles/startup.blend"
+
+      - name: Save required LFS assets cache
+        if: steps.required-lfs-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .git/lfs/objects
+            release/datafiles/startup.blend
+          key: ${{ runner.os }}-required-lfs-${{ steps.required-lfs-cache-key.outputs.sha }}-v1
 
       - name: Show toolchain
         run: |
@@ -62,18 +96,18 @@ jobs:
           cmake --version
           ninja --version
 
-      - name: Cache host tools build
-        id: cache-host-tools
-        uses: actions/cache@v4
+      - name: Restore host tools build cache
+        id: restore-host-tools-cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             ${{ env.HOST_BUILD_DIR }}
           key: host-tools-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/**', 'source/blender/blentranslation/msgfmt/CMakeLists.txt', 'source/blender/datatoc/CMakeLists.txt', 'source/blender/gpu/shader_tool/CMakeLists.txt', 'source/blender/makesdna/intern/CMakeLists.txt', 'source/blender/makesrna/intern/CMakeLists.txt', '.github/workflows/apple-port-build.yml') }}
 
       - name: Build host tools
-        if: steps.cache-host-tools.outputs.cache-hit != 'true'
+        if: steps.restore-host-tools-cache.outputs.cache-hit != 'true'
         run: |
-          make tools ninja BUILD_DIR="${HOST_BUILD_DIR}" NPROCS=3
+          make tools BUILD_DIR="${HOST_BUILD_DIR}" NPROCS=3
 
       - name: Verify host tools
         run: |
@@ -83,6 +117,14 @@ jobs:
           test -x "${HOST_BUILD_DIR}/bin/makesrna"
           test -x "${HOST_BUILD_DIR}/bin/msgfmt"
 
+      - name: Save host tools build cache
+        if: steps.restore-host-tools-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ env.HOST_BUILD_DIR }}
+          key: host-tools-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/**', 'source/blender/blentranslation/msgfmt/CMakeLists.txt', 'source/blender/datatoc/CMakeLists.txt', 'source/blender/gpu/shader_tool/CMakeLists.txt', 'source/blender/makesdna/intern/CMakeLists.txt', 'source/blender/makesrna/intern/CMakeLists.txt', '.github/workflows/apple-port-build.yml') }}
+
   build-dep:
     runs-on: macos-15
     needs: host-tools
@@ -91,24 +133,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          lfs: true
+          lfs: false
 
       - name: Restore host tools build
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             ${{ env.HOST_BUILD_DIR }}
           key: host-tools-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/**', 'source/blender/blentranslation/msgfmt/CMakeLists.txt', 'source/blender/datatoc/CMakeLists.txt', 'source/blender/gpu/shader_tool/CMakeLists.txt', 'source/blender/makesdna/intern/CMakeLists.txt', 'source/blender/makesrna/intern/CMakeLists.txt', '.github/workflows/apple-port-build.yml') }}
 
       - name: Cache deps build tree
-        uses: actions/cache@v4
+        id: restore-deps-cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             ${{ env.DEPS_BUILD_DIR }}
             ${{ env.DEPS_INSTALL_DIR }}
-          key: deps-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ env.DEP_TARGET }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**', '.github/workflows/apple-port-build.yml') }}
+          key: deps-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**', '.github/workflows/apple-port-build.yml') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            deps-${{ runner.os }}-${{ env.TARGET_DEVICE }}-
+            deps-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**', '.github/workflows/apple-port-build.yml') }}-
 
       - name: Configure deps build
         run: |
@@ -124,6 +167,14 @@ jobs:
       - name: Build selected dependency
         run: |
           cmake --build "${DEPS_BUILD_DIR}" --target "${DEP_TARGET}" --parallel 3
+
+      - name: Save deps build cache
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ env.DEPS_BUILD_DIR }}
+            ${{ env.DEPS_INSTALL_DIR }}
+          key: deps-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**', '.github/workflows/apple-port-build.yml') }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Summarize outputs
         run: |
