@@ -40,13 +40,13 @@ permissions:
 env:
   TARGET_DEVICE: ${{ github.event.inputs.apple_target_device || 'ios-simulator' }}
   DEP_TARGET: ${{ github.event.inputs.dep_target || 'external_zlib' }}
-  HOST_BUILD_DIR: ${{ github.workspace }}/../build_darwin
-  DEPS_BUILD_DIR: ${{ github.workspace }}/../build_deps_${{ github.event.inputs.apple_target_device || 'ios-simulator' }}
+  HOST_BUILD_DIR: ${{ github.workspace }}/build_darwin
+  DEPS_BUILD_DIR: ${{ github.workspace }}/build_deps_${{ github.event.inputs.apple_target_device || 'ios-simulator' }}
   DEPS_INSTALL_DIR: ${{ github.workspace }}/lib/${{ github.event.inputs.apple_target_device || 'ios-simulator' }}_arm64
   HOST_DEPS_INSTALL_DIR: ${{ github.workspace }}/lib/macos_arm64
 
 jobs:
-  host-tools:
+  build:
     runs-on: macos-15
 
     steps:
@@ -124,6 +124,19 @@ jobs:
           cmake --version
           ninja --version
 
+      - name: Install dependency build prerequisites
+        run: |
+          missing=()
+          for pkg in autoconf automake bison dos2unix flex libtool meson ninja pkg-config yasm; do
+            brew list "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            HOMEBREW_NO_AUTO_UPDATE=1 brew install "${missing[@]}"
+          fi
+          echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix flex)/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix libtool)/bin" >> "$GITHUB_PATH"
+
       - name: Restore host tools build cache
         id: restore-host-tools-cache
         uses: actions/cache/restore@v4
@@ -153,24 +166,7 @@ jobs:
             ${{ env.HOST_BUILD_DIR }}
           key: host-tools-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/**', 'source/blender/blentranslation/msgfmt/CMakeLists.txt', 'source/blender/datatoc/CMakeLists.txt', 'source/blender/gpu/shader_tool/CMakeLists.txt', 'source/blender/makesdna/intern/CMakeLists.txt', 'source/blender/makesrna/intern/CMakeLists.txt', '.github/workflows/apple-port-build.yml') }}
 
-  build-dep:
-    runs-on: macos-15
-    needs: host-tools
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          lfs: false
-
-      - name: Restore host tools build
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ${{ env.HOST_BUILD_DIR }}
-          key: host-tools-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/**', 'source/blender/blentranslation/msgfmt/CMakeLists.txt', 'source/blender/datatoc/CMakeLists.txt', 'source/blender/gpu/shader_tool/CMakeLists.txt', 'source/blender/makesdna/intern/CMakeLists.txt', 'source/blender/makesrna/intern/CMakeLists.txt', '.github/workflows/apple-port-build.yml') }}
-
-      - name: Cache deps build tree
+      - name: Restore deps build cache
         id: restore-deps-cache
         uses: actions/cache/restore@v4
         with:
@@ -197,6 +193,7 @@ jobs:
           cmake --build "${DEPS_BUILD_DIR}" --target "${DEP_TARGET}" --parallel 3
 
       - name: Save deps build cache
+        if: always()
         uses: actions/cache/save@v4
         with:
           path: |
