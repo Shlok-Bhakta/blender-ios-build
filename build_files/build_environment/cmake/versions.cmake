@@ -983,7 +983,7 @@ set(ISPC_FILE ispc-${ISPC_VERSION}.tar.gz)
 set(ISPC_DEPSBUILDTIMEONLY "Blender ships the produced artifact, but doesn't ship/link with any binary")
 
 set(GMP_VERSION 6.3.0)
-set(GMP_URI https://gmplib.org/download/gmp/gmp-${GMP_VERSION}.tar.xz)
+set(GMP_URI https://ftp.gnu.org/gnu/gmp/gmp-${GMP_VERSION}.tar.xz)
 set(GMP_HASH 956dc04e864001a9c22429f761f2c283)
 set(GMP_HASH_TYPE MD5)
 set(GMP_FILE gmp-${GMP_VERSION}.tar.xz)
