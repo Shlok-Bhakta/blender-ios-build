@@ -13,7 +13,7 @@ on:
           - ios
           - macos
       dep_target:
-        description: `make deps` target to build
+        description: "`make deps` target to build"
         required: true
         default: install
   push:
