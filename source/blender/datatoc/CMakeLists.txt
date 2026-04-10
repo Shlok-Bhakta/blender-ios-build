@@ -10,5 +10,7 @@ set(SRC
 )
 
 # `SRC_DNA_INC` is defined in the parent directory.
-add_executable(datatoc ${SRC})
-optimize_debug_target(datatoc)
+if(NOT WITH_CROSSCOMPILED_TOOLS)
+  add_executable(datatoc ${SRC})
+  optimize_debug_target(datatoc)
+endif()

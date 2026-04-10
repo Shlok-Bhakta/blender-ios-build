@@ -179,7 +179,21 @@ endif
 # System Vars
 OS:=$(shell uname -s)
 OS_NCASE:=$(shell uname -s | tr '[A-Z]' '[a-z]')
+OS_NCASE_CROSSCOMPILE:=$(OS_NCASE)
 CPU:=$(shell uname -m)
+
+APPLE_TARGET_ARGS:=
+ifeq ($(OS),Darwin)
+	ifneq "$(findstring ios-simulator, $(MAKECMDGOALS))" ""
+		OS_NCASE:=ios-simulator
+		APPLE_TARGET_ARGS:=-DAPPLE_TARGET_DEVICE=ios-simulator
+	else ifneq "$(findstring ios, $(MAKECMDGOALS))" ""
+		OS_NCASE:=ios
+		APPLE_TARGET_ARGS:=-DAPPLE_TARGET_DEVICE=ios
+	else
+		APPLE_TARGET_ARGS:=-DAPPLE_TARGET_DEVICE=macos
+	endif
+endif
 
 # Use our OS and CPU architecture naming conventions.
 ifeq ($(CPU),x86_64)
@@ -201,10 +215,14 @@ BUILD_TYPE:=Release
 BLENDER_IS_PYTHON_MODULE:=
 
 # CMake arguments, assigned to local variable to make it mutable.
-CMAKE_CONFIG_ARGS := $(BUILD_CMAKE_ARGS)
+CMAKE_CONFIG_ARGS := $(APPLE_TARGET_ARGS) $(BUILD_CMAKE_ARGS)
 
 ifndef BUILD_DIR
 	BUILD_DIR:=$(shell dirname "$(BLENDER_DIR)")/build_$(OS_NCASE)
+endif
+
+ifndef CROSSCOMPILE_BUILD_DIR
+	CROSSCOMPILE_BUILD_DIR:=$(shell dirname "$(BLENDER_DIR)")/build_$(OS_NCASE_CROSSCOMPILE)
 endif
 
 # Dependencies DIR's
@@ -216,6 +234,22 @@ endif
 
 ifndef DEPS_INSTALL_DIR
 	DEPS_INSTALL_DIR:=$(BLENDER_DIR)/lib/$(OS_LIBDIR)_$(CPU)
+endif
+
+DEPS_CROSSCOMPILE_ARGS:=
+ifeq ($(OS),Darwin)
+	ifeq ($(OS_NCASE_CROSSCOMPILE),darwin)
+		OS_LIBDIR_CROSSCOMPILE:=macos
+	else
+		OS_LIBDIR_CROSSCOMPILE:=$(OS_NCASE_CROSSCOMPILE)
+	endif
+
+	ifndef CROSSCOMPILE_DEPS_INSTALL_DIR
+		CROSSCOMPILE_DEPS_INSTALL_DIR:=$(BLENDER_DIR)/lib/$(OS_LIBDIR_CROSSCOMPILE)_$(CPU)
+	endif
+
+	DEPS_CROSSCOMPILE_ARGS:=-DCMAKE_DEPS_CROSSCOMPILE_BUILDDIR=$(CROSSCOMPILE_BUILD_DIR) \
+		-DCMAKE_DEPS_CROSSCOMPILE_INSTALLDIR=$(CROSSCOMPILE_DEPS_INSTALL_DIR)
 endif
 
 # Set the LIBDIR, an empty string when not found.
@@ -427,6 +461,18 @@ bpy: all
 developer: all
 ninja: all
 ccache: all
+tools: .FORCE
+	@echo
+	@echo Configuring Blender host tools in \"$(BUILD_DIR)\" ...
+	@$(CMAKE_CONFIG)
+
+	@echo
+	@echo Building Blender host tools ...
+	$(BUILD_COMMAND) -C "$(BUILD_DIR)" -j $(NPROCS) shader_tool
+	$(BUILD_COMMAND) -C "$(BUILD_DIR)" -j $(NPROCS) datatoc
+	$(BUILD_COMMAND) -C "$(BUILD_DIR)" -j $(NPROCS) makesrna
+	$(BUILD_COMMAND) -C "$(BUILD_DIR)" -j $(NPROCS) makesdna
+	$(BUILD_COMMAND) -C "$(BUILD_DIR)" -j $(NPROCS) msgfmt
 
 # -----------------------------------------------------------------------------
 # Build dependencies
@@ -443,7 +489,9 @@ deps: .FORCE
 
 	@cmake -H"$(DEPS_SOURCE_DIR)" \
 	       -B"$(DEPS_BUILD_DIR)" \
-	       -DHARVEST_TARGET=$(DEPS_INSTALL_DIR)
+	       -DHARVEST_TARGET=$(DEPS_INSTALL_DIR) \
+	       $(APPLE_TARGET_ARGS) \
+	       $(DEPS_CROSSCOMPILE_ARGS)
 
 	@echo
 	@echo Building dependencies ...
@@ -661,6 +709,12 @@ clean: .FORCE
 	@if [ -d "$(BUILD_DIR)" ] ; then \
 		$(BUILD_COMMAND) -C "$(BUILD_DIR)" clean ; \
 	fi
+
+ios: .FORCE
+	@echo "iOS target detected"
+
+ios-simulator: .FORCE
+	@echo "iOS simulator target detected"
 
 .PHONY: all
 

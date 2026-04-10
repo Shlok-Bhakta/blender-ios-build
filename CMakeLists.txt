@@ -119,6 +119,22 @@ blender_project_hack_post()
 
 enable_testing()
 
+if(APPLE)
+  set(APPLE_TARGET_DEVICE "macos" CACHE STRING "Target build device for Apple platforms")
+  set_property(CACHE APPLE_TARGET_DEVICE PROPERTY STRINGS macos ios ios-simulator)
+  mark_as_advanced(APPLE_TARGET_DEVICE)
+
+  if(APPLE_TARGET_DEVICE STREQUAL "ios" OR APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
+    set(WITH_APPLE_CROSSPLATFORM ON CACHE BOOL "Build for non-macOS Apple platforms" FORCE)
+  elseif(APPLE_TARGET_DEVICE STREQUAL "macos")
+    set(WITH_APPLE_CROSSPLATFORM OFF CACHE BOOL "Build for non-macOS Apple platforms" FORCE)
+  else()
+    message(FATAL_ERROR "Valid values for APPLE_TARGET_DEVICE are: macos, ios, ios-simulator")
+  endif()
+
+  mark_as_advanced(WITH_APPLE_CROSSPLATFORM)
+endif()
+
 # There are some circumstances where the git checkout doesn't grab
 # the files from LFS but produces small pointer files. The build system
 # does not pick up on this, and at runtime blender will throw a strange
@@ -238,11 +254,19 @@ intended for use by file-managers to extract PNG images from `.blend` files."
     ON
   )
 elseif(APPLE)
-  option(WITH_BLENDER_THUMBNAILER "\
+  if(WITH_APPLE_CROSSPLATFORM)
+    option(WITH_BLENDER_THUMBNAILER "\
 Build \"blender-thumbnailer.appex\" extension for Finder/ QuickLook thumbnail \
 support for blend files."
-    ON
-  )
+      OFF
+    )
+  else()
+    option(WITH_BLENDER_THUMBNAILER "\
+Build \"blender-thumbnailer.appex\" extension for Finder/ QuickLook thumbnail \
+support for blend files."
+      ON
+    )
+  endif()
 endif()
 
 option(WITH_INTERNATIONAL "Enable I18N (International fonts and text)" ON)
@@ -2676,6 +2700,12 @@ if(FIRST_RUN)
   info_cfg_option(WITH_UI_TESTS_VULKAN)
   info_cfg_option(WITH_GPU_RENDER_TESTS_VULKAN)
   info_cfg_option(WITH_LINUX_OFFICIAL_RELEASE_TESTS)
+
+  if(APPLE)
+    info_cfg_text("Apple Platform Options:")
+    info_cfg_option(APPLE_TARGET_DEVICE)
+    info_cfg_option(WITH_APPLE_CROSSPLATFORM)
+  endif()
 
   info_cfg_text("")
 

@@ -1,0 +1,128 @@
+name: Apple Port Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      apple_target_device:
+        description: Apple target device
+        required: true
+        type: choice
+        default: ios-simulator
+        options:
+          - ios-simulator
+          - ios
+          - macos
+      dep_target:
+        description: ExternalProject target to build
+        required: true
+        default: external_zlib
+  push:
+    branches:
+      - main-iosport
+    paths:
+      - .github/workflows/apple-port-build.yml
+      - CMakeLists.txt
+      - GNUmakefile
+      - build_files/**
+      - source/blender/blentranslation/msgfmt/CMakeLists.txt
+      - source/blender/datatoc/CMakeLists.txt
+      - source/blender/gpu/shader_tool/CMakeLists.txt
+      - source/blender/makesdna/intern/CMakeLists.txt
+      - source/blender/makesrna/intern/CMakeLists.txt
+
+concurrency:
+  group: apple-port-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  TARGET_DEVICE: ${{ github.event.inputs.apple_target_device || 'ios-simulator' }}
+  DEP_TARGET: ${{ github.event.inputs.dep_target || 'external_zlib' }}
+  HOST_BUILD_DIR: ${{ github.workspace }}/../build_darwin
+  DEPS_BUILD_DIR: ${{ github.workspace }}/../build_deps_${{ github.event.inputs.apple_target_device || 'ios-simulator' }}
+  DEPS_INSTALL_DIR: ${{ github.workspace }}/lib/${{ github.event.inputs.apple_target_device || 'ios-simulator' }}_arm64
+  HOST_DEPS_INSTALL_DIR: ${{ github.workspace }}/lib/macos_arm64
+
+jobs:
+  host-tools:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          cmake --version
+          ninja --version
+
+      - name: Cache host tools build
+        id: cache-host-tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.HOST_BUILD_DIR }}
+          key: host-tools-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/**', 'source/blender/blentranslation/msgfmt/CMakeLists.txt', 'source/blender/datatoc/CMakeLists.txt', 'source/blender/gpu/shader_tool/CMakeLists.txt', 'source/blender/makesdna/intern/CMakeLists.txt', 'source/blender/makesrna/intern/CMakeLists.txt', '.github/workflows/apple-port-build.yml') }}
+
+      - name: Build host tools
+        if: steps.cache-host-tools.outputs.cache-hit != 'true'
+        run: |
+          make tools ninja BUILD_DIR="${HOST_BUILD_DIR}" NPROCS=3
+
+      - name: Verify host tools
+        run: |
+          test -x "${HOST_BUILD_DIR}/bin/datatoc"
+          test -x "${HOST_BUILD_DIR}/bin/shader_tool"
+          test -x "${HOST_BUILD_DIR}/bin/makesdna"
+          test -x "${HOST_BUILD_DIR}/bin/makesrna"
+          test -x "${HOST_BUILD_DIR}/bin/msgfmt"
+
+  build-dep:
+    runs-on: macos-15
+    needs: host-tools
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore host tools build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.HOST_BUILD_DIR }}
+          key: host-tools-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/**', 'source/blender/blentranslation/msgfmt/CMakeLists.txt', 'source/blender/datatoc/CMakeLists.txt', 'source/blender/gpu/shader_tool/CMakeLists.txt', 'source/blender/makesdna/intern/CMakeLists.txt', 'source/blender/makesrna/intern/CMakeLists.txt', '.github/workflows/apple-port-build.yml') }}
+
+      - name: Cache deps build tree
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.DEPS_BUILD_DIR }}
+            ${{ env.DEPS_INSTALL_DIR }}
+          key: deps-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ env.DEP_TARGET }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**', '.github/workflows/apple-port-build.yml') }}
+          restore-keys: |
+            deps-${{ runner.os }}-${{ env.TARGET_DEVICE }}-
+
+      - name: Configure deps build
+        run: |
+          cmake -S build_files/build_environment \
+            -B "${DEPS_BUILD_DIR}" \
+            -G Ninja \
+            -DAPPLE_TARGET_DEVICE="${TARGET_DEVICE}" \
+            -DHARVEST_TARGET="${DEPS_INSTALL_DIR}" \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_DEPS_CROSSCOMPILE_BUILDDIR="${HOST_BUILD_DIR}" \
+            -DCMAKE_DEPS_CROSSCOMPILE_INSTALLDIR="${HOST_DEPS_INSTALL_DIR}"
+
+      - name: Build selected dependency
+        run: |
+          cmake --build "${DEPS_BUILD_DIR}" --target "${DEP_TARGET}" --parallel 3
+
+      - name: Summarize outputs
+        run: |
+          echo "Built target: ${DEP_TARGET}"
+          echo "Target device: ${TARGET_DEVICE}"
+          ls "${DEPS_INSTALL_DIR}" || true

@@ -22,17 +22,46 @@ function(print_found_status
   endif()
 endfunction()
 
+if(WITH_APPLE_CROSSPLATFORM)
+  set(_apple_crossplatform_msg "Auto disabled for ${APPLE_TARGET_DEVICE} builds")
+  set(WITH_VULKAN_BACKEND OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
+  set(WITH_OPENGL_BACKEND OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
+  set(WITH_SDL OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
+  set(WITH_INPUT_NDOF OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
+  set(WITH_PYTHON_MODULE OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
+  set(WITH_AUDASPACE OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
+  set(WITH_OPENAL OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
+  set(WITH_COREAUDIO OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
+  set(WITH_JACK OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
+  set(WITH_HYDRA OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
+  set(WITH_CYCLES_OSL OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
+  unset(_apple_crossplatform_msg)
+
+  set(WITH_CROSSCOMPILED_TOOLS ON CACHE BOOL "Use host-built tools for Apple cross-platform builds" FORCE)
+  set(BLENDER_HOST_TOOLS_DIR "${CMAKE_SOURCE_DIR}/../build_darwin/bin" CACHE PATH
+    "Directory containing host-built Blender tools for Apple cross-platform builds")
+  mark_as_advanced(BLENDER_HOST_TOOLS_DIR)
+
+  foreach(_blender_host_tool IN ITEMS datatoc shader_tool makesdna makesrna msgfmt)
+    add_executable(${_blender_host_tool} IMPORTED GLOBAL)
+    set_property(
+      TARGET ${_blender_host_tool}
+      PROPERTY IMPORTED_LOCATION "${BLENDER_HOST_TOOLS_DIR}/${_blender_host_tool}")
+  endforeach()
+  unset(_blender_host_tool)
+
+  set(PLATFORM_ENV_BUILD "")
+else()
+  set(WITH_CROSSCOMPILED_TOOLS OFF CACHE BOOL "Use host-built tools for Apple cross-platform builds" FORCE)
+endif()
+
 # ------------------------------------------------------------------------
 # Find system provided libraries.
 
-# Find system ZLIB
-set(ZLIB_ROOT /usr)
-find_package(ZLIB REQUIRED)
-find_package(BZip2 REQUIRED)
-list(APPEND ZLIB_LIBRARIES ${BZIP2_LIBRARIES})
-
 if(WITH_OPENAL)
-  find_package(OpenAL REQUIRED)
+  if(NOT WITH_APPLE_CROSSPLATFORM)
+    find_package(OpenAL REQUIRED)
+  endif()
 endif()
 
 if(WITH_JACK)
@@ -48,14 +77,22 @@ if(WITH_JACK)
 endif()
 
 if(NOT DEFINED LIBDIR)
-  if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
-    set(LIBDIR ${CMAKE_SOURCE_DIR}/lib/macos_x64)
+  if(WITH_APPLE_CROSSPLATFORM)
+    set(LIBDIR ${CMAKE_SOURCE_DIR}/lib/${APPLE_TARGET_DEVICE}_${CMAKE_OSX_ARCHITECTURES})
   else()
-    set(LIBDIR ${CMAKE_SOURCE_DIR}/lib/macos_${CMAKE_OSX_ARCHITECTURES})
+    if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
+      set(LIBDIR ${CMAKE_SOURCE_DIR}/lib/macos_x64)
+    else()
+      set(LIBDIR ${CMAKE_SOURCE_DIR}/lib/macos_${CMAKE_OSX_ARCHITECTURES})
+    endif()
   endif()
 endif()
-if(NOT EXISTS "${LIBDIR}/.git")
-  message(FATAL_ERROR "Mac OSX requires pre-compiled libs at: '${LIBDIR}'")
+if(NOT EXISTS "${LIBDIR}/python")
+  if(WITH_APPLE_CROSSPLATFORM)
+    message(FATAL_ERROR "Apple cross-platform builds require pre-compiled libs at: '${LIBDIR}'")
+  else()
+    message(FATAL_ERROR "Mac OSX requires pre-compiled libs at: '${LIBDIR}'")
+  endif()
 endif()
 if(FIRST_RUN)
   message(STATUS "Using pre-compiled LIBDIR: ${LIBDIR}")
@@ -66,14 +103,36 @@ endif()
 set(CMAKE_FIND_FRAMEWORK NEVER)
 
 # Optionally use system Python if PYTHON_ROOT_DIR is specified.
-if(WITH_PYTHON)
-  if(WITH_PYTHON_MODULE AND PYTHON_ROOT_DIR)
-    find_package(PythonLibsUnix REQUIRED)
+if(WITH_APPLE_CROSSPLATFORM)
+  if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
+    set(_blender_host_lib_arch x64)
+  else()
+    set(_blender_host_lib_arch ${CMAKE_HOST_SYSTEM_PROCESSOR})
+  endif()
+  set(BLENDER_HOST_LIBDIR "${CMAKE_SOURCE_DIR}/lib/macos_${_blender_host_lib_arch}" CACHE PATH
+    "Host macOS precompiled libraries used for Apple cross-platform builds")
+  mark_as_advanced(BLENDER_HOST_LIBDIR)
+  unset(_blender_host_lib_arch)
+
+  find_program(
+    PYTHON_EXECUTABLE
+    NAMES python3.15 python3.14 python3.13 python3.12 python3.11 python3.10
+    PATHS "${BLENDER_HOST_LIBDIR}/python/bin"
+    NO_DEFAULT_PATH)
+
+  if(NOT PYTHON_EXECUTABLE)
+    message(FATAL_ERROR "Unable to find a host Python in '${BLENDER_HOST_LIBDIR}/python/bin'")
   endif()
 else()
-  # Python executable is needed as part of the build-process,
-  # note that building without Python is quite unusual.
-  find_program(PYTHON_EXECUTABLE "python3")
+  if(WITH_PYTHON)
+    if(WITH_PYTHON_MODULE AND PYTHON_ROOT_DIR)
+      find_package(PythonLibsUnix REQUIRED)
+    endif()
+  else()
+    # Python executable is needed as part of the build-process,
+    # note that building without Python is quite unusual.
+    find_program(PYTHON_EXECUTABLE "python3")
+  endif()
 endif()
 
 # Prefer lib directory paths
@@ -82,6 +141,16 @@ set(CMAKE_PREFIX_PATH ${LIB_SUBDIRS})
 
 # -------------------------------------------------------------------------
 # Find precompiled libraries, and avoid system or user-installed ones.
+
+if(WITH_APPLE_CROSSPLATFORM)
+  set(ZLIB_ROOT ${LIBDIR}/zlib)
+  find_package(ZLIB REQUIRED)
+else()
+  set(ZLIB_ROOT /usr)
+  find_package(ZLIB REQUIRED)
+  find_package(BZip2 REQUIRED)
+  list(APPEND ZLIB_LIBRARIES ${BZIP2_LIBRARIES})
+endif()
 
 if(EXISTS ${LIBDIR})
   include(platform_old_libs_update)
@@ -159,11 +228,19 @@ add_bundled_libraries(openexr/lib)
 add_bundled_libraries(imath/lib)
 
 string(APPEND PLATFORM_CFLAGS " -pipe -funsigned-char -fno-strict-aliasing -ffp-contract=off")
-set(PLATFORM_LINKFLAGS "\
+if(WITH_APPLE_CROSSPLATFORM)
+  set(PLATFORM_LINKFLAGS "\
+-fexceptions -framework CoreServices -framework Foundation -framework IOKit -framework UIKit \
+-framework AudioToolbox -framework CoreAudio -framework Metal -framework MetalKit \
+-framework QuartzCore -framework ImageIO -framework GameController -framework CoreGraphics"
+  )
+else()
+  set(PLATFORM_LINKFLAGS "\
 -fexceptions -framework CoreServices -framework Foundation -framework IOKit -framework AppKit -framework Cocoa \
 -framework Carbon -framework AudioUnit -framework AudioToolbox -framework CoreAudio -framework Metal \
 -framework QuartzCore"
-)
+  )
+endif()
 
 if(WITH_CODEC_FFMPEG)
   set(FFMPEG_ROOT_DIR ${LIBDIR}/ffmpeg)
@@ -230,7 +307,9 @@ if(WITH_SDL)
 endif()
 
 set(EPOXY_ROOT_DIR ${LIBDIR}/epoxy)
-find_package(Epoxy REQUIRED)
+if(NOT WITH_APPLE_CROSSPLATFORM)
+  find_package(Epoxy REQUIRED)
+endif()
 
 set(PNG_ROOT ${LIBDIR}/png)
 find_package(PNG REQUIRED)
@@ -496,8 +575,10 @@ if(PLATFORM_BUNDLED_LIBRARIES)
   # Environment variables to run precompiled executables that needed libraries.
   list(JOIN PLATFORM_BUNDLED_LIBRARY_DIRS ":" _library_paths)
   # Intentionally double "$$" which expands into "$" when instantiated.
-  set(PLATFORM_ENV_BUILD "DYLD_LIBRARY_PATH=\"${_library_paths}:$$DYLD_LIBRARY_PATH\"")
-  set(PLATFORM_ENV_INSTALL "DYLD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX_WITH_CONFIG}/Blender.app/Contents/Resources/lib/:$$DYLD_LIBRARY_PATH")
+  if(NOT WITH_APPLE_CROSSPLATFORM)
+    set(PLATFORM_ENV_BUILD "DYLD_LIBRARY_PATH=\"${_library_paths}:$$DYLD_LIBRARY_PATH\"")
+    set(PLATFORM_ENV_INSTALL "DYLD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX_WITH_CONFIG}/Blender.app/Contents/Resources/lib/:$$DYLD_LIBRARY_PATH")
+  endif()
   unset(_library_paths)
 endif()
 
