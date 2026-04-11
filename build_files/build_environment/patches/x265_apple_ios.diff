@@ -1,0 +1,33 @@
+diff --git a/source/CMakeLists.txt b/source/CMakeLists.txt
+index ab5ddfe..d4099dd 100755
+--- a/source/CMakeLists.txt
++++ b/source/CMakeLists.txt
+@@ -57,7 +57,7 @@ project (x265)
+ # Xcode < 6 is required to build the 4:2:2 and 4:4:4 assemblies
+ #if(CMAKE_GENERATOR STREQUAL "Xcode" AND XCODE_VERSION VERSION_LESS 6.0)
+ if(POLICY CMP0025)
+-    cmake_policy(SET CMP0025 OLD)
++    cmake_policy(SET CMP0025 NEW)
+ endif()
+ if(CMAKE_GENERATOR STREQUAL "Xcode")
+     set(XCODE 1)
+@@ -96,7 +96,7 @@ option(ENABLE_SHARED "Build shared libraries" ON)
+ option(ENABLE_LIBNUMA "Enable libnuma" OFF)
+ option(ENABLE_PPA "Enable PPA profiling instrumentation" OFF)
+ if(POLICY CMP0054)
+-  cmake_policy(SET CMP0054 OLD)
++  cmake_policy(SET CMP0054 NEW)
+ endif()
+ option(CMAKE_ASM_YASM_COMPILER "Yasm Compiler" yasm)
+ option(WARNINGS_AS_ERRORS "Stop compiles on first warning" OFF)
+@@ -478,6 +478,10 @@ if(ARM64)
+   endif()
+ endif(ARM64)
+ 
++if(APPLE)
++  list(APPEND ASM_FLAGS -isysroot ${CMAKE_OSX_SYSROOT} ${APPLE_OS_MINVERSION_CFLAG})
++endif()
++
+ option(WARNINGS_AS_ERRORS "Stop compiles on first warning" OFF)
+ if(WARNINGS_AS_ERRORS)
+     if(GCC)
