@@ -2,14 +2,27 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-set(BROTLI_EXTRA_ARGS
-)
+if(WITH_APPLE_CROSSPLATFORM)
+  set(BROTLI_EXTRA_ARGS
+    -DWITH_APPLE_CROSSPLATFORM=ON
+    -DBROTLI_DISABLE_TESTS=ON
+  )
+  set(BROTLI_PATCH_COMMAND
+    ${PATCH_CMD} --verbose -p 1 -N -d
+      ${BUILD_DIR}/brotli/src/external_brotli <
+      ${PATCH_DIR}/brotli_ios.diff
+  )
+else()
+  set(BROTLI_EXTRA_ARGS)
+  set(BROTLI_PATCH_COMMAND echo .)
+endif()
 
 ExternalProject_Add(external_brotli
   URL file://${PACKAGE_DIR}/${BROTLI_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
   URL_HASH ${BROTLI_HASH_TYPE}=${BROTLI_HASH}
   PREFIX ${BUILD_DIR}/brotli
+  PATCH_COMMAND ${BROTLI_PATCH_COMMAND}
   CMAKE_GENERATOR ${PLATFORM_ALT_GENERATOR}
 
   CMAKE_ARGS
