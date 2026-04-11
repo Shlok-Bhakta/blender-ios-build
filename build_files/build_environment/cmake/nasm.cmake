@@ -11,9 +11,11 @@ if(WITH_APPLE_CROSSPLATFORM)
     export LDFLAGS=
   )
   set(NASM_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET})
+  set(NASM_BUILD_COMMAND make -j${MAKE_THREADS})
 else()
   set(NASM_CONFIGURE_ENV ${CONFIGURE_ENV})
   set(NASM_CONFIGURE_COMMAND ${CONFIGURE_COMMAND})
+  set(NASM_BUILD_COMMAND make -j${MAKE_THREADS} && make manpages)
 endif()
 
 ExternalProject_Add(external_nasm
@@ -33,8 +35,7 @@ ExternalProject_Add(external_nasm
 
   BUILD_COMMAND ${NASM_CONFIGURE_ENV} &&
     cd ${BUILD_DIR}/nasm/src/external_nasm/ &&
-    make -j${MAKE_THREADS} &&
-    make manpages
+    ${NASM_BUILD_COMMAND}
 
   INSTALL_COMMAND ${NASM_CONFIGURE_ENV} &&
     cd ${BUILD_DIR}/nasm/src/external_nasm/ &&
