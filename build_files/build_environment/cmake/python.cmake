@@ -211,6 +211,15 @@ ${LIBDIR}/ssl/lib64/pkgconfig:${LIBDIR}/lzma/lib/pkgconfig:${LIBDIR}/zlib/share/
       export ZLIB_CFLAGS=-I${LIBDIR}/zlib/include &&
       export ZLIB_LIBS=${LIBDIR}/zlib/lib/${ZLIB_LIBRARY}
     )
+    if(WITH_APPLE_CROSSPLATFORM)
+      # python_ios.diff enables static _ssl/_hashlib via $(OPENSSL_*); pkg-config alone is not enough for make.
+      set(PYTHON_CONFIGURE_EXTRA_ENV
+        ${PYTHON_CONFIGURE_EXTRA_ENV} &&
+        export OPENSSL_INCLUDES=-I${LIBDIR}/ssl/include &&
+        export OPENSSL_LDFLAGS=-L${LIBDIR}/ssl/lib &&
+        export OPENSSL_LIBS=-L${LIBDIR}/ssl/lib\ -lssl\ -lcrypto
+      )
+    endif()
   endif()
 
   # NOTE: untested on APPLE so far.

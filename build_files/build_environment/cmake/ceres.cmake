@@ -13,6 +13,12 @@ set(CERES_EXTRA_ARGS
   -DBUILD_SHARED_LIBS=ON
 )
 
+if(WITH_APPLE_CROSSPLATFORM)
+  # Ceres enables IOS-specific logic when IOS is set (CMake iOS platform); IOS_DEPLOYMENT_TARGET
+  # is only defined by Ceres's own toolchain otherwise, so pass it explicitly.
+  list(APPEND CERES_EXTRA_ARGS -DIOS_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET})
+endif()
+
 ExternalProject_Add(external_ceres
   URL file://${PACKAGE_DIR}/${CERES_FILE}
   URL_HASH ${CERES_HASH_TYPE}=${CERES_HASH}
@@ -32,6 +38,7 @@ add_dependencies(
   external_ceres
   external_abseil
   external_eigen
+  external_tbb
 )
 
 ExternalProject_Add_Step(external_ceres after_install
