@@ -29,6 +29,17 @@ function(fftw_build FFTW_POSTFIX)
   else()
     set(FFTW_EXTRA_ARGS --enable-static --enable-threads)
     set(FFTW_INSTALL install)
+    set(FFTW_CONFIGURE_COMMAND ${CONFIGURE_COMMAND})
+
+    if(WITH_APPLE_CROSSPLATFORM)
+      if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
+        list(APPEND FFTW_EXTRA_ARGS --host=x86_64-apple-darwin19.0.0)
+      else()
+        list(APPEND FFTW_EXTRA_ARGS --host=aarch64-apple-darwin20.0.0)
+      endif()
+      set(FFTW_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET})
+    endif()
+
     ExternalProject_Add(external_fftw3_${FFTW_POSTFIX}
       URL file://${PACKAGE_DIR}/${FFTW_FILE}
       DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -37,7 +48,7 @@ function(fftw_build FFTW_POSTFIX)
 
       CONFIGURE_COMMAND ${CONFIGURE_ENV} &&
         cd ${BUILD_DIR}/fftw3/src/external_fftw3_${FFTW_POSTFIX}/ &&
-        ${CONFIGURE_COMMAND} ${FFTW_EXTRA_ARGS} ${ARGN} --prefix=${mingw_LIBDIR}/fftw3
+        ${FFTW_CONFIGURE_COMMAND} ${FFTW_EXTRA_ARGS} ${ARGN} --prefix=${mingw_LIBDIR}/fftw3
 
       BUILD_COMMAND ${CONFIGURE_ENV} &&
         cd ${BUILD_DIR}/fftw3/src/external_fftw3_${FFTW_POSTFIX}/ &&
