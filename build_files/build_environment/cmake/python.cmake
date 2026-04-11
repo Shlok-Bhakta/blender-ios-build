@@ -173,6 +173,7 @@ ${LIBDIR}/ssl/lib64/pkgconfig:${LIBDIR}/lzma/lib/pkgconfig:${LIBDIR}/zlib/share/
     )
 
     if(WITH_APPLE_CROSSPLATFORM)
+      list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --build=$(./config.guess))
       if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
         list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --host=x86_64-apple-darwin19.0.0)
       else()
