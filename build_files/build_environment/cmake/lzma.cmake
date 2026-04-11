@@ -10,8 +10,10 @@ if(WITH_APPLE_CROSSPLATFORM)
   else()
     set(LZMA_EXTRA_ARGS --host=aarch64-apple-darwin20.0.0)
   endif()
+  set(LZMA_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET})
 else()
   set(LZMA_EXTRA_ARGS)
+  set(LZMA_CONFIGURE_COMMAND ${CONFIGURE_COMMAND})
 endif()
 
 ExternalProject_Add(external_lzma
@@ -23,7 +25,7 @@ ExternalProject_Add(external_lzma
 
   CONFIGURE_COMMAND ${CONFIGURE_ENV} &&
     cd ${BUILD_DIR}/lzma/src/external_lzma/ &&
-    ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/lzma --disable-shared ${LZMA_EXTRA_ARGS}
+    ${LZMA_CONFIGURE_COMMAND} --prefix=${LIBDIR}/lzma --disable-shared ${LZMA_EXTRA_ARGS}
 
   BUILD_COMMAND ${CONFIGURE_ENV} &&
     cd ${BUILD_DIR}/lzma/src/external_lzma/ &&
