@@ -95,6 +95,7 @@ if(WIN32)
     external_zlib
   )
 else()
+  set(PYTHON_PATCH "")
   if(APPLE)
     # Disable functions that can be in 10.13 sdk but aren't available on 10.9 target.
     #
@@ -180,7 +181,13 @@ ${LIBDIR}/ssl/lib64/pkgconfig:${LIBDIR}/lzma/lib/pkgconfig:${LIBDIR}/zlib/share/
         list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --build=arm64-apple-darwin24.0.0)
         list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --host=aarch64-apple-darwin20.0.0)
       endif()
+      list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --with-force-crosscompile)
       list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --with-build-python=${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}/python/bin/python${PYTHON_SHORT_VERSION})
+      set(PYTHON_PATCH
+        ${PATCH_CMD} --verbose -p1 -d
+          ${BUILD_DIR}/python/src/external_python <
+          ${PATCH_DIR}/python_ios.diff
+      )
       set(PYTHON_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET})
     endif()
 
