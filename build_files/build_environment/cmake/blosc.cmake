@@ -27,6 +27,7 @@ ExternalProject_Add(external_blosc
 
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=${LIBDIR}/blosc
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
     ${DEFAULT_CMAKE_FLAGS}
     ${BLOSC_EXTRA_ARGS}
 
