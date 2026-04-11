@@ -8,6 +8,17 @@ else()
   set(THEORA_CONFIGURE_ENV ${CONFIGURE_ENV})
 endif()
 
+set(THEORA_CONFIGURE_COMMAND ${CONFIGURE_COMMAND})
+
+if(WITH_APPLE_CROSSPLATFORM)
+  if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
+    set(THEORA_HOST_ARCH x86_64-apple-darwin19.0.0)
+  else()
+    set(THEORA_HOST_ARCH aarch64-apple-darwin20.0.0)
+  endif()
+  set(THEORA_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET} --host=${THEORA_HOST_ARCH})
+endif()
+
 if(NOT WIN32)
   ExternalProject_Add(external_theora
     URL file://${PACKAGE_DIR}/${THEORA_FILE}
@@ -21,7 +32,7 @@ if(NOT WIN32)
 
     CONFIGURE_COMMAND ${THEORA_CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/theora/src/external_theora/ &&
-      ${CONFIGURE_COMMAND}
+      ${THEORA_CONFIGURE_COMMAND}
         --prefix=${LIBDIR}/theora
         --disable-shared
         --enable-static
