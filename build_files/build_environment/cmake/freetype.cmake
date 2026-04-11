@@ -16,6 +16,14 @@ set(FREETYPE_EXTRA_ARGS
   -DZLIB_INCLUDE_DIR=${LIBDIR}/zlib/include
 )
 
+if(WITH_APPLE_CROSSPLATFORM)
+  set(FREETYPE_EXTRA_ARGS
+    ${FREETYPE_EXTRA_ARGS}
+    -DBROTLIDEC_INCLUDE_DIRS=${LIBDIR}/brotli/include
+    -DBROTLIDEC_LIBRARIES=${LIBDIR}/brotli/lib/libbrotlidec-static${LIBEXT}
+  )
+endif()
+
 ExternalProject_Add(external_freetype
   URL file://${PACKAGE_DIR}/${FREETYPE_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
