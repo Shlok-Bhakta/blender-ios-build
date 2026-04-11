@@ -194,11 +194,6 @@ ${LIBDIR}/ssl/lib64/pkgconfig:${LIBDIR}/lzma/lib/pkgconfig:${LIBDIR}/zlib/share/
           ${PATCH_DIR}/python_ios.diff
       )
       set(PYTHON_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET})
-      # CPython iOS expects compiler shims from the source tree (xcrun wrappers); keep PATH minimal.
-      set(PYTHON_CONFIGURE_ENV
-        export PATH=${BUILD_DIR}/python/src/external_python/iOS/Resources/bin:/usr/bin:/bin:/usr/sbin:/sbin &&
-        ${PYTHON_CONFIGURE_ENV}
-      )
     endif()
 
     # Override library paths for SQLite and zlib on macOS (which are normally provided by pkg-config).
