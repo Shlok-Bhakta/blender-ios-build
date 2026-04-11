@@ -29,3 +29,16 @@ index 864f5d5..c8d5844 100755
  if(ENABLE_PIC)
      if(XCODE)
          append_property(GET XC BB_GENERATE_PIC "YES")
+diff --git a/source/common/md5.cpp b/source/common/md5.cpp
+index 37616f8..5acff39 100644
+--- a/source/common/md5.cpp
++++ b/source/common/md5.cpp
+@@ -185,7 +185,7 @@ void MD5::finalize(const unsigned char input[64])
+     uint32_t X[16];
+     decode(X, input, 64);
+ 
+-    register uint32_t a, b, c, d;
++    uint32_t a, b, c, d;
+ 
+     a = m_state[0];
+     b = m_state[1];
