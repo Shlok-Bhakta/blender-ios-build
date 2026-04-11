@@ -1,19 +1,19 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8f34d8d..cc15437 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -164,17 +164,21 @@ if(BROTLI_PARENT_DIRECTORY)
+@@ -215,17 +215,21 @@ if(BROTLI_PARENT_DIRECTORY)
  endif()
  
  # Build the brotli executable
--add_executable(brotli c/tools/brotli.c)
--target_link_libraries(brotli ${BROTLI_LIBRARIES})
+-add_executable(brotli ${BROTLI_CLI_C})
+-target_link_libraries(brotli ${BROTLI_LIBRARIES_STATIC})
 +if(NOT WITH_APPLE_CROSSPLATFORM)
-+  add_executable(brotli c/tools/brotli.c)
-+  target_link_libraries(brotli ${BROTLI_LIBRARIES})
++  add_executable(brotli ${BROTLI_CLI_C})
++  target_link_libraries(brotli ${BROTLI_LIBRARIES_STATIC})
 +endif()
  
  # Installation
+ if(NOT BROTLI_EMSCRIPTEN)
  if(NOT BROTLI_BUNDLED_MODE)
 -  install(
 -    TARGETS brotli
