@@ -222,7 +222,6 @@ jobs:
           key: deps-state-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             deps-state-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**') }}-
-            deps-state-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ env.TARGET_DEVICE }}-
 
       - name: Build deps via GNUmakefile wrapper
         run: |

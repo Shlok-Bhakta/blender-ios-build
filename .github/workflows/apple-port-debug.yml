@@ -185,7 +185,6 @@ jobs:
           key: apple-deps-debug-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             apple-deps-debug-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**') }}-
-            apple-deps-debug-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ env.TARGET_DEVICE }}-
 
       - name: Build deps via GNUmakefile wrapper
         run: |
