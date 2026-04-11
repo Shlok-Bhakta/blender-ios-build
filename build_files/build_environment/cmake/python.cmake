@@ -151,12 +151,12 @@ ${LIBDIR}/ssl/lib64/pkgconfig:${LIBDIR}/lzma/lib/pkgconfig:${LIBDIR}/zlib/share/
     export LDFLAGS=${PYTHON_LDFLAGS} &&
 
     # Use pkg-config for libraries that support it, and ensure that it used static libraries.
-    export PKG_CONFIG=pkg-config\ --static
-    export PKG_CONFIG_PATH=${PYTHON_CONFIGURE_PKG_CONFIG_PATH}
+    export PKG_CONFIG=pkg-config\ --static &&
+    export PKG_CONFIG_PATH=${PYTHON_CONFIGURE_PKG_CONFIG_PATH} &&
 
     # Use flags documented by ./configure for other libs.
-    export BZIP2_CFLAGS=-I${LIBDIR}/bzip2/include
-    export BZIP2_LIBS=${LIBDIR}/bzip2/lib/${LIBPREFIX}bz2${LIBEXT}
+    export BZIP2_CFLAGS=-I${LIBDIR}/bzip2/include &&
+    export BZIP2_LIBS=${LIBDIR}/bzip2/lib/${LIBPREFIX}bz2${LIBEXT} &&
 
     # Prevent Python configuration script from enabling modules that might be enabled due to the
     # presence of system-wide libraries.
@@ -187,21 +187,27 @@ ${LIBDIR}/ssl/lib64/pkgconfig:${LIBDIR}/lzma/lib/pkgconfig:${LIBDIR}/zlib/share/
         list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --host=aarch64-apple-ios${CMAKE_OSX_DEPLOYMENT_TARGET}${PYTHON_HOST_TRIPLE_SUFFIX})
       endif()
       list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --with-build-python=${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}/python/bin/python${PYTHON_SHORT_VERSION})
+      list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --enable-framework=${LIBDIR}/python)
       set(PYTHON_PATCH
         ${PATCH_CMD} --verbose -p1 -d
           ${BUILD_DIR}/python/src/external_python <
           ${PATCH_DIR}/python_ios.diff
       )
       set(PYTHON_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET})
+      # CPython iOS expects compiler shims from the source tree (xcrun wrappers); keep PATH minimal.
+      set(PYTHON_CONFIGURE_ENV
+        export PATH=${BUILD_DIR}/python/src/external_python/iOS/Resources/bin:/usr/bin:/bin:/usr/sbin:/sbin &&
+        ${PYTHON_CONFIGURE_ENV}
+      )
     endif()
 
     # Override library paths for SQLite and zlib on macOS (which are normally provided by pkg-config).
     # Redefining these prevents Python from wrongly trying to dynamically link zlib in SQLite and various built-in modules.
     set(PYTHON_CONFIGURE_EXTRA_ENV
-      ${PYTHON_CONFIGURE_EXTRA_ENV}
-      export LIBSQLITE3_CFLAGS=-I${LIBDIR}/sqlite/include
-      export LIBSQLITE3_LIBS=${LIBDIR}/sqlite/lib/${LIBPREFIX}sqlite3${LIBEXT}
-      export ZLIB_CFLAGS=-I${LIBDIR}/zlib/include
+      ${PYTHON_CONFIGURE_EXTRA_ENV} &&
+      export LIBSQLITE3_CFLAGS=-I${LIBDIR}/sqlite/include &&
+      export LIBSQLITE3_LIBS=${LIBDIR}/sqlite/lib/${LIBPREFIX}sqlite3${LIBEXT} &&
+      export ZLIB_CFLAGS=-I${LIBDIR}/zlib/include &&
       export ZLIB_LIBS=${LIBDIR}/zlib/lib/${ZLIB_LIBRARY}
     )
   endif()
