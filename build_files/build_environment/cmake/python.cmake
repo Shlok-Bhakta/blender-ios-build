@@ -138,6 +138,7 @@ else()
     # Don't build or ship the python test suite
     --disable-test-modules
   )
+  set(PYTHON_CONFIGURE_COMMAND ${CONFIGURE_COMMAND})
 
   set(PYTHON_CONFIGURE_PKG_CONFIG_PATH "\
 ${LIBDIR}/ffi/lib/pkgconfig:${LIBDIR}/sqlite/lib/pkgconfig:${LIBDIR}/ssl/lib/pkgconfig:\
@@ -170,6 +171,15 @@ ${LIBDIR}/ssl/lib64/pkgconfig:${LIBDIR}/lzma/lib/pkgconfig:${LIBDIR}/zlib/share/
       ${PYTHON_CONFIGURE_EXTRA_ARGS}
       --without-system-libmpdec
     )
+
+    if(WITH_APPLE_CROSSPLATFORM)
+      if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
+        list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --host=x86_64-apple-darwin19.0.0)
+      else()
+        list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --host=aarch64-apple-darwin20.0.0)
+      endif()
+      set(PYTHON_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET})
+    endif()
 
     # Override library paths for SQLite and zlib on macOS (which are normally provided by pkg-config).
     # Redefining these prevents Python from wrongly trying to dynamically link zlib in SQLite and various built-in modules.
@@ -204,7 +214,7 @@ ${LIBDIR}/ssl/lib64/pkgconfig:${LIBDIR}/lzma/lib/pkgconfig:${LIBDIR}/zlib/share/
     CONFIGURE_COMMAND ${PYTHON_CONFIGURE_ENV} &&
       ${PYTHON_CONFIGURE_EXTRA_ENV} &&
       cd ${BUILD_DIR}/python/src/external_python/ &&
-      ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/python ${PYTHON_CONFIGURE_EXTRA_ARGS}
+      ${PYTHON_CONFIGURE_COMMAND} --prefix=${LIBDIR}/python ${PYTHON_CONFIGURE_EXTRA_ARGS}
 
     BUILD_COMMAND ${PYTHON_CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/python/src/external_python/ &&
