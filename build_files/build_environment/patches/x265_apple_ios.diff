@@ -1,26 +1,24 @@
 diff --git a/source/CMakeLists.txt b/source/CMakeLists.txt
-index ab5ddfe..d4099dd 100755
+index 864f5d5..c8d5844 100755
 --- a/source/CMakeLists.txt
 +++ b/source/CMakeLists.txt
-@@ -57,7 +57,7 @@ project (x265)
- # Xcode < 6 is required to build the 4:2:2 and 4:4:4 assemblies
- #if(CMAKE_GENERATOR STREQUAL "Xcode" AND XCODE_VERSION VERSION_LESS 6.0)
+@@ -28,12 +28,12 @@
+ message(STATUS "cmake version ${CMAKE_VERSION}")
  if(POLICY CMP0025)
--    cmake_policy(SET CMP0025 OLD)
-+    cmake_policy(SET CMP0025 NEW)
+-    cmake_policy(SET CMP0025 OLD) # report Apple's Clang as just Clang
++    cmake_policy(SET CMP0025 NEW) # report Apple's Clang as just Clang
  endif()
- if(CMAKE_GENERATOR STREQUAL "Xcode")
-     set(XCODE 1)
-@@ -96,7 +96,7 @@ option(ENABLE_SHARED "Build shared libraries" ON)
- option(ENABLE_LIBNUMA "Enable libnuma" OFF)
- option(ENABLE_PPA "Enable PPA profiling instrumentation" OFF)
+ if(POLICY CMP0042)
+     cmake_policy(SET CMP0042 NEW) # MACOSX_RPATH
+ endif()
  if(POLICY CMP0054)
--  cmake_policy(SET CMP0054 OLD)
-+  cmake_policy(SET CMP0054 NEW)
+-    cmake_policy(SET CMP0054 OLD) # Only interpret if() arguments as variables or keywords when unquoted
++    cmake_policy(SET CMP0054 NEW) # Only interpret if() arguments as variables or keywords when unquoted
  endif()
- option(CMAKE_ASM_YASM_COMPILER "Yasm Compiler" yasm)
- option(WARNINGS_AS_ERRORS "Stop compiles on first warning" OFF)
-@@ -478,6 +478,10 @@ if(ARM64)
+ 
+ project (x265)
+@@ -522,6 +522,10 @@ if(ARM64)
+     list(APPEND ASM_FLAGS -DHIGH_BIT_DEPTH=0 -DBIT_DEPTH=8 -DX265_NS=${X265_NS})
    endif()
  endif(ARM64)
  
@@ -28,6 +26,6 @@ index ab5ddfe..d4099dd 100755
 +  list(APPEND ASM_FLAGS -isysroot ${CMAKE_OSX_SYSROOT} ${APPLE_OS_MINVERSION_CFLAG})
 +endif()
 +
- option(WARNINGS_AS_ERRORS "Stop compiles on first warning" OFF)
- if(WARNINGS_AS_ERRORS)
-     if(GCC)
+ if(ENABLE_PIC)
+     if(XCODE)
+         append_property(GET XC BB_GENERATE_PIC "YES")
