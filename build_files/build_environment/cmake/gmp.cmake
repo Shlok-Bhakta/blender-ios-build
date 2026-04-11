@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 set(GMP_EXTRA_ARGS -enable-cxx)
+set(GMP_CONFIGURE_COMMAND ${CONFIGURE_COMMAND})
 
 if(WIN32)
   cmake_to_msys_path("${BUILD_DIR}/gmp/src/external_gmp/compile" compilescript_path)
@@ -21,7 +22,6 @@ if(WIN32)
     set CFLAGS=${GMP_CFLAGS} &&
     set AS=:
   )
-
   set(GMP_OPTIONS
     --disable-static
     --enable-shared
@@ -54,6 +54,15 @@ if(WIN32)
 else()
   set(GMP_CONFIGURE_ENV ${CONFIGURE_ENV_NO_PERL})
   set(GMP_OPTIONS --enable-static --disable-shared )
+
+  if(WITH_APPLE_CROSSPLATFORM)
+    if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
+      list(APPEND GMP_OPTIONS --host=x86_64-apple-darwin19.0.0)
+    else()
+      list(APPEND GMP_OPTIONS --host=aarch64-apple-darwin20.0.0)
+    endif()
+    set(GMP_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET})
+  endif()
 endif()
 
 if(UNIX)
@@ -85,7 +94,7 @@ ExternalProject_Add(external_gmp
 
   CONFIGURE_COMMAND ${GMP_CONFIGURE_ENV} &&
     cd ${BUILD_DIR}/gmp/src/external_gmp/ &&
-    ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/gmp ${GMP_OPTIONS} ${GMP_EXTRA_ARGS}
+    ${GMP_CONFIGURE_COMMAND} --prefix=${LIBDIR}/gmp ${GMP_OPTIONS} ${GMP_EXTRA_ARGS}
 
   BUILD_COMMAND ${CONFIGURE_ENV_NO_PERL} &&
     cd ${BUILD_DIR}/gmp/src/external_gmp/ &&
