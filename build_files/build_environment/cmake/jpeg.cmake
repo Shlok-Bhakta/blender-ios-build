@@ -44,7 +44,7 @@ else()
     -DWITH_JPEG8=ON
     -DENABLE_STATIC=ON
     -DENABLE_SHARED=OFF
-    -DCMAKE_INSTALL_LIBDIR=${LIBDIR}/jpeg/lib)
+    -DCMAKE_INSTALL_LIBDIR=lib)
 
   ExternalProject_Add(external_jpeg
     URL file://${PACKAGE_DIR}/${JPEG_FILE}
