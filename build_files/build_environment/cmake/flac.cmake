@@ -22,7 +22,12 @@ if(NOT WIN32)
 
     CONFIGURE_COMMAND ${CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/flac/src/external_flac/ &&
-      ${FLAC_CONFIGURE_COMMAND} --prefix=${LIBDIR}/flac --disable-shared --enable-static
+      ${FLAC_CONFIGURE_COMMAND}
+        --prefix=${LIBDIR}/flac
+        --disable-shared
+        --enable-static
+        --with-ogg-includes=${LIBDIR}/ogg/include
+        --with-ogg-libraries=${LIBDIR}/ogg/lib
 
     BUILD_COMMAND ${CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/flac/src/external_flac/ &&
@@ -33,6 +38,11 @@ if(NOT WIN32)
       make install
 
     INSTALL_DIR ${LIBDIR}/flac
+  )
+
+  add_dependencies(
+    external_flac
+    external_ogg
   )
 
   harvest(external_flac flac/lib sndfile/lib "libFLAC.a")
