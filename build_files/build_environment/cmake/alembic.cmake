@@ -4,6 +4,7 @@
 
 set(ALEMBIC_EXTRA_ARGS
   -DImath_ROOT=${LIBDIR}/imath
+  -DImath_DIR=${LIBDIR}/imath/lib/cmake/Imath
   -DUSE_PYALEMBIC=OFF
   -DUSE_ARNOLD=OFF
   -DUSE_MAYA=OFF
