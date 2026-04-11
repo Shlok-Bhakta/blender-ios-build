@@ -164,7 +164,9 @@ jobs:
           path: |
             ${{ env.DEPS_BUILD_DIR }}/downloads
             ${{ env.DEPS_BUILD_DIR }}/packages
-          key: apple-deps-source-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('build_files/build_environment/CMakeLists.txt', 'build_files/build_environment/cmake/download.cmake', 'build_files/build_environment/cmake/options.cmake', 'build_files/build_environment/cmake/versions.cmake') }}
+          key: apple-deps-source-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('build_files/build_environment/cmake/download.cmake', 'build_files/build_environment/cmake/versions.cmake') }}
+          restore-keys: |
+            apple-deps-source-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-
 
       - name: Restore deps debug state cache
         id: restore-deps-state-cache
@@ -202,7 +204,7 @@ jobs:
           path: |
             ${{ env.DEPS_BUILD_DIR }}/downloads
             ${{ env.DEPS_BUILD_DIR }}/packages
-          key: apple-deps-source-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('build_files/build_environment/CMakeLists.txt', 'build_files/build_environment/cmake/download.cmake', 'build_files/build_environment/cmake/options.cmake', 'build_files/build_environment/cmake/versions.cmake') }}
+          key: apple-deps-source-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('build_files/build_environment/cmake/download.cmake', 'build_files/build_environment/cmake/versions.cmake') }}
 
       - name: Save deps debug state cache
         if: always()
