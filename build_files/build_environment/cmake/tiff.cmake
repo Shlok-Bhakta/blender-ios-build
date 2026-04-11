@@ -26,6 +26,13 @@ if(APPLE)
   )
 endif()
 
+if(WITH_APPLE_CROSSPLATFORM)
+  set(TIFF_EXTRA_ARGS
+    ${TIFF_EXTRA_ARGS}
+    -Dtiff-tools=OFF
+  )
+endif()
+
 ExternalProject_Add(external_tiff
   URL file://${PACKAGE_DIR}/${TIFF_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
