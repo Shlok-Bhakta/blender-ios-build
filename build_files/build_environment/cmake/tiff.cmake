@@ -29,6 +29,7 @@ endif()
 if(WITH_APPLE_CROSSPLATFORM)
   set(TIFF_EXTRA_ARGS
     ${TIFF_EXTRA_ARGS}
+    -Dtiff-contrib=OFF
     -Dtiff-tools=OFF
   )
 endif()
