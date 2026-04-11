@@ -180,6 +180,7 @@ ${LIBDIR}/ssl/lib64/pkgconfig:${LIBDIR}/lzma/lib/pkgconfig:${LIBDIR}/zlib/share/
         list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --build=arm64-apple-darwin24.0.0)
         list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --host=aarch64-apple-darwin20.0.0)
       endif()
+      list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --with-build-python=${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}/python/bin/python${PYTHON_SHORT_VERSION})
       set(PYTHON_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET})
     endif()
 
