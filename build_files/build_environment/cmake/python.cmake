@@ -174,14 +174,18 @@ ${LIBDIR}/ssl/lib64/pkgconfig:${LIBDIR}/lzma/lib/pkgconfig:${LIBDIR}/zlib/share/
     )
 
     if(WITH_APPLE_CROSSPLATFORM)
+      if(CMAKE_OSX_SYSROOT MATCHES "iPhoneSimulator")
+        set(PYTHON_HOST_TRIPLE_SUFFIX -simulator)
+      else()
+        set(PYTHON_HOST_TRIPLE_SUFFIX)
+      endif()
       if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
         list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --build=x86_64-apple-darwin24.0.0)
-        list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --host=x86_64-apple-darwin19.0.0)
+        list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --host=x86_64-apple-ios${CMAKE_OSX_DEPLOYMENT_TARGET}${PYTHON_HOST_TRIPLE_SUFFIX})
       else()
         list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --build=arm64-apple-darwin24.0.0)
-        list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --host=aarch64-apple-darwin20.0.0)
+        list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --host=aarch64-apple-ios${CMAKE_OSX_DEPLOYMENT_TARGET}${PYTHON_HOST_TRIPLE_SUFFIX})
       endif()
-      list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --with-force-crosscompile)
       list(APPEND PYTHON_CONFIGURE_EXTRA_ARGS --with-build-python=${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}/python/bin/python${PYTHON_SHORT_VERSION})
       set(PYTHON_PATCH
         ${PATCH_CMD} --verbose -p1 -d
