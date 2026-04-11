@@ -194,6 +194,12 @@ ${LIBDIR}/ssl/lib64/pkgconfig:${LIBDIR}/lzma/lib/pkgconfig:${LIBDIR}/zlib/share/
           ${PATCH_DIR}/python_ios.diff
       )
       set(PYTHON_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET})
+      # Cross autoconf looks for $host-cpp; point preprocessing at the same Clang we use for CC/CXX.
+      set(PYTHON_CONFIGURE_ENV
+        ${PYTHON_CONFIGURE_ENV} &&
+        export CPP=${CONFIGURE_C_COMPILER}\ -E &&
+        export CXXCPP=${CONFIGURE_CXX_COMPILER}\ -E
+      )
     endif()
 
     # Override library paths for SQLite and zlib on macOS (which are normally provided by pkg-config).
