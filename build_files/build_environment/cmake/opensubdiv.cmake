@@ -25,6 +25,13 @@ set(OPENSUBDIV_EXTRA_ARGS
   -DTBB_DIR=${LIBDIR}/tbb/lib/cmake/tbb
 )
 
+if(WITH_APPLE_CROSSPLATFORM)
+  set(OPENSUBDIV_EXTRA_ARGS
+    ${OPENSUBDIV_EXTRA_ARGS}
+    -DNO_OPENGL=ON
+  )
+endif()
+
 ExternalProject_Add(external_opensubdiv
   URL file://${PACKAGE_DIR}/${OPENSUBDIV_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
