@@ -24,10 +24,21 @@ if(MSVC)
       ${LIBDIR}/lame/lib/mp3lame.lib
   )
 else()
+  set(LAME_CONFIGURE_COMMAND ${CONFIGURE_COMMAND})
+
+  if(WITH_APPLE_CROSSPLATFORM)
+    if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
+      list(APPEND LAME_EXTRA_ARGS --host=x86_64-apple-darwin19.0.0)
+    else()
+      list(APPEND LAME_EXTRA_ARGS --host=aarch64-apple-darwin20.0.0)
+    endif()
+    set(LAME_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET})
+  endif()
+
   set(LAME_CONFIGURE
     ${CONFIGURE_ENV} &&
     cd ${BUILD_DIR}/lame/src/external_lame/ &&
-    ${CONFIGURE_COMMAND}
+    ${LAME_CONFIGURE_COMMAND}
       --prefix=${LIBDIR}/lame
       --disable-shared
       --enable-static
