@@ -3,6 +3,17 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 if(NOT WIN32)
+  set(FLAC_CONFIGURE_COMMAND ${CONFIGURE_COMMAND})
+
+  if(WITH_APPLE_CROSSPLATFORM)
+    if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
+      set(FLAC_HOST_ARCH x86_64-apple-darwin19.0.0)
+    else()
+      set(FLAC_HOST_ARCH aarch64-apple-darwin20.0.0)
+    endif()
+    set(FLAC_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET} --host=${FLAC_HOST_ARCH})
+  endif()
+
   ExternalProject_Add(external_flac
     URL file://${PACKAGE_DIR}/${FLAC_FILE}
     DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -11,7 +22,7 @@ if(NOT WIN32)
 
     CONFIGURE_COMMAND ${CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/flac/src/external_flac/ &&
-      ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/flac --disable-shared --enable-static
+      ${FLAC_CONFIGURE_COMMAND} --prefix=${LIBDIR}/flac --disable-shared --enable-static
 
     BUILD_COMMAND ${CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/flac/src/external_flac/ &&
