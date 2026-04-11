@@ -25,6 +25,7 @@ if(WIN32)
   # out, "fine ,then don't". We'll pick the files we need ourselves
   # from the build folder in the after install cmake step.
   set(FFI_INSTALL echo .)
+  set(FFI_CONFIGURE_COMMAND ${CONFIGURE_COMMAND})
   set(FFI_EXTRA_ARGS
       --disable-docs
       --disable-multi-os-directory
@@ -42,6 +43,16 @@ else()
       --enable-static=yes
       --with-pic
   )
+  set(FFI_CONFIGURE_COMMAND ${CONFIGURE_COMMAND})
+
+  if(WITH_APPLE_CROSSPLATFORM)
+    if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
+      list(APPEND FFI_EXTRA_ARGS --host=x86_64-apple-darwin19.0.0)
+    else()
+      list(APPEND FFI_EXTRA_ARGS --host=aarch64-apple-darwin20.0.0)
+    endif()
+    set(FFI_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET})
+  endif()
 endif()
 
 ExternalProject_Add(external_ffi
@@ -52,7 +63,7 @@ ExternalProject_Add(external_ffi
 
   CONFIGURE_COMMAND ${CONFIGURE_ENV_FFI} &&
     cd ${BUILD_DIR}/ffi/src/external_ffi/ &&
-    ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/ffi
+    ${FFI_CONFIGURE_COMMAND} --prefix=${LIBDIR}/ffi
       --libdir=${LIBDIR}/ffi/lib/
       ${FFI_EXTRA_ARGS}
 
