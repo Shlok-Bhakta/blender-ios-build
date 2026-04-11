@@ -2,6 +2,20 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+if(WITH_APPLE_CROSSPLATFORM)
+  set(NASM_CONFIGURE_ENV
+    export MACOSX_DEPLOYMENT_TARGET= &&
+    export MACOSX_SDK_VERSION= &&
+    export CFLAGS= &&
+    export CXXFLAGS= &&
+    export LDFLAGS=
+  )
+  set(NASM_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET})
+else()
+  set(NASM_CONFIGURE_ENV ${CONFIGURE_ENV})
+  set(NASM_CONFIGURE_COMMAND ${CONFIGURE_COMMAND})
+endif()
+
 ExternalProject_Add(external_nasm
   URL file://${PACKAGE_DIR}/${NASM_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -12,17 +26,17 @@ ExternalProject_Add(external_nasm
     ${BUILD_DIR}/nasm/src/external_nasm <
     ${PATCH_DIR}/nasm.diff
 
-  CONFIGURE_COMMAND ${CONFIGURE_ENV} &&
+  CONFIGURE_COMMAND ${NASM_CONFIGURE_ENV} &&
     cd ${BUILD_DIR}/nasm/src/external_nasm/ &&
     ./autogen.sh &&
-    ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/nasm
+    ${NASM_CONFIGURE_COMMAND} --prefix=${LIBDIR}/nasm
 
-  BUILD_COMMAND ${CONFIGURE_ENV} &&
+  BUILD_COMMAND ${NASM_CONFIGURE_ENV} &&
     cd ${BUILD_DIR}/nasm/src/external_nasm/ &&
     make -j${MAKE_THREADS} &&
     make manpages
 
-  INSTALL_COMMAND ${CONFIGURE_ENV} &&
+  INSTALL_COMMAND ${NASM_CONFIGURE_ENV} &&
     cd ${BUILD_DIR}/nasm/src/external_nasm/ &&
     make install
 
