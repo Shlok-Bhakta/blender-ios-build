@@ -11,6 +11,23 @@ if(MSVC)
 endif()
 
 if(NOT WIN32)
+  set(OPUS_CONFIGURE_COMMAND ${CONFIGURE_COMMAND})
+  set(OPUS_CONFIGURE_ARGS
+    --prefix=${LIBDIR}/opus
+    --disable-shared
+    --enable-static
+    --with-pic
+    --disable-maintainer-mode)
+
+  if(WITH_APPLE_CROSSPLATFORM)
+    if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
+      list(APPEND OPUS_CONFIGURE_ARGS --host=x86_64-apple-darwin19.0.0)
+    else()
+      list(APPEND OPUS_CONFIGURE_ARGS --host=aarch64-apple-darwin20.0.0)
+    endif()
+    set(OPUS_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET})
+  endif()
+
   ExternalProject_Add(external_opus
     URL file://${PACKAGE_DIR}/${OPUS_FILE}
     DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -19,12 +36,8 @@ if(NOT WIN32)
 
     CONFIGURE_COMMAND ${CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/opus/src/external_opus/ &&
-      ${CONFIGURE_COMMAND}
-        --prefix=${LIBDIR}/opus
-        --disable-shared
-        --enable-static
-        --with-pic
-        --disable-maintainer-mode
+      ${OPUS_CONFIGURE_COMMAND}
+        ${OPUS_CONFIGURE_ARGS}
 
     BUILD_COMMAND ${CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/opus/src/external_opus/ &&
