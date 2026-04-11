@@ -84,6 +84,18 @@ if(TBB_STATIC_LIBRARY)
   )
 endif()
 
+if(WITH_APPLE_CROSSPLATFORM)
+  set(EMBREE_PATCH_PATH ${PATCH_DIR}/embree_ios.diff)
+  set(EMBREE_EXTRA_ARGS
+    ${EMBREE_EXTRA_ARGS}
+    -DEMBREE_MAX_ISA=NEON
+    -DEMBREE_STATIC_LIB=ON
+    -Dtbb_LIBRARY_RELEASE=${LIBDIR}/tbb/lib/libtbb.dylib
+  )
+else()
+  set(EMBREE_PATCH_PATH ${PATCH_DIR}/embree.diff)
+endif()
+
 ExternalProject_Add(external_embree
   URL file://${PACKAGE_DIR}/${EMBREE_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -94,7 +106,7 @@ ExternalProject_Add(external_embree
   PATCH_COMMAND
     ${PATCH_CMD} -p 1 -d
       ${BUILD_DIR}/embree/src/external_embree <
-      ${PATCH_DIR}/embree.diff
+      ${EMBREE_PATCH_PATH}
 
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=${LIBDIR}/embree
