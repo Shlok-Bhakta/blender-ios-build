@@ -148,7 +148,7 @@ jobs:
       - name: Build host tools
         if: steps.restore-host-tools-cache.outputs.cache-hit != 'true'
         run: |
-          make tools BUILD_DIR="${HOST_BUILD_DIR}" NPROCS=3
+          make tools BUILD_DIR="${HOST_BUILD_DIR}"
 
       - name: Verify host tools
         run: |
@@ -184,8 +184,7 @@ jobs:
             DEPS_BUILD_DIR="${DEPS_BUILD_DIR}" \
             DEPS_INSTALL_DIR="${DEPS_INSTALL_DIR}" \
             CROSSCOMPILE_BUILD_DIR="${HOST_BUILD_DIR}" \
-            CROSSCOMPILE_DEPS_INSTALL_DIR="${HOST_DEPS_INSTALL_DIR}" \
-            NPROCS=3
+            CROSSCOMPILE_DEPS_INSTALL_DIR="${HOST_DEPS_INSTALL_DIR}"
 
       - name: Save deps build cache
         if: always()

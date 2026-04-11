@@ -1,5 +1,10 @@
 # generic files to ignore
 .*
+!.github/
+.github/*
+!.github/workflows/
+.github/workflows/*
+!.github/workflows/*.yml
 
 # python temp paths
 __pycache__/
