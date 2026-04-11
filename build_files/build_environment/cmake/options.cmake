@@ -7,9 +7,31 @@ if(WIN32)
   option(MSYS2_USE_UPSTREAM_PACKAGES "Use upstream packages to bootstrap msys2, when OFF the blender mirror will be used" OFF)
 endif()
 option(FORCE_CHECK_HASH "Force a check of all hashes during CMake the configure phase" OFF)
+option(WITH_COMPILER_CCACHE "Use ccache for dependency builds" OFF)
 
 cmake_host_system_information(RESULT NUM_CORES QUERY NUMBER_OF_LOGICAL_CORES)
 set(MAKE_THREADS ${NUM_CORES} CACHE STRING "Number of threads to run make with")
+
+set(CCACHE_CMAKE_FLAGS "")
+set(CONFIGURE_C_COMPILER "${CMAKE_C_COMPILER}")
+set(CONFIGURE_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
+
+if(WITH_COMPILER_CCACHE AND NOT WIN32)
+  find_program(CCACHE_PROGRAM ccache)
+  mark_as_advanced(CCACHE_PROGRAM)
+
+  if(CCACHE_PROGRAM)
+    set(CCACHE_CMAKE_FLAGS
+      -DCMAKE_C_COMPILER_LAUNCHER=${CCACHE_PROGRAM}
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CCACHE_PROGRAM}
+    )
+    set(CONFIGURE_C_COMPILER "${CCACHE_PROGRAM} ${CMAKE_C_COMPILER}")
+    set(CONFIGURE_CXX_COMPILER "${CCACHE_PROGRAM} ${CMAKE_CXX_COMPILER}")
+  else()
+    message(WARNING "ccache requested but not found; disabling WITH_COMPILER_CCACHE")
+    set(WITH_COMPILER_CCACHE OFF)
+  endif()
+endif()
 
 # Any python module building with setup.py cannot use multiple threads on windows
 # as they will try to write to the same .pdb file simultaneously which causes
@@ -274,6 +296,8 @@ else()
   set(BLENDER_CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g -DNDEBUG ${PLATFORM_CXXFLAGS}")
 
   set(CONFIGURE_ENV
+    "export CC='${CONFIGURE_C_COMPILER}'" &&
+    "export CXX='${CONFIGURE_CXX_COMPILER}'" &&
     export MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET} &&
     export MACOSX_SDK_VERSION=${CMAKE_OSX_DEPLOYMENT_TARGET} &&
     export CFLAGS=${PLATFORM_CFLAGS} &&
@@ -297,6 +321,7 @@ set(DEFAULT_CMAKE_FLAGS
   -DCMAKE_CXX_FLAGS_RELEASE=${BLENDER_CMAKE_CXX_FLAGS_RELEASE}
   -DCMAKE_CXX_FLAGS_RELWITHDEBINFO=${BLENDER_CMAKE_CXX_FLAGS_RELWITHDEBINFO}
   -DCMAKE_CXX_STANDARD=20
+  ${CCACHE_CMAKE_FLAGS}
   ${PLATFORM_CMAKE_FLAGS}
 )
 
@@ -319,6 +344,8 @@ set(CMAKE_INSTALL_MESSAGE LAZY)
 # On windows we sometimes want to build with ninja, but not all projects quite
 # yet, so for select project we pass PLATFORM_ALT_GENERATOR as the generator
 if(WIN32)
+  set(PLATFORM_ALT_GENERATOR "Ninja")
+elseif(APPLE)
   set(PLATFORM_ALT_GENERATOR "Ninja")
 else()
   set(PLATFORM_ALT_GENERATOR "Unix Makefiles")

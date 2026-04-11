@@ -359,13 +359,17 @@ ifneq "$(filter ninja, $(MAKECMDGOALS))" ""
 	BUILD_COMMAND:=ninja
 	DEPS_BUILD_COMMAND:=ninja
 else
-	ifneq ("$(wildcard $(BUILD_DIR)/build.ninja)","")
+	ifneq ($(findstring -G Ninja,$(BUILD_CMAKE_ARGS)),)
+		BUILD_COMMAND:=ninja
+	else ifneq ("$(wildcard $(BUILD_DIR)/build.ninja)","")
 		BUILD_COMMAND:=ninja
 	else
 		BUILD_COMMAND:=make -s
 	endif
 
-	ifneq ("$(wildcard $(DEPS_BUILD_DIR)/build.ninja)","")
+	ifneq ($(findstring -G Ninja,$(DEPS_CMAKE_ARGS)),)
+		DEPS_BUILD_COMMAND:=ninja
+	else ifneq ("$(wildcard $(DEPS_BUILD_DIR)/build.ninja)","")
 		DEPS_BUILD_COMMAND:=ninja
 	else
 		ifeq ($(OS), Darwin)
@@ -491,7 +495,8 @@ deps: .FORCE
 	       -B"$(DEPS_BUILD_DIR)" \
 	       -DHARVEST_TARGET=$(DEPS_INSTALL_DIR) \
 	       $(APPLE_TARGET_ARGS) \
-	       $(DEPS_CROSSCOMPILE_ARGS)
+	       $(DEPS_CROSSCOMPILE_ARGS) \
+	       $(DEPS_CMAKE_ARGS)
 
 	@echo
 	@echo Building dependencies ...

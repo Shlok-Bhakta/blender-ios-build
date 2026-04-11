@@ -38,12 +38,16 @@ permissions:
   contents: read
 
 env:
+  CACHE_VERSION: v3
+  CACHE_FEATURES: ninja-ccache-v1
   TARGET_DEVICE: ${{ github.event.inputs.apple_target_device || 'ios-simulator' }}
   DEP_TARGET: ${{ github.event.inputs.dep_target || 'install' }}
   HOST_BUILD_DIR: ${{ github.workspace }}/build_darwin
   DEPS_BUILD_DIR: ${{ github.workspace }}/build_deps_${{ github.event.inputs.apple_target_device || 'ios-simulator' }}
   DEPS_INSTALL_DIR: ${{ github.workspace }}/lib/${{ github.event.inputs.apple_target_device || 'ios-simulator' }}_arm64
   HOST_DEPS_INSTALL_DIR: ${{ github.workspace }}/lib/macos_arm64
+  CCACHE_DIR: ${{ github.workspace }}/.ccache
+  CCACHE_MAXSIZE: 1500M
 
 jobs:
   build:
@@ -117,6 +121,23 @@ jobs:
             lib/macos_arm64
           key: ${{ runner.os }}-host-libs-${{ steps.host-libs-cache-key.outputs.sha }}-v1
 
+      - name: Install dependency build prerequisites
+        run: |
+          missing=()
+          for pkg in autoconf automake bison ccache dos2unix flex libtool meson ninja pkg-config yasm; do
+            brew list "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            HOMEBREW_NO_AUTO_UPDATE=1 brew install "${missing[@]}"
+          fi
+          mkdir -p "$HOME/.local/bin"
+          ln -sf "$(command -v aclocal)" "$HOME/.local/bin/aclocal-1.16"
+          ln -sf "$(command -v automake)" "$HOME/.local/bin/automake-1.16"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix flex)/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix libtool)/bin" >> "$GITHUB_PATH"
+
       - name: Show toolchain
         run: |
           sw_vers
@@ -124,18 +145,23 @@ jobs:
           cmake --version
           ninja --version
 
-      - name: Install dependency build prerequisites
+      - name: Restore compiler cache
+        id: restore-ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ env.CCACHE_DIR }}
+          key: apple-ccache-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/cmake/**', 'build_files/build_environment/**', 'source/blender/blentranslation/msgfmt/**', 'source/blender/datatoc/**', 'source/blender/gpu/shader_tool/**', 'source/blender/makesdna/**', 'source/blender/makesrna/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            apple-ccache-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/cmake/**', 'build_files/build_environment/**', 'source/blender/blentranslation/msgfmt/**', 'source/blender/datatoc/**', 'source/blender/gpu/shader_tool/**', 'source/blender/makesdna/**', 'source/blender/makesrna/**') }}-
+            apple-ccache-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-
+
+      - name: Configure compiler cache
         run: |
-          missing=()
-          for pkg in autoconf automake bison dos2unix flex libtool meson ninja pkg-config yasm; do
-            brew list "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
-          done
-          if [ ${#missing[@]} -gt 0 ]; then
-            HOMEBREW_NO_AUTO_UPDATE=1 brew install "${missing[@]}"
-          fi
-          echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
-          echo "$(brew --prefix flex)/bin" >> "$GITHUB_PATH"
-          echo "$(brew --prefix libtool)/bin" >> "$GITHUB_PATH"
+          ccache --version
+          ccache --set-config=max_size="${CCACHE_MAXSIZE}"
+          ccache --zero-stats || true
+          ccache --show-config
 
       - name: Restore host tools build cache
         id: restore-host-tools-cache
@@ -143,12 +169,14 @@ jobs:
         with:
           path: |
             ${{ env.HOST_BUILD_DIR }}
-          key: host-tools-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/**', 'source/blender/blentranslation/msgfmt/CMakeLists.txt', 'source/blender/datatoc/CMakeLists.txt', 'source/blender/gpu/shader_tool/CMakeLists.txt', 'source/blender/makesdna/intern/CMakeLists.txt', 'source/blender/makesrna/intern/CMakeLists.txt', '.github/workflows/apple-port-build.yml') }}
+          key: host-tools-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/cmake/**', 'source/blender/blentranslation/msgfmt/**', 'source/blender/datatoc/**', 'source/blender/gpu/shader_tool/**', 'source/blender/makesdna/**', 'source/blender/makesrna/**') }}
 
       - name: Build host tools
         if: steps.restore-host-tools-cache.outputs.cache-hit != 'true'
         run: |
-          make tools BUILD_DIR="${HOST_BUILD_DIR}"
+          make tools \
+            BUILD_DIR="${HOST_BUILD_DIR}" \
+            BUILD_CMAKE_ARGS="-G Ninja -DWITH_COMPILER_CCACHE=YES"
 
       - name: Verify host tools
         run: |
@@ -164,18 +192,35 @@ jobs:
         with:
           path: |
             ${{ env.HOST_BUILD_DIR }}
-          key: host-tools-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/**', 'source/blender/blentranslation/msgfmt/CMakeLists.txt', 'source/blender/datatoc/CMakeLists.txt', 'source/blender/gpu/shader_tool/CMakeLists.txt', 'source/blender/makesdna/intern/CMakeLists.txt', 'source/blender/makesrna/intern/CMakeLists.txt', '.github/workflows/apple-port-build.yml') }}
+          key: host-tools-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/cmake/**', 'source/blender/blentranslation/msgfmt/**', 'source/blender/datatoc/**', 'source/blender/gpu/shader_tool/**', 'source/blender/makesdna/**', 'source/blender/makesrna/**') }}
 
-      - name: Restore deps build cache
+      - name: Restore deps source cache
+        id: restore-deps-source-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ env.DEPS_BUILD_DIR }}/downloads
+            ${{ env.DEPS_BUILD_DIR }}/packages
+          key: apple-deps-source-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('build_files/build_environment/CMakeLists.txt', 'build_files/build_environment/cmake/download.cmake', 'build_files/build_environment/cmake/options.cmake', 'build_files/build_environment/cmake/versions.cmake') }}
+
+      - name: Restore deps state cache
         id: restore-deps-cache
         uses: actions/cache/restore@v4
         with:
           path: |
-            ${{ env.DEPS_BUILD_DIR }}
+            ${{ env.DEPS_BUILD_DIR }}/CMakeCache.txt
+            ${{ env.DEPS_BUILD_DIR }}/CMakeFiles
+            ${{ env.DEPS_BUILD_DIR }}/build.ninja
+            ${{ env.DEPS_BUILD_DIR }}/rules.ninja
+            ${{ env.DEPS_BUILD_DIR }}/.ninja_deps
+            ${{ env.DEPS_BUILD_DIR }}/.ninja_log
+            ${{ env.DEPS_BUILD_DIR }}/Release
+            ${{ env.DEPS_BUILD_DIR }}/build
             ${{ env.DEPS_INSTALL_DIR }}
-          key: deps-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**', '.github/workflows/apple-port-build.yml') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: deps-state-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            deps-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**', '.github/workflows/apple-port-build.yml') }}-
+            deps-state-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**') }}-
+            deps-state-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ env.TARGET_DEVICE }}-
 
       - name: Build deps via GNUmakefile wrapper
         run: |
@@ -183,20 +228,55 @@ jobs:
             DEPS_TARGET="${DEP_TARGET}" \
             DEPS_BUILD_DIR="${DEPS_BUILD_DIR}" \
             DEPS_INSTALL_DIR="${DEPS_INSTALL_DIR}" \
+            DEPS_CMAKE_ARGS="-G Ninja -DWITH_COMPILER_CCACHE=ON" \
             CROSSCOMPILE_BUILD_DIR="${HOST_BUILD_DIR}" \
             CROSSCOMPILE_DEPS_INSTALL_DIR="${HOST_DEPS_INSTALL_DIR}"
 
-      - name: Save deps build cache
+      - name: Save deps source cache
+        if: always() && steps.restore-deps-source-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ env.DEPS_BUILD_DIR }}/downloads
+            ${{ env.DEPS_BUILD_DIR }}/packages
+          key: apple-deps-source-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('build_files/build_environment/CMakeLists.txt', 'build_files/build_environment/cmake/download.cmake', 'build_files/build_environment/cmake/options.cmake', 'build_files/build_environment/cmake/versions.cmake') }}
+
+      - name: Save deps state cache
         if: always()
         uses: actions/cache/save@v4
         with:
           path: |
-            ${{ env.DEPS_BUILD_DIR }}
+            ${{ env.DEPS_BUILD_DIR }}/CMakeCache.txt
+            ${{ env.DEPS_BUILD_DIR }}/CMakeFiles
+            ${{ env.DEPS_BUILD_DIR }}/build.ninja
+            ${{ env.DEPS_BUILD_DIR }}/rules.ninja
+            ${{ env.DEPS_BUILD_DIR }}/.ninja_deps
+            ${{ env.DEPS_BUILD_DIR }}/.ninja_log
+            ${{ env.DEPS_BUILD_DIR }}/Release
+            ${{ env.DEPS_BUILD_DIR }}/build
             ${{ env.DEPS_INSTALL_DIR }}
-          key: deps-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**', '.github/workflows/apple-port-build.yml') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: deps-state-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Show compiler cache stats
+        if: always()
+        run: |
+          ccache --show-stats || true
+
+      - name: Save compiler cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ env.CCACHE_DIR }}
+          key: apple-ccache-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/cmake/**', 'build_files/build_environment/**', 'source/blender/blentranslation/msgfmt/**', 'source/blender/datatoc/**', 'source/blender/gpu/shader_tool/**', 'source/blender/makesdna/**', 'source/blender/makesrna/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Summarize outputs
+        if: always()
         run: |
           echo "Built target: ${DEP_TARGET}"
           echo "Target device: ${TARGET_DEVICE}"
+          echo "Compiler cache hit: ${{ steps.restore-ccache.outputs.cache-hit }}"
+          echo "Host tools cache hit: ${{ steps.restore-host-tools-cache.outputs.cache-hit }}"
+          echo "Deps source cache hit: ${{ steps.restore-deps-source-cache.outputs.cache-hit }}"
+          echo "Deps state cache hit: ${{ steps.restore-deps-cache.outputs.cache-hit }}"
           ls "${DEPS_INSTALL_DIR}" || true
