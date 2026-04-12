@@ -56,8 +56,13 @@ endif()
 # OpenImageIO's CMake runs the interpreter during configure; use host Python for Apple cross.
 if(APPLE AND WITH_APPLE_CROSSPLATFORM)
   set(OIIO_PYTHON_EXECUTABLE "${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}/python/bin/python${PYTHON_SHORT_VERSION}")
+  set(OIIO_PYBIND11_HINTS
+    -Dpybind11_DIR=${LIBDIR}/pybind11/share/cmake/pybind11
+    -Dpybind11_INCLUDE_DIR=${LIBDIR}/pybind11/include
+  )
 else()
   set(OIIO_PYTHON_EXECUTABLE "${PYTHON_BINARY}")
+  set(OIIO_PYBIND11_HINTS -Dpybind11_ROOT=${LIBDIR}/pybind11)
 endif()
 
 set(OPENIMAGEIO_EXTRA_ARGS
@@ -109,7 +114,7 @@ set(OPENIMAGEIO_EXTRA_ARGS
   -DWebP_ROOT=${LIBDIR}/webp
   ${OIIO_SIMD_FLAGS}
   -DOpenEXR_ROOT=${LIBDIR}/openexr
-  -Dpybind11_ROOT=${LIBDIR}/pybind11
+  ${OIIO_PYBIND11_HINTS}
   -DPython_EXECUTABLE=${OIIO_PYTHON_EXECUTABLE}
   -DPython3_EXECUTABLE=${OIIO_PYTHON_EXECUTABLE}
   -DTBB_ROOT=${LIBDIR}/tbb
