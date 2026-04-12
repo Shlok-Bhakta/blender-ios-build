@@ -9,6 +9,8 @@ if(WITH_APPLE_CROSSPLATFORM)
     -DPYTHON_EXECUTABLE=${PYBIND11_HOST_PYTHON}
     -DPython_EXECUTABLE=${PYBIND11_HOST_PYTHON}
     -DPython_ROOT_DIR=${LIBDIR}/python
+    -DPython_INCLUDE_DIR=${LIBDIR}/python/include/python${PYTHON_SHORT_VERSION}
+    -DPython_LIBRARY=${LIBDIR}/python/Python.framework/Python
   )
 else()
   set(PYBIND11_EXTRA_ARGS
