@@ -465,3 +465,38 @@ diff -Naur ll.org/llvm/lib/WindowsManifest/CMakeLists.txt ll/llvm/lib/WindowsMan
  __DEVICE__ unsigned int __umul24(unsigned int __a, unsigned int __b) {
    return __nv_umul24(__a, __b);
  }
+diff -Naur ll.org/llvm/cmake/modules/TableGen.cmake ll/llvm/cmake/modules/TableGen.cmake
+--- ll.org/llvm/cmake/modules/TableGen.cmake	2026-04-11 00:00:00.000000000 +0000
++++ ll/llvm/cmake/modules/TableGen.cmake	2026-04-11 00:00:00.000000000 +0000
+@@ -235,7 +235,8 @@
+     install(TARGETS ${target}
+             ${export_arg}
+             COMPONENT ${target}
+-            RUNTIME DESTINATION "${ADD_TABLEGEN_DESTINATION}")
++            RUNTIME DESTINATION "${ADD_TABLEGEN_DESTINATION}"
++            BUNDLE DESTINATION "${ADD_TABLEGEN_DESTINATION}")
+     if(NOT LLVM_ENABLE_IDE)
+       add_llvm_install_targets("install-${target}"
+                                DEPENDS ${target}
+diff -Naur ll.org/llvm/cmake/modules/AddLLVM.cmake ll/llvm/cmake/modules/AddLLVM.cmake
+--- ll.org/llvm/cmake/modules/AddLLVM.cmake	2026-04-11 00:00:00.000000000 +0000
++++ ll/llvm/cmake/modules/AddLLVM.cmake	2026-04-11 00:00:00.000000000 +0000
+@@ -1474,7 +1474,8 @@
+       install(TARGETS ${name}
+               ${export_to_llvmexports}
+               RUNTIME DESTINATION ${LLVM_TOOLS_INSTALL_DIR}
++              BUNDLE DESTINATION ${LLVM_TOOLS_INSTALL_DIR}
+               COMPONENT ${name})
+ 
+       if(NOT LLVM_ENABLE_IDE)
+diff -Naur ll.org/clang/cmake/modules/AddClang.cmake ll/clang/cmake/modules/AddClang.cmake
+--- ll.org/clang/cmake/modules/AddClang.cmake	2026-04-11 00:00:00.000000000 +0000
++++ ll/clang/cmake/modules/AddClang.cmake	2026-04-11 00:00:00.000000000 +0000
+@@ -180,7 +180,8 @@
+       install(TARGETS ${name}
+         ${export_to_clangtargets}
+         RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
++        BUNDLE DESTINATION "${CMAKE_INSTALL_BINDIR}"
+         COMPONENT ${name})
+ 
+       if(NOT LLVM_ENABLE_IDE)
