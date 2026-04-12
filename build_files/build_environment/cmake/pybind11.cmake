@@ -5,6 +5,7 @@
 if(WITH_APPLE_CROSSPLATFORM)
   set(PYBIND11_EXTRA_ARGS
     -DPYBIND11_TEST=OFF
+    -DPYBIND11_USE_CROSSCOMPILING=ON
     -DPython_ROOT_DIR=${LIBDIR}/python
     -DPython_INCLUDE_DIR=${LIBDIR}/python/include/python${PYTHON_SHORT_VERSION}
     -DPython_LIBRARY=${LIBDIR}/python/Python.framework/Python
