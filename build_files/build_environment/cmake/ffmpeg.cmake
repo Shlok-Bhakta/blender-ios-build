@@ -58,6 +58,8 @@ ucrt.lib"
   # As we now use MSVC on windows, pkgconfig is not really a viable option for many packages
   # so this patch removes those checks in favour of looking for the libs directly.
   set(FFMPEG_PATCH_FILE ${PATCH_DIR}/ffmpeg_windows.diff)
+elseif(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  set(FFMPEG_PATCH_FILE ${PATCH_DIR}/ffmpeg_ios.diff)
 else()
   # OpenJpeg is compiled with pthread support on Linux, which is all fine and is what we
   # want for maximum runtime performance, but due to static nature of that library we
@@ -136,21 +138,17 @@ else()
 endif()
 
 if(APPLE)
-  set(FFMPEG_EXTRA_FLAGS
-    ${FFMPEG_EXTRA_FLAGS}
-    --target-os=darwin
-  )
   if(WITH_APPLE_CROSSPLATFORM)
     # iOS/tvOS simulator/device: compiler produces binaries that cannot execute on the build host;
     # without --enable-cross-compile, configure's link tests abort (signal 6).
-    list(APPEND FFMPEG_EXTRA_FLAGS --enable-cross-compile)
+    list(APPEND FFMPEG_EXTRA_FLAGS --enable-cross-compile --target-os=ios-simulator)
     if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
       list(APPEND FFMPEG_EXTRA_FLAGS --arch=arm64)
     else()
       list(APPEND FFMPEG_EXTRA_FLAGS --arch=x86_64)
     endif()
   else()
-    list(APPEND FFMPEG_EXTRA_FLAGS --x86asmexe=${LIBDIR}/nasm/bin/nasm)
+    list(APPEND FFMPEG_EXTRA_FLAGS --target-os=darwin --x86asmexe=${LIBDIR}/nasm/bin/nasm)
   endif()
 elseif(UNIX)
   set(FFMPEG_EXTRA_FLAGS
