@@ -124,11 +124,16 @@ if(NOT (APPLE AND WITH_APPLE_CROSSPLATFORM))
 endif()
 
 if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  # Host interpreter for configure-time scripts; headers/libs from cross-built prefix (see opencolorio.cmake).
   list(APPEND OPENIMAGEIO_EXTRA_ARGS
     -DOpenEXR_DIR=${LIBDIR}/openexr/lib/cmake/OpenEXR
     -DImath_DIR=${LIBDIR}/imath/lib/cmake/Imath
     -DPython_ROOT_DIR=${LIBDIR}/python
     -DPython3_ROOT=${LIBDIR}/python
+    -DPython_INCLUDE_DIR=${LIBDIR}/python/include/python${PYTHON_SHORT_VERSION}
+    -DPython3_INCLUDE_DIR=${LIBDIR}/python/include/python${PYTHON_SHORT_VERSION}
+    -DPython_LIBRARY=${LIBDIR}/python/lib/libpython${PYTHON_SHORT_VERSION}.a
+    -DPython3_LIBRARY=${LIBDIR}/python/lib/libpython${PYTHON_SHORT_VERSION}.a
   )
 else()
   list(APPEND OPENIMAGEIO_EXTRA_ARGS
