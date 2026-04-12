@@ -96,7 +96,6 @@ set(OPENIMAGEIO_EXTRA_ARGS
   -DWebP_ROOT=${LIBDIR}/webp
   ${OIIO_SIMD_FLAGS}
   -DOpenEXR_ROOT=${LIBDIR}/openexr
-  -DImath_ROOT=${LIBDIR}/imath
   -Dpybind11_ROOT=${LIBDIR}/pybind11
   -DPython_EXECUTABLE=${PYTHON_BINARY}
   -DPython3_EXECUTABLE=${PYTHON_BINARY}
@@ -106,6 +105,16 @@ set(OPENIMAGEIO_EXTRA_ARGS
   -Dopenjph_DIR=${LIBDIR}/openjph/lib/cmake/openjph
   -DLibheif_DIR=${LIBDIR}/libheif/lib/cmake/libheif
 )
+
+if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  list(APPEND OPENIMAGEIO_EXTRA_ARGS
+    -DImath_DIR=${LIBDIR}/imath/lib/cmake/Imath
+  )
+else()
+  list(APPEND OPENIMAGEIO_EXTRA_ARGS
+    -DImath_ROOT=${LIBDIR}/imath
+  )
+endif()
 
 if(WIN32)
   # We don't want the SOABI tags in the final filename since it gets the debug
