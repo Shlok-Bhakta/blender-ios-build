@@ -53,6 +53,13 @@ if(APPLE AND WITH_APPLE_CROSSPLATFORM)
   set(OIIO_JPEG_DEP JPEG)
 endif()
 
+# OpenImageIO's CMake runs the interpreter during configure; use host Python for Apple cross.
+if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  set(OIIO_PYTHON_EXECUTABLE "${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}/python/bin/python${PYTHON_SHORT_VERSION}")
+else()
+  set(OIIO_PYTHON_EXECUTABLE "${PYTHON_BINARY}")
+endif()
+
 set(OPENIMAGEIO_EXTRA_ARGS
   -DBUILD_SHARED_LIBS=ON
   ${OPENIMAGEIO_LINKSTATIC}
@@ -86,7 +93,6 @@ set(OPENIMAGEIO_EXTRA_ARGS
   -DJPEG_ROOT=${LIBDIR}/jpeg/
   -DJPEG_LIBRARY=${LIBDIR}/jpeg/lib/${JPEG_LIBRARY}
   -DJPEG_INCLUDE_DIR=${LIBDIR}/jpeg/include
-  -Dlibjpeg-turbo_ROOT=${LIBDIR}/jpeg/
   ${OPENJPEG_FLAGS}
   -DOPENEXR_ILMTHREAD_LIBRARY=${LIBDIR}/openexr/lib/${LIBPREFIX}IlmThread${OPENEXR_VERSION_POSTFIX}${SHAREDLIBEXT}
   -DOPENEXR_IEX_LIBRARY=${LIBDIR}/openexr/lib/${LIBPREFIX}Iex${OPENEXR_VERSION_POSTFIX}${SHAREDLIBEXT}
@@ -104,8 +110,8 @@ set(OPENIMAGEIO_EXTRA_ARGS
   ${OIIO_SIMD_FLAGS}
   -DOpenEXR_ROOT=${LIBDIR}/openexr
   -Dpybind11_ROOT=${LIBDIR}/pybind11
-  -DPython_EXECUTABLE=${PYTHON_BINARY}
-  -DPython3_EXECUTABLE=${PYTHON_BINARY}
+  -DPython_EXECUTABLE=${OIIO_PYTHON_EXECUTABLE}
+  -DPython3_EXECUTABLE=${OIIO_PYTHON_EXECUTABLE}
   -DTBB_ROOT=${LIBDIR}/tbb
   -Dlibdeflate_ROOT=${LIBDIR}/deflate
   -Dfmt_ROOT=${LIBDIR}/fmt
@@ -113,11 +119,16 @@ set(OPENIMAGEIO_EXTRA_ARGS
   -DLibheif_DIR=${LIBDIR}/libheif/lib/cmake/libheif
 )
 
+if(NOT (APPLE AND WITH_APPLE_CROSSPLATFORM))
+  list(APPEND OPENIMAGEIO_EXTRA_ARGS -Dlibjpeg-turbo_ROOT=${LIBDIR}/jpeg/)
+endif()
+
 if(APPLE AND WITH_APPLE_CROSSPLATFORM)
   list(APPEND OPENIMAGEIO_EXTRA_ARGS
     -DOpenEXR_DIR=${LIBDIR}/openexr/lib/cmake/OpenEXR
     -DImath_DIR=${LIBDIR}/imath/lib/cmake/Imath
-    -Dlibjpeg-turbo_DIR=${LIBDIR}/jpeg/lib/cmake/libjpeg-turbo
+    -DPython_ROOT_DIR=${LIBDIR}/python
+    -DPython3_ROOT=${LIBDIR}/python
   )
 else()
   list(APPEND OPENIMAGEIO_EXTRA_ARGS
