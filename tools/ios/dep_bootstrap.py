@@ -16,7 +16,7 @@ from typing import Iterable
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-KEY_SCHEMA_VERSION = 2
+KEY_SCHEMA_VERSION = 3
 
 # Upstream fork expected extra ios cmake under build_environment; this repo may omit them.
 # Only existing files participate in cache keys (see compute_metadata).
@@ -88,7 +88,6 @@ DEP_CONFIG = {
         "cmake_prefixes": ["JPEG"],
         "key_files": [
             Path("build_files/build_environment/cmake/jpeg.cmake"),
-            Path("build_files/build_environment/cmake/platform/ios/jpeg_ios.cmake"),
         ],
     },
     "tiff": {
