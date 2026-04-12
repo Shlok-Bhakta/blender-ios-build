@@ -481,7 +481,7 @@ diff -Naur ll.org/llvm/cmake/modules/TableGen.cmake ll/llvm/cmake/modules/TableG
 diff -Naur ll.org/llvm/cmake/modules/AddLLVM.cmake ll/llvm/cmake/modules/AddLLVM.cmake
 --- ll.org/llvm/cmake/modules/AddLLVM.cmake	2026-04-11 00:00:00.000000000 +0000
 +++ ll/llvm/cmake/modules/AddLLVM.cmake	2026-04-11 00:00:00.000000000 +0000
-@@ -1474,7 +1474,8 @@
+@@ -1474,6 +1474,7 @@
        install(TARGETS ${name}
                ${export_to_llvmexports}
                RUNTIME DESTINATION ${LLVM_TOOLS_INSTALL_DIR}
@@ -492,7 +492,7 @@ diff -Naur ll.org/llvm/cmake/modules/AddLLVM.cmake ll/llvm/cmake/modules/AddLLVM
 diff -Naur ll.org/clang/cmake/modules/AddClang.cmake ll/clang/cmake/modules/AddClang.cmake
 --- ll.org/clang/cmake/modules/AddClang.cmake	2026-04-11 00:00:00.000000000 +0000
 +++ ll/clang/cmake/modules/AddClang.cmake	2026-04-11 00:00:00.000000000 +0000
-@@ -180,7 +180,8 @@
+@@ -180,6 +180,7 @@
        install(TARGETS ${name}
          ${export_to_clangtargets}
          RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
