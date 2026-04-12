@@ -13,7 +13,7 @@ on:
           - ios
           - macos
       dep_target:
-        description: "`make deps` target to build"
+        description: "`install` for full chain, or one `external_*` ninja target (ios-simulator only)"
         required: true
         default: install
   push:
@@ -24,6 +24,7 @@ on:
       - CMakeLists.txt
       - GNUmakefile
       - build_files/**
+      - tools/ios/**
       - source/blender/blentranslation/msgfmt/CMakeLists.txt
       - source/blender/datatoc/CMakeLists.txt
       - source/blender/gpu/shader_tool/CMakeLists.txt
@@ -35,7 +36,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   CACHE_VERSION: v3
@@ -46,6 +47,12 @@ env:
   DEPS_BUILD_DIR: ${{ github.workspace }}/build_deps_${{ github.event.inputs.apple_target_device || 'ios-simulator' }}
   DEPS_INSTALL_DIR: ${{ github.workspace }}/lib/${{ github.event.inputs.apple_target_device || 'ios-simulator' }}_arm64
   HOST_DEPS_INSTALL_DIR: ${{ github.workspace }}/lib/macos_arm64
+  IOS_DEPS_BUILD_DIR: ${{ github.workspace }}/build/ios-deps/ios_simulator
+  IOS_DEPS_INSTALL_DIR: ${{ github.workspace }}/build/ios-deps/install/ios_simulator
+  IOS_HOST_BUILD_DIR: ${{ github.workspace }}/build_darwin
+  IOS_HOST_INSTALL_DIR: ${{ github.workspace }}/lib/macos_arm64
+  IOS_DEPS_RELEASE_TAG: ${{ github.ref_name }}-sim-deps
+  WITH_COMPILER_CCACHE: ON
   CCACHE_DIR: ${{ github.workspace }}/.ccache
   CCACHE_MAXSIZE: 1500M
 
@@ -144,6 +151,7 @@ jobs:
           xcodebuild -version
           cmake --version
           ninja --version
+          command -v gh && gh --version || echo "gh not found"
 
       - name: Restore compiler cache
         id: restore-ccache
@@ -151,9 +159,9 @@ jobs:
         with:
           path: |
             ${{ env.CCACHE_DIR }}
-          key: apple-ccache-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/cmake/**', 'build_files/build_environment/**', 'source/blender/blentranslation/msgfmt/**', 'source/blender/datatoc/**', 'source/blender/gpu/shader_tool/**', 'source/blender/makesdna/**', 'source/blender/makesrna/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: apple-ccache-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/cmake/**', 'build_files/build_environment/**', 'source/blender/blentranslation/msgfmt/**', 'source/blender/datatoc/**', 'source/blender/gpu/shader_tool/**', 'source/blender/makesdna/**', 'source/blender/makesrna/**', 'tools/ios/**') }}-stable
           restore-keys: |
-            apple-ccache-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/cmake/**', 'build_files/build_environment/**', 'source/blender/blentranslation/msgfmt/**', 'source/blender/datatoc/**', 'source/blender/gpu/shader_tool/**', 'source/blender/makesdna/**', 'source/blender/makesrna/**') }}-
+            apple-ccache-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/cmake/**', 'build_files/build_environment/**', 'source/blender/blentranslation/msgfmt/**', 'source/blender/datatoc/**', 'source/blender/gpu/shader_tool/**', 'source/blender/makesdna/**', 'source/blender/makesrna/**', 'tools/ios/**') }}-
             apple-ccache-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-
 
       - name: Configure compiler cache
@@ -194,8 +202,21 @@ jobs:
             ${{ env.HOST_BUILD_DIR }}
           key: host-tools-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/cmake/**', 'source/blender/blentranslation/msgfmt/**', 'source/blender/datatoc/**', 'source/blender/gpu/shader_tool/**', 'source/blender/makesdna/**', 'source/blender/makesrna/**') }}
 
-      - name: Restore deps source cache
+      - name: Restore deps source cache (iOS simulator)
+        id: restore-ios-deps-source-cache
+        if: env.TARGET_DEVICE == 'ios-simulator'
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ env.IOS_DEPS_BUILD_DIR }}/downloads
+            ${{ env.IOS_DEPS_BUILD_DIR }}/packages
+          key: apple-ios-sim-deps-source-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('build_files/build_environment/cmake/download.cmake', 'build_files/build_environment/cmake/versions.cmake') }}
+          restore-keys: |
+            apple-ios-sim-deps-source-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-
+
+      - name: Restore deps source cache (GNUmakefile layout)
         id: restore-deps-source-cache
+        if: env.TARGET_DEVICE != 'ios-simulator'
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -207,6 +228,7 @@ jobs:
 
       - name: Restore deps state cache
         id: restore-deps-cache
+        if: env.TARGET_DEVICE != 'ios-simulator'
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -219,11 +241,69 @@ jobs:
             ${{ env.DEPS_BUILD_DIR }}/Release
             ${{ env.DEPS_BUILD_DIR }}/build
             ${{ env.DEPS_INSTALL_DIR }}
-          key: deps-state-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: deps-state-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**') }}
           restore-keys: |
             deps-state-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**') }}-
 
+      - name: Configure iOS simulator dependency build
+        if: env.TARGET_DEVICE == 'ios-simulator'
+        env:
+          APPLE_TARGET_DEVICE: ios-simulator
+          APPLE_IOS_DEPS_BUILD_ROOT: build/ios-deps/ios_simulator
+          IOS_DEPS_RELEASE_TAG: ${{ env.IOS_DEPS_RELEASE_TAG }}
+        run: |
+          mkdir -p artifacts/ios-deps
+          python3 tools/ios/build_deps.py --mode ios-simulator --configure-only \
+            --generator Ninja \
+            --build-dir "${IOS_DEPS_BUILD_DIR}" \
+            --install-dir "${IOS_DEPS_INSTALL_DIR}" \
+            --host-build-dir "${HOST_BUILD_DIR}" \
+            --host-install-dir "${HOST_DEPS_INSTALL_DIR}" \
+            --log-dir artifacts/ios-deps/configure-logs \
+            --manifest-path artifacts/ios-deps/configure-manifest.json \
+            --cmake-arg=-DWITH_COMPILER_CCACHE=ON
+
+      - name: Build iOS simulator dependencies (GitHub Release cache)
+        if: env.TARGET_DEVICE == 'ios-simulator' && env.DEP_TARGET == 'install'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPLE_TARGET_DEVICE: ios-simulator
+          APPLE_IOS_DEPS_BUILD_ROOT: build/ios-deps/ios_simulator
+          IOS_DEPS_RELEASE_TAG: ${{ env.IOS_DEPS_RELEASE_TAG }}
+        run: |
+          bash tools/ios/run_cached_deps_all.sh
+
+      - name: Build single iOS simulator dependency (GitHub Release cache)
+        if: env.TARGET_DEVICE == 'ios-simulator' && env.DEP_TARGET != 'install'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPLE_TARGET_DEVICE: ios-simulator
+          APPLE_IOS_DEPS_BUILD_ROOT: build/ios-deps/ios_simulator
+          IOS_DEPS_RELEASE_TAG: ${{ env.IOS_DEPS_RELEASE_TAG }}
+        run: |
+          mkdir -p artifacts/ios-deps
+          short="${DEP_TARGET#external_}"
+          logdir="artifacts/ios-deps/${short}-logs"
+          mkdir -p "$logdir"
+          bash tools/ios/run_release_cached_dep.sh "$short" artifacts/ios-deps \
+            python3 tools/ios/build_deps.py --mode ios-simulator --generator Ninja \
+            --build-dir "${IOS_DEPS_BUILD_DIR}" \
+            --install-dir "${IOS_DEPS_INSTALL_DIR}" \
+            --host-build-dir "${HOST_BUILD_DIR}" \
+            --host-install-dir "${HOST_DEPS_INSTALL_DIR}" \
+            --cmake-arg=-DWITH_COMPILER_CCACHE=ON \
+            --build-target "${DEP_TARGET}" \
+            --log-dir "$logdir" \
+            --manifest-path "artifacts/ios-deps/${short}-manifest.json"
+
+      - name: Sync iOS simulator install tree to lib/
+        if: env.TARGET_DEVICE == 'ios-simulator'
+        run: |
+          mkdir -p "${DEPS_INSTALL_DIR}"
+          rsync -a --delete "${IOS_DEPS_INSTALL_DIR}/" "${DEPS_INSTALL_DIR}/"
+
       - name: Build deps via GNUmakefile wrapper
+        if: env.TARGET_DEVICE != 'ios-simulator'
         run: |
           make deps "${TARGET_DEVICE}" \
             DEPS_TARGET="${DEP_TARGET}" \
@@ -233,8 +313,17 @@ jobs:
             CROSSCOMPILE_BUILD_DIR="${HOST_BUILD_DIR}" \
             CROSSCOMPILE_DEPS_INSTALL_DIR="${HOST_DEPS_INSTALL_DIR}"
 
-      - name: Save deps source cache
-        if: always() && steps.restore-deps-source-cache.outputs.cache-hit != 'true'
+      - name: Save deps source cache (iOS simulator)
+        if: always() && env.TARGET_DEVICE == 'ios-simulator' && steps.restore-ios-deps-source-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ env.IOS_DEPS_BUILD_DIR }}/downloads
+            ${{ env.IOS_DEPS_BUILD_DIR }}/packages
+          key: apple-ios-sim-deps-source-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('build_files/build_environment/cmake/download.cmake', 'build_files/build_environment/cmake/versions.cmake') }}
+
+      - name: Save deps source cache (GNUmakefile layout)
+        if: always() && env.TARGET_DEVICE != 'ios-simulator' && steps.restore-deps-source-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: |
@@ -243,7 +332,7 @@ jobs:
           key: apple-deps-source-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('build_files/build_environment/cmake/download.cmake', 'build_files/build_environment/cmake/versions.cmake') }}
 
       - name: Save deps state cache
-        if: always()
+        if: always() && env.TARGET_DEVICE != 'ios-simulator'
         uses: actions/cache/save@v4
         with:
           path: |
@@ -256,7 +345,7 @@ jobs:
             ${{ env.DEPS_BUILD_DIR }}/Release
             ${{ env.DEPS_BUILD_DIR }}/build
             ${{ env.DEPS_INSTALL_DIR }}
-          key: deps-state-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: deps-state-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**') }}
 
       - name: Show compiler cache stats
         if: always()
@@ -269,7 +358,7 @@ jobs:
         with:
           path: |
             ${{ env.CCACHE_DIR }}
-          key: apple-ccache-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/cmake/**', 'build_files/build_environment/**', 'source/blender/blentranslation/msgfmt/**', 'source/blender/datatoc/**', 'source/blender/gpu/shader_tool/**', 'source/blender/makesdna/**', 'source/blender/makesrna/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: apple-ccache-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/cmake/**', 'build_files/build_environment/**', 'source/blender/blentranslation/msgfmt/**', 'source/blender/datatoc/**', 'source/blender/gpu/shader_tool/**', 'source/blender/makesdna/**', 'source/blender/makesrna/**', 'tools/ios/**') }}-stable
 
       - name: Summarize outputs
         if: always()
@@ -278,6 +367,12 @@ jobs:
           echo "Target device: ${TARGET_DEVICE}"
           echo "Compiler cache hit: ${{ steps.restore-ccache.outputs.cache-hit }}"
           echo "Host tools cache hit: ${{ steps.restore-host-tools-cache.outputs.cache-hit }}"
-          echo "Deps source cache hit: ${{ steps.restore-deps-source-cache.outputs.cache-hit }}"
-          echo "Deps state cache hit: ${{ steps.restore-deps-cache.outputs.cache-hit }}"
-          ls "${DEPS_INSTALL_DIR}" || true
+          if [ "${TARGET_DEVICE}" = "ios-simulator" ]; then
+            echo "Deps source cache hit: ${{ steps.restore-ios-deps-source-cache.outputs.cache-hit }}"
+            echo "iOS simulator release tag: ${IOS_DEPS_RELEASE_TAG}"
+            ls "${DEPS_INSTALL_DIR}" || true
+          else
+            echo "Deps source cache hit: ${{ steps.restore-deps-source-cache.outputs.cache-hit }}"
+            echo "Deps state cache hit: ${{ steps.restore-deps-cache.outputs.cache-hit }}"
+            ls "${DEPS_INSTALL_DIR}" || true
+          fi
