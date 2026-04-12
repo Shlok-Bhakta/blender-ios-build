@@ -131,6 +131,10 @@ else()
   # We need to add the zlib static lib path here as even if python itself links the static zlib correctly,
   # the "_sqlite" cpython library needs to know where to get it from.
   set(PYTHON_LDFLAGS "-L${LIBDIR}/zlib/lib ${PLATFORM_LDFLAGS} ")
+  # Static _ssl/_hashlib are archived into libpython; the final python link still must pull OpenSSL.
+  if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+    string(APPEND PYTHON_LDFLAGS "-L${LIBDIR}/ssl/lib -lssl -lcrypto ")
+  endif()
 
   set(PYTHON_CONFIGURE_EXTRA_ARGS
     # Using pkg-config is supported for most libs besides bzip2, so make sure it is on.
