@@ -144,6 +144,7 @@ if(APPLE AND WITH_APPLE_CROSSPLATFORM)
     -DWebP_DIR=${LIBDIR}/webp/share/WebP/cmake
     # FindRobinmap.cmake only hints ext/robin-map; does not use Robinmap_ROOT.
     -DROBINMAP_INCLUDE_DIR=${LIBDIR}/robinmap/include
+    -Dfmt_DIR=${LIBDIR}/fmt/lib/cmake/fmt
   )
 else()
   list(APPEND OPENIMAGEIO_EXTRA_ARGS
