@@ -140,6 +140,7 @@ if(APPLE AND WITH_APPLE_CROSSPLATFORM)
     -DPython_LIBRARY=${LIBDIR}/python/lib/libpython${PYTHON_SHORT_VERSION}.a
     -DPython3_LIBRARY=${LIBDIR}/python/lib/libpython${PYTHON_SHORT_VERSION}.a
     -DTBB_DIR=${LIBDIR}/tbb/lib/cmake/TBB
+    -DOpenJPEG_DIR=${LIBDIR}/openjpeg/lib/cmake/openjpeg-${OPENJPEG_SHORT_VERSION}
   )
 else()
   list(APPEND OPENIMAGEIO_EXTRA_ARGS
