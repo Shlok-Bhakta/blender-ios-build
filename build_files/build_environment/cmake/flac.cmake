@@ -5,6 +5,7 @@
 if(NOT WIN32)
   set(FLAC_CONFIGURE_COMMAND ${CONFIGURE_COMMAND})
 
+  set(FLAC_APPLE_CROSS_CFLAGS "")
   if(WITH_APPLE_CROSSPLATFORM)
     if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
       set(FLAC_HOST_ARCH x86_64-apple-darwin19.0.0)
@@ -12,6 +13,8 @@ if(NOT WIN32)
       set(FLAC_HOST_ARCH aarch64-apple-darwin20.0.0)
     endif()
     set(FLAC_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET} --host=${FLAC_HOST_ARCH})
+    # Autoconf otherwise picks -std=gnu23; FLAC's bundled getopt does not build as C23.
+    set(FLAC_APPLE_CROSS_CFLAGS export CFLAGS=${PLATFORM_CFLAGS}\ -std=gnu11 &&)
   endif()
 
   ExternalProject_Add(external_flac
@@ -20,7 +23,7 @@ if(NOT WIN32)
     URL_HASH ${FLAC_HASH_TYPE}=${FLAC_HASH}
     PREFIX ${BUILD_DIR}/flac
 
-    CONFIGURE_COMMAND ${CONFIGURE_ENV} &&
+    CONFIGURE_COMMAND ${CONFIGURE_ENV} && ${FLAC_APPLE_CROSS_CFLAGS}
       cd ${BUILD_DIR}/flac/src/external_flac/ &&
       ${FLAC_CONFIGURE_COMMAND}
         --prefix=${LIBDIR}/flac
@@ -29,11 +32,11 @@ if(NOT WIN32)
         --with-ogg-includes=${LIBDIR}/ogg/include
         --with-ogg-libraries=${LIBDIR}/ogg/lib
 
-    BUILD_COMMAND ${CONFIGURE_ENV} &&
+    BUILD_COMMAND ${CONFIGURE_ENV} && ${FLAC_APPLE_CROSS_CFLAGS}
       cd ${BUILD_DIR}/flac/src/external_flac/ &&
       make -j${MAKE_THREADS}
 
-    INSTALL_COMMAND ${CONFIGURE_ENV} &&
+    INSTALL_COMMAND ${CONFIGURE_ENV} && ${FLAC_APPLE_CROSS_CFLAGS}
       cd ${BUILD_DIR}/flac/src/external_flac/ &&
       make install
 
