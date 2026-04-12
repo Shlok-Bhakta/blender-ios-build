@@ -28,9 +28,17 @@ endif()
 if(WITH_APPLE_CROSSPLATFORM)
   set(NUMPY_PIP_EXECUTABLE ${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}/python/bin/python${PYTHON_SHORT_VERSION})
   set(NUMPY_PREFIX_ARG --prefix=${LIBDIR}/python)
+  set(NUMPY_PIP_COMMAND
+    ${CMAKE_COMMAND} -E env
+    PYTHONPATH=${LIBDIR}/python/lib/python${PYTHON_SHORT_VERSION}/site-packages
+    ${NUMPY_PIP_EXECUTABLE} -m pip install --no-build-isolation ${NUMPY_PREFIX_ARG} .
+  )
 else()
   set(NUMPY_PIP_EXECUTABLE ${PYTHON_BINARY})
   set(NUMPY_PREFIX_ARG "")
+  set(NUMPY_PIP_COMMAND
+    ${NUMPY_PIP_EXECUTABLE} -m pip install --no-build-isolation ${NUMPY_PREFIX_ARG} .
+  )
 endif()
 
 ExternalProject_Add(external_numpy
@@ -42,7 +50,7 @@ ExternalProject_Add(external_numpy
   CONFIGURE_COMMAND ""
   BUILD_IN_SOURCE 1
 
-  BUILD_COMMAND ${NUMPY_CONF} && ${NUMPY_PIP_EXECUTABLE} -m pip install --no-build-isolation ${NUMPY_PREFIX_ARG} .
+  BUILD_COMMAND ${NUMPY_CONF} && ${NUMPY_PIP_COMMAND}
 
   INSTALL_COMMAND ""
 )
