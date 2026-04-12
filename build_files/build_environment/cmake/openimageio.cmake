@@ -142,6 +142,8 @@ if(APPLE AND WITH_APPLE_CROSSPLATFORM)
     -DTBB_DIR=${LIBDIR}/tbb/lib/cmake/TBB
     -DOpenJPEG_DIR=${LIBDIR}/openjpeg/lib/cmake/openjpeg-${OPENJPEG_SHORT_VERSION}
     -DWebP_DIR=${LIBDIR}/webp/share/WebP/cmake
+    # FindRobinmap.cmake only hints ext/robin-map; does not use Robinmap_ROOT.
+    -DROBINMAP_INCLUDE_DIR=${LIBDIR}/robinmap/include
   )
 else()
   list(APPEND OPENIMAGEIO_EXTRA_ARGS
