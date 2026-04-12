@@ -110,6 +110,7 @@ if(APPLE AND WITH_APPLE_CROSSPLATFORM)
   list(APPEND OPENIMAGEIO_EXTRA_ARGS
     -DOpenEXR_DIR=${LIBDIR}/openexr/lib/cmake/OpenEXR
     -DImath_DIR=${LIBDIR}/imath/lib/cmake/Imath
+    -Dlibjpeg-turbo_DIR=${LIBDIR}/jpeg/lib/cmake/libjpeg-turbo
   )
 else()
   list(APPEND OPENIMAGEIO_EXTRA_ARGS
