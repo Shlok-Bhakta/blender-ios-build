@@ -17,6 +17,12 @@ if(UNIX AND NOT APPLE)
   )
 else()
   set(BZIP2_CONFIGURE_ENV ${CONFIGURE_ENV})
+  # BUILD_COMMAND passes CFLAGS/LDFLAGS on the make line; empty values override CONFIGURE_ENV
+  # and accidentally build for the host (breaks iOS simulator cross).
+  if(APPLE)
+    set(BZIP2_CFLAGS "${PLATFORM_CFLAGS} -fPIC -Wall -Winline -O2 -g -D_FILE_OFFSET_BITS=64")
+    set(BZIP2_LDFLAGS "${PLATFORM_LDFLAGS}")
+  endif()
 endif()
 
 ExternalProject_Add(external_bzip2
