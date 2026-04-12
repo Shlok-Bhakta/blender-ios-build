@@ -141,7 +141,11 @@ if(APPLE)
   if(WITH_APPLE_CROSSPLATFORM)
     # iOS/tvOS simulator/device: compiler produces binaries that cannot execute on the build host;
     # without --enable-cross-compile, configure's link tests abort (signal 6).
-    list(APPEND FFMPEG_EXTRA_FLAGS --enable-cross-compile --target-os=ios-simulator)
+    list(APPEND FFMPEG_EXTRA_FLAGS
+      --enable-cross-compile
+      --target-os=ios-simulator
+      --sysroot=${CMAKE_OSX_SYSROOT}
+    )
     if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
       list(APPEND FFMPEG_EXTRA_FLAGS --arch=arm64)
     else()
