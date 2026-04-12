@@ -273,7 +273,7 @@ DEP_CONFIG = {
         ],
     },
     "fftw": {
-        "folder": "fftw",
+        "folder": "fftw3",
         "cmake_prefixes": ["FFTW"],
         "key_files": [
             Path("build_files/build_environment/cmake/fftw.cmake"),
@@ -434,7 +434,7 @@ DEP_CONFIG = {
         ],
     },
     "spirv-reflect": {
-        "folder": "spirv-reflect",
+        "folder": "spirv_reflect",
         "cmake_prefixes": ["SPIRV_REFLECT"],
         "key_files": [
             Path("build_files/build_environment/cmake/spirv-reflect.cmake"),

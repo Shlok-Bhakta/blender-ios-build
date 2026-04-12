@@ -98,5 +98,5 @@ python external_python
 cython external_cython
 numpy external_numpy
 shaderc external_shaderc
-spirv-reflect external_spirv-reflect
+spirv-reflect external_spirv_reflect
 DEPS
