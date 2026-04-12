@@ -60,6 +60,15 @@ set(LLVM_PATCH
     ${PATCH_DIR}/llvm.diff
 )
 
+if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  set(LLVM_PATCH
+    ${LLVM_PATCH} &&
+    ${PATCH_CMD} -p 1 -d
+      ${BUILD_DIR}/llvm/src/external_llvm <
+      ${PATCH_DIR}/llvm_ios.diff
+  )
+endif()
+
 if(WIN32)
   set(LLVM_GENERATOR "Ninja")
   list(APPEND LLVM_EXTRA_ARGS -DPython3_FIND_REGISTRY=NEVER)
