@@ -16,6 +16,15 @@ endif()
 
 set(CYTHON_POSTFIX "")
 
+if(WITH_APPLE_CROSSPLATFORM)
+  # Target Python is not executable on the build host (e.g. iOS simulator).
+  set(CYTHON_PYTHON_EXECUTABLE ${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}/python/bin/python${PYTHON_SHORT_VERSION})
+  set(CYTHON_INSTALL_PREFIX_ARG --prefix=${LIBDIR}/python)
+else()
+  set(CYTHON_PYTHON_EXECUTABLE ${PYTHON_BINARY})
+  set(CYTHON_INSTALL_PREFIX_ARG "")
+endif()
+
 ExternalProject_Add(external_cython
   URL file://${PACKAGE_DIR}/${CYTHON_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -27,9 +36,10 @@ ExternalProject_Add(external_cython
   BUILD_IN_SOURCE 1
 
   BUILD_COMMAND
-    ${PYTHON_BINARY} setup.py
+    ${CYTHON_PYTHON_EXECUTABLE} setup.py
       build ${CYTHON_BUILD_OPTION} -j${PYTHON_MAKE_THREADS}
       install
+      ${CYTHON_INSTALL_PREFIX_ARG}
       --old-and-unmanageable
 
   INSTALL_COMMAND ""
