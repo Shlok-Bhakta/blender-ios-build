@@ -4,6 +4,12 @@
 
 set(OCIO_PATCH echo .)
 
+if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  set(OCIO_PATCH
+    ${PATCH_CMD} -p 1 -N -d ${BUILD_DIR}/opencolorio/src/external_opencolorio
+    < ${PATCH_DIR}/opencolorio_ios.diff)
+endif()
+
 if(WIN32)
   set(MINIZIP_LIBRARY minizip${LIBEXT})
 else()
