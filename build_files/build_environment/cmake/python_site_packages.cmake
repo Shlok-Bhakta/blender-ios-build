@@ -26,6 +26,16 @@ file(WRITE ${PIP_CONSTRAINT_FILE}
 "setuptools-scm==${SETUPTOOLS_SCM_VERSION}\n"
 )
 
+# Target Python is not executable on the build host (e.g. iOS simulator); use the
+# host build-python from the cross prefix and install pure packages into LIBDIR/python.
+if(WITH_APPLE_CROSSPLATFORM)
+  set(PYTHON_PIP_EXECUTABLE ${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}/python/bin/python${PYTHON_SHORT_VERSION})
+  set(PIP_DEST_PREFIX_ARG --prefix=${LIBDIR}/python)
+else()
+  set(PYTHON_PIP_EXECUTABLE ${PYTHON_BINARY})
+  set(PIP_DEST_PREFIX_ARG "")
+endif()
+
 ExternalProject_Add(external_python_site_packages
   DOWNLOAD_COMMAND ""
   CONFIGURE_COMMAND ${PIP_CONFIGURE_COMMAND}
@@ -36,7 +46,7 @@ ExternalProject_Add(external_python_site_packages
   INSTALL_COMMAND
     ${CMAKE_COMMAND} -E env
       PIP_CONSTRAINT=${PIP_CONSTRAINT_FILE}
-      ${PYTHON_BINARY} -m pip install --no-cache-dir ${SITE_PACKAGES_EXTRA}
+      ${PYTHON_PIP_EXECUTABLE} -m pip install --no-cache-dir ${PIP_DEST_PREFIX_ARG} ${SITE_PACKAGES_EXTRA}
       setuptools==${SETUPTOOLS_VERSION}
       meson-python==${MESON_PYTHON_VERSION}
       packaging==${PACKAGING_VERSION}
