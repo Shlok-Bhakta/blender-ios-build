@@ -139,6 +139,7 @@ if(APPLE AND WITH_APPLE_CROSSPLATFORM)
     -DPython3_INCLUDE_DIR=${LIBDIR}/python/include/python${PYTHON_SHORT_VERSION}
     -DPython_LIBRARY=${LIBDIR}/python/lib/libpython${PYTHON_SHORT_VERSION}.a
     -DPython3_LIBRARY=${LIBDIR}/python/lib/libpython${PYTHON_SHORT_VERSION}.a
+    -DTBB_DIR=${LIBDIR}/tbb/lib/cmake/TBB
   )
 else()
   list(APPEND OPENIMAGEIO_EXTRA_ARGS
