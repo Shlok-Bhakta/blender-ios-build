@@ -22,22 +22,22 @@ index ffa407d53d..0b9094a329 100755
 +        version_script='-exported_symbols_list'
 +        VERSION_SCRIPT_POSTPROCESS_CMD='tr " " "\n" | sed -n /global:/,/local:/p | grep ";" | tr ";" "\n" | sed -E "s/(.+)/_\1/g" | sed -E "s/(.+[^*])$$$$/\1*/"'
 +        ;;
-     ios-simulator)
-         enabled ppc && add_asflags -force_cpusubtype_ALL
-         install_name_dir_default='$(SHLIBDIR)'
-         SHFLAGS='-dynamiclib -Wl,-single_module -Wl,-install_name,$(INSTALL_NAME_DIR)/$(SLIBNAME_WITH_MAJOR),-current_version,$(LIBVERSION),-compatibility_version,$(LIBMAJOR) ${$LDFLAGS}'
-         strip="${strip} -x"
-         add_ldflags -Wl,-dynamic,-search_paths_first
-         SLIBSUF=".dylib"
-         SLIBNAME_WITH_VERSION='$(SLIBPREF)$(FULLNAME).$(LIBVERSION)$(SLIBSUF)'
-         SLIBNAME_WITH_MAJOR='$(SLIBPREF)$(FULLNAME).$(LIBMAJOR)$(SLIBSUF)'
++    ios-simulator)
++        enabled ppc && add_asflags -force_cpusubtype_ALL
++        install_name_dir_default='$(SHLIBDIR)'
++        SHFLAGS='-dynamiclib -Wl,-single_module -Wl,-install_name,$(INSTALL_NAME_DIR)/$(SLIBNAME_WITH_MAJOR),-current_version,$(LIBVERSION),-compatibility_version,$(LIBMAJOR) ${$LDFLAGS}'
++        strip="${strip} -x"
++        add_ldflags -Wl,-dynamic,-search_paths_first
++        SLIBSUF=".dylib"
++        SLIBNAME_WITH_VERSION='$(SLIBPREF)$(FULLNAME).$(LIBVERSION)$(SLIBSUF)'
++        SLIBNAME_WITH_MAJOR='$(SLIBPREF)$(FULLNAME).$(LIBMAJOR)$(SLIBSUF)'
 +        if true; then
 +            add_cppflags -isysroot $sysroot -arch arm64 -miphonesimulator-version-min=15.00
 +            add_ldflags -isysroot $sysroot
 +        fi
-         version_script='-exported_symbols_list'
-         VERSION_SCRIPT_POSTPROCESS_CMD='tr " " "\n" | sed -n /global:/,/local:/p | grep ";" | tr ";" "\n" | sed -E "s/(.+)/_\1/g" | sed -E "s/(.+[^*])$$$$/\1*/"'
-         ;;
++        version_script='-exported_symbols_list'
++        VERSION_SCRIPT_POSTPROCESS_CMD='tr " " "\n" | sed -n /global:/,/local:/p | grep ";" | tr ";" "\n" | sed -E "s/(.+)/_\1/g" | sed -E "s/(.+[^*])$$$$/\1*/"'
++        ;;
      msys*)
          die "Native MSYS builds are discouraged, please use the MINGW environment."
          ;;
