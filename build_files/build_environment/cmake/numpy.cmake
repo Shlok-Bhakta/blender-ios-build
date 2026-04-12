@@ -25,6 +25,14 @@ else()
   set(NUMPY_CONF export CYTHON=${LIBDIR}/python/bin/cython)
 endif()
 
+if(WITH_APPLE_CROSSPLATFORM)
+  set(NUMPY_PIP_EXECUTABLE ${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}/python/bin/python${PYTHON_SHORT_VERSION})
+  set(NUMPY_PREFIX_ARG --prefix=${LIBDIR}/python)
+else()
+  set(NUMPY_PIP_EXECUTABLE ${PYTHON_BINARY})
+  set(NUMPY_PREFIX_ARG "")
+endif()
+
 ExternalProject_Add(external_numpy
   URL file://${PACKAGE_DIR}/${NUMPY_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -34,7 +42,7 @@ ExternalProject_Add(external_numpy
   CONFIGURE_COMMAND ""
   BUILD_IN_SOURCE 1
 
-  BUILD_COMMAND ${NUMPY_CONF} && ${PYTHON_BINARY} -m pip install --no-build-isolation .
+  BUILD_COMMAND ${NUMPY_CONF} && ${NUMPY_PIP_EXECUTABLE} -m pip install --no-build-isolation ${NUMPY_PREFIX_ARG} .
 
   INSTALL_COMMAND ""
 )
