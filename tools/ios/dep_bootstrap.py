@@ -88,6 +88,7 @@ DEP_CONFIG = {
         "cmake_prefixes": ["JPEG"],
         "key_files": [
             Path("build_files/build_environment/cmake/jpeg.cmake"),
+            Path("build_files/build_environment/cmake/install_libjpeg_turbo_cmake.cmake"),
         ],
     },
     "tiff": {

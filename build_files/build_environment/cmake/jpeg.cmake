@@ -63,6 +63,16 @@ else()
 
   set(JPEG_LIBRARY libjpeg${LIBEXT})
 
+  if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+    ExternalProject_Add_Step(external_jpeg copy_libjpeg_turbo_cmake_package
+      COMMAND ${CMAKE_COMMAND}
+        -DLIBDIR=${LIBDIR}
+        -DBUILD_DIR=${BUILD_DIR}
+        -P "${CMAKE_CURRENT_LIST_DIR}/install_libjpeg_turbo_cmake.cmake"
+      DEPENDEES install
+    )
+  endif()
+
   harvest(external_jpeg jpeg/include jpeg/include "*.h")
   harvest(external_jpeg jpeg/lib jpeg/lib "libjpeg.a")
 endif()
