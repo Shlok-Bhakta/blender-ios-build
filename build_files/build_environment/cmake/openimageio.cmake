@@ -54,9 +54,6 @@ else()
 endif()
 
 set(OIIO_JPEG_DEP libjpeg-turbo)
-if(APPLE AND WITH_APPLE_CROSSPLATFORM)
-  set(OIIO_JPEG_DEP JPEG)
-endif()
 
 # OpenImageIO's CMake runs the interpreter during configure; use host Python for Apple cross.
 if(APPLE AND WITH_APPLE_CROSSPLATFORM)
@@ -134,6 +131,11 @@ if(NOT (APPLE AND WITH_APPLE_CROSSPLATFORM))
 endif()
 
 if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  # OIIO resolves JPEG via libjpeg-turbo CONFIG (libjpeg-turbo::jpeg -> JPEG::JPEG).
+  list(APPEND OPENIMAGEIO_EXTRA_ARGS
+    -Dlibjpeg-turbo_DIR=${LIBDIR}/jpeg/lib/cmake/libjpeg-turbo
+    -Dlibjpeg-turbo_ROOT=${LIBDIR}/jpeg
+  )
   # Host interpreter for configure-time scripts; headers/libs from cross-built prefix (see opencolorio.cmake).
   list(APPEND OPENIMAGEIO_EXTRA_ARGS
     -DOpenEXR_DIR=${LIBDIR}/openexr/lib/cmake/OpenEXR
