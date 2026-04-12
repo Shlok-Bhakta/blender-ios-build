@@ -7,6 +7,11 @@ if(BUILD_MODE STREQUAL Release)
 else()
   set(OIIO_TOOLS OFF)
 endif()
+# iOS / simulator toolchains set APPLE; OIIO's CLI targets use MACOSX_BUNDLE and
+# CMake then requires a BUNDLE DESTINATION — skip tools for cross deps.
+if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  set(OIIO_TOOLS OFF)
+endif()
 
 if(UNIX AND NOT APPLE)
   # This causes linking to static pthread libraries which gives link errors.
