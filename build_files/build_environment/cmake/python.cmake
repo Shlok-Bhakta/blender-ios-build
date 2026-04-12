@@ -247,10 +247,12 @@ ${LIBDIR}/ssl/lib64/pkgconfig:${LIBDIR}/lzma/lib/pkgconfig:${LIBDIR}/zlib/share/
       ${PYTHON_CONFIGURE_COMMAND} --prefix=${LIBDIR}/python ${PYTHON_CONFIGURE_EXTRA_ARGS}
 
     BUILD_COMMAND ${PYTHON_CONFIGURE_ENV} &&
+      ${PYTHON_CONFIGURE_EXTRA_ENV} &&
       cd ${BUILD_DIR}/python/src/external_python/ &&
       make -j${MAKE_THREADS}
 
     INSTALL_COMMAND ${PYTHON_CONFIGURE_ENV} &&
+      ${PYTHON_CONFIGURE_EXTRA_ENV} &&
       cd ${BUILD_DIR}/python/src/external_python/ &&
       make install
 

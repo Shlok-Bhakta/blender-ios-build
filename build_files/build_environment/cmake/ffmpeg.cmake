@@ -139,8 +139,19 @@ if(APPLE)
   set(FFMPEG_EXTRA_FLAGS
     ${FFMPEG_EXTRA_FLAGS}
     --target-os=darwin
-    --x86asmexe=${LIBDIR}/nasm/bin/nasm
   )
+  if(WITH_APPLE_CROSSPLATFORM)
+    # iOS/tvOS simulator/device: compiler produces binaries that cannot execute on the build host;
+    # without --enable-cross-compile, configure's link tests abort (signal 6).
+    list(APPEND FFMPEG_EXTRA_FLAGS --enable-cross-compile)
+    if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
+      list(APPEND FFMPEG_EXTRA_FLAGS --arch=arm64)
+    else()
+      list(APPEND FFMPEG_EXTRA_FLAGS --arch=x86_64)
+    endif()
+  else()
+    list(APPEND FFMPEG_EXTRA_FLAGS --x86asmexe=${LIBDIR}/nasm/bin/nasm)
+  endif()
 elseif(UNIX)
   set(FFMPEG_EXTRA_FLAGS
     ${FFMPEG_EXTRA_FLAGS}
