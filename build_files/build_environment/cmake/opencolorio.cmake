@@ -27,24 +27,24 @@ set(OPENCOLORIO_EXTRA_ARGS
   -Dyaml-cpp_DIR=${LIBDIR}/yamlcpp/lib/cmake/yaml-cpp
   -Dyaml-cpp_VERSION=${YAMLCPP_VERSION}
   -Dpystring_ROOT=${LIBDIR}/pystring
-  -DImath_ROOT=${LIBDIR}/imath
   -Dminizip-ng_ROOT=${LIBDIR}/minizipng
   -Dminizip-ng_INCLUDE_DIR=${LIBDIR}/minizipng/include/minizip-ng/minizip
   -Dminizip-ng_LIBRARY=${LIBDIR}/minizipng/lib/${MINIZIP_LIBRARY}
   -DZLIB_LIBRARY=${LIBDIR}/zlib/lib/${ZLIB_LIBRARY}
   -DZLIB_INCLUDE_DIR=${LIBDIR}/zlib/include/
   -DPython_EXECUTABLE=${PYTHON_BINARY}
-  -Dpybind11_ROOT=${LIBDIR}/pybind11
 )
 
-if(APPLE)
+if(APPLE AND WITH_APPLE_CROSSPLATFORM)
   set(OPENCOLORIO_HOST_PYTHON ${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}/python/bin/python${PYTHON_SHORT_VERSION})
   set(OPENCOLORIO_EXTRA_ARGS
     ${OPENCOLORIO_EXTRA_ARGS}
     -Dpystring_INCLUDE_DIR=${LIBDIR}/pystring/include
     -Dpystring_LIBRARY=${LIBDIR}/pystring/lib/libpystring${LIBEXT}
     -DImath_DIR=${LIBDIR}/imath/lib/cmake/Imath
+    -DImath_INCLUDE_DIR=${LIBDIR}/imath/include
     -Dpybind11_DIR=${LIBDIR}/pybind11/share/cmake/pybind11
+    -Dpybind11_INCLUDE_DIR=${LIBDIR}/pybind11/include
     -DPython_EXECUTABLE=${OPENCOLORIO_HOST_PYTHON}
     -DPython_ROOT_DIR=${LIBDIR}/python
     -DPython_INCLUDE_DIR=${LIBDIR}/python/include/python${PYTHON_SHORT_VERSION}
@@ -53,6 +53,12 @@ if(APPLE)
     -Dminizip_LIBRARY=${LIBDIR}/minizipng/lib/libminizip${LIBEXT}
     # Work around issue where homebrew Imath's can be prioritized over our own dependency during linking if installed.
     -DImath_LIBRARY=${LIBDIR}/imath/lib/libImath${SHAREDLIBEXT}
+  )
+else()
+  set(OPENCOLORIO_EXTRA_ARGS
+    ${OPENCOLORIO_EXTRA_ARGS}
+    -DImath_ROOT=${LIBDIR}/imath
+    -Dpybind11_ROOT=${LIBDIR}/pybind11
   )
 endif()
 
