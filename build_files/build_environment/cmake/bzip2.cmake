@@ -25,6 +25,35 @@ else()
   endif()
 endif()
 
+# Simulator/device objects cannot run on the build host; default make runs self-tests via ./bzip2.
+if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  set(BZIP2_BUILD_COMMAND
+    ${BZIP2_CONFIGURE_ENV} &&
+    cd ${BUILD_DIR}/bzip2/src/external_bzip2/ &&
+    make libbz2.a CFLAGS=${BZIP2_CFLAGS} LDFLAGS=${BZIP2_LDFLAGS} -j${MAKE_THREADS}
+  )
+  set(BZIP2_INSTALL_COMMAND
+    ${CMAKE_COMMAND} -E make_directory ${BZIP2_PREFIX}/lib ${BZIP2_PREFIX}/include &&
+    ${CMAKE_COMMAND} -E copy
+      ${BUILD_DIR}/bzip2/src/external_bzip2/libbz2.a
+      ${BZIP2_PREFIX}/lib/${LIBPREFIX}bz2${LIBEXT} &&
+    ${CMAKE_COMMAND} -E copy
+      ${BUILD_DIR}/bzip2/src/external_bzip2/bzlib.h
+      ${BZIP2_PREFIX}/include/bzlib.h
+  )
+else()
+  set(BZIP2_BUILD_COMMAND
+    ${BZIP2_CONFIGURE_ENV} &&
+    cd ${BUILD_DIR}/bzip2/src/external_bzip2/ &&
+    make CFLAGS=${BZIP2_CFLAGS} LDFLAGS=${BZIP2_LDFLAGS} -j${MAKE_THREADS}
+  )
+  set(BZIP2_INSTALL_COMMAND
+    ${BZIP2_CONFIGURE_ENV} &&
+    cd ${BUILD_DIR}/bzip2/src/external_bzip2/ &&
+    make CFLAGS=${BZIP2_CFLAGS} LDFLAGS=${BZIP2_LDFLAGS} PREFIX=${BZIP2_PREFIX} install
+  )
+endif()
+
 ExternalProject_Add(external_bzip2
   URL file://${PACKAGE_DIR}/${BZIP2_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -32,13 +61,9 @@ ExternalProject_Add(external_bzip2
   PREFIX ${BUILD_DIR}/bzip2
   CONFIGURE_COMMAND echo .
 
-  BUILD_COMMAND ${BZIP2_CONFIGURE_ENV} &&
-    cd ${BUILD_DIR}/bzip2/src/external_bzip2/ &&
-    make CFLAGS=${BZIP2_CFLAGS} LDFLAGS=${BZIP2_LDFLAGS} -j${MAKE_THREADS}
+  BUILD_COMMAND ${BZIP2_BUILD_COMMAND}
 
-  INSTALL_COMMAND ${BZIP2_CONFIGURE_ENV} &&
-    cd ${BUILD_DIR}/bzip2/src/external_bzip2/ &&
-    make CFLAGS=${BZIP2_CFLAGS} LDFLAGS=${BZIP2_LDFLAGS} PREFIX=${BZIP2_PREFIX} install
+  INSTALL_COMMAND ${BZIP2_INSTALL_COMMAND}
 
   INSTALL_DIR ${LIBDIR}/bzip2
 )
