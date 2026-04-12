@@ -328,6 +328,13 @@ DEP_CONFIG = {
             Path("build_files/build_environment/cmake/lame.cmake"),
         ],
     },
+    "libheif": {
+        "folder": "libheif",
+        "cmake_prefixes": ["LIBHEIF"],
+        "key_files": [
+            Path("build_files/build_environment/cmake/libheif.cmake"),
+        ],
+    },
     "aom": {
         "folder": "aom",
         "cmake_prefixes": ["AOM"],

@@ -88,15 +88,16 @@ vpx external_vpx
 lame external_lame
 aom external_aom
 fftw external_fftw
+python external_python
 pybind11 external_pybind11
 nanobind external_nanobind
 manifold external_manifold
+cython external_cython
+numpy external_numpy
+libheif external_libheif
 opencolorio external_opencolorio
 openimageio external_openimageio
 openvdb external_openvdb
-python external_python
-cython external_cython
-numpy external_numpy
 shaderc external_shaderc
 spirv-reflect external_spirv_reflect
 DEPS
