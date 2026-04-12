@@ -38,8 +38,17 @@ set(OPENCOLORIO_EXTRA_ARGS
 )
 
 if(APPLE)
+  set(OPENCOLORIO_HOST_PYTHON ${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}/python/bin/python${PYTHON_SHORT_VERSION})
   set(OPENCOLORIO_EXTRA_ARGS
     ${OPENCOLORIO_EXTRA_ARGS}
+    -Dpystring_INCLUDE_DIR=${LIBDIR}/pystring/include
+    -Dpystring_LIBRARY=${LIBDIR}/pystring/lib/libpystring${LIBEXT}
+    -DImath_DIR=${LIBDIR}/imath/lib/cmake/Imath
+    -Dpybind11_DIR=${LIBDIR}/pybind11/share/cmake/pybind11
+    -DPython_EXECUTABLE=${OPENCOLORIO_HOST_PYTHON}
+    -DPython_ROOT_DIR=${LIBDIR}/python
+    -DPython_INCLUDE_DIR=${LIBDIR}/python/include/python${PYTHON_SHORT_VERSION}
+    -DPython_LIBRARY=${LIBDIR}/python/Python.framework/Python
     # Work around issue where minizip-ng_LIBRARY assumes -ng in file name.
     -Dminizip_LIBRARY=${LIBDIR}/minizipng/lib/libminizip${LIBEXT}
     # Work around issue where homebrew Imath's can be prioritized over our own dependency during linking if installed.
