@@ -136,10 +136,11 @@ if(APPLE AND WITH_APPLE_CROSSPLATFORM)
     -Dlibjpeg-turbo_DIR=${LIBDIR}/jpeg/lib/cmake/libjpeg-turbo
     -Dlibjpeg-turbo_ROOT=${LIBDIR}/jpeg
     # libjpeg-turbo CMake exports can leave JPEG::JPEG without a Release IMPORTED_LOCATION on iOS.
-    -DCMAKE_MAP_IMPORTED_CONFIG_Release=NOCONFIG
-    -DCMAKE_MAP_IMPORTED_CONFIG_DEBUG=Release
-    -DCMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO=Release
-    -DCMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL=Release
+    # Names must match CMAKE_MAP_IMPORTED_CONFIG_<CONFIG> (uppercase config ids).
+    -DCMAKE_MAP_IMPORTED_CONFIG_RELEASE=NOCONFIG
+    -DCMAKE_MAP_IMPORTED_CONFIG_DEBUG=RELEASE
+    -DCMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO=RELEASE
+    -DCMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL=RELEASE
   )
   # Host interpreter for configure-time scripts; headers/libs from cross-built prefix (see opencolorio.cmake).
   list(APPEND OPENIMAGEIO_EXTRA_ARGS
