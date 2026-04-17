@@ -2,6 +2,14 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  # USD runs Python during configure, so use the host interpreter while keeping
+  # the target Python headers and libraries from ${LIBDIR}/python.
+  set(USD_PYTHON_EXECUTABLE "${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}/python/bin/python${PYTHON_SHORT_VERSION}")
+else()
+  set(USD_PYTHON_EXECUTABLE "${PYTHON_BINARY}")
+endif()
+
 if(WIN32)
   # OIIO and OSL are statically linked for us, but USD doesn't know
   set(USD_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DOIIO_STATIC_DEFINE /DOSL_STATIC_DEFINE")
@@ -77,8 +85,8 @@ set(USD_EXTRA_ARGS
   -DPXR_ENABLE_HDF5_SUPPORT=OFF
   -DPXR_ENABLE_MATERIALX_SUPPORT=ON
   -DPXR_ENABLE_OPENVDB_SUPPORT=ON
-  -DPYTHON_EXECUTABLE=${PYTHON_BINARY}
-  -DPython3_EXECUTABLE=${PYTHON_BINARY}
+  -DPYTHON_EXECUTABLE=${USD_PYTHON_EXECUTABLE}
+  -DPython3_EXECUTABLE=${USD_PYTHON_EXECUTABLE}
   -DPXR_BUILD_MONOLITHIC=ON
   # OSL is an optional dependency of the Imaging module. However, since that
   # module was included for its support for converting primitive shapes (sphere,
