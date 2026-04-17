@@ -229,7 +229,7 @@ jobs:
 
       - name: Restore deps state cache
         id: restore-deps-cache
-        if: env.TARGET_DEVICE != 'ios-simulator'
+        if: env.TARGET_DEVICE == 'macos'
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -388,7 +388,7 @@ jobs:
           key: apple-deps-source-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('build_files/build_environment/cmake/download.cmake', 'build_files/build_environment/cmake/versions.cmake') }}
 
       - name: Save deps state cache
-        if: always() && env.TARGET_DEVICE != 'ios-simulator'
+        if: always() && env.TARGET_DEVICE == 'macos'
         uses: actions/cache/save@v4
         with:
           path: |
@@ -429,7 +429,6 @@ jobs:
             ls "${DEPS_INSTALL_DIR}" || true
           elif [ "${TARGET_DEVICE}" = "ios" ]; then
             echo "Deps source cache hit: ${{ steps.restore-deps-source-cache.outputs.cache-hit }}"
-            echo "Deps state cache hit: ${{ steps.restore-deps-cache.outputs.cache-hit }}"
             echo "iOS device release tag: ${IOS_DEVICE_DEPS_RELEASE_TAG}"
             ls "${DEPS_INSTALL_DIR}" || true
           else
