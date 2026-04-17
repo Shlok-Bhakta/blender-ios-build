@@ -41,3 +41,15 @@ list(FILTER _targets EXCLUDE REGEX "^$")
 foreach(_f IN LISTS _targets)
   file(COPY "${_f}" DESTINATION "${_dest}")
 endforeach()
+
+set(_config "${_dest}/libjpeg-turboConfig.cmake")
+if(EXISTS "${_config}")
+  file(APPEND "${_config}" [=[
+
+if(TARGET libjpeg-turbo::jpeg-static AND NOT TARGET libjpeg-turbo::jpeg)
+  add_library(libjpeg-turbo::jpeg INTERFACE IMPORTED)
+  set_property(TARGET libjpeg-turbo::jpeg APPEND PROPERTY
+    INTERFACE_LINK_LIBRARIES libjpeg-turbo::jpeg-static)
+endif()
+]=])
+endif()
