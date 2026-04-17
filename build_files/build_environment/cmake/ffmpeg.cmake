@@ -139,11 +139,17 @@ endif()
 
 if(APPLE)
   if(WITH_APPLE_CROSSPLATFORM)
+    if("${APPLE_TARGET_DEVICE}" STREQUAL "ios")
+      set(FFMPEG_APPLE_TARGET_OS ios)
+    else()
+      set(FFMPEG_APPLE_TARGET_OS ios-simulator)
+    endif()
+
     # iOS/tvOS simulator/device: compiler produces binaries that cannot execute on the build host;
     # without --enable-cross-compile, configure's link tests abort (signal 6).
     list(APPEND FFMPEG_EXTRA_FLAGS
       --enable-cross-compile
-      --target-os=ios-simulator
+      --target-os=${FFMPEG_APPLE_TARGET_OS}
       --sysroot=${CMAKE_OSX_SYSROOT}
     )
     if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
