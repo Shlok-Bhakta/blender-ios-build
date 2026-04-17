@@ -2,13 +2,21 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  set(SHADERC_PYTHON_EXECUTABLE
+    ${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}/python/bin/python${PYTHON_SHORT_VERSION}
+  )
+else()
+  set(SHADERC_PYTHON_EXECUTABLE ${PYTHON_BINARY})
+endif()
+
 set(SHADERC_EXTRA_ARGS
   -DSHADERC_SKIP_TESTS=On
   -DSHADERC_SPIRV_TOOLS_DIR=${BUILD_DIR}/shaderc_spirv_tools/src/external_shaderc_spirv_tools
   -DSHADERC_SPIRV_HEADERS_DIR=${BUILD_DIR}/shaderc_spirv_headers/src/external_shaderc_spirv_headers
   -DSHADERC_GLSLANG_DIR=${BUILD_DIR}/shaderc_glslang/src/external_shaderc_glslang
-  -DPython_EXECUTABLE=${PYTHON_BINARY}
-  -DPython3_EXECUTABLE=${PYTHON_BINARY}
+  -DPython_EXECUTABLE=${SHADERC_PYTHON_EXECUTABLE}
+  -DPython3_EXECUTABLE=${SHADERC_PYTHON_EXECUTABLE}
   -DSHADERC_ENABLE_SHARED_CRT=ON
 )
 
