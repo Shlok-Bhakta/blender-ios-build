@@ -24,6 +24,7 @@ endfunction()
 
 if(WITH_APPLE_CROSSPLATFORM)
   set(_apple_crossplatform_msg "Auto disabled for ${APPLE_TARGET_DEVICE} builds")
+  set(WITH_USD OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
   set(WITH_VULKAN_BACKEND OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
   set(WITH_OPENGL_BACKEND OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
   set(WITH_SDL OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)

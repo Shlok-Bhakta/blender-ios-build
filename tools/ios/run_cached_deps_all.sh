@@ -7,15 +7,26 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd -P)"
 cd "$ROOT"
 
+: "${APPLE_TARGET_DEVICE:?Set APPLE_TARGET_DEVICE}"
 : "${IOS_DEPS_BUILD_DIR:?Set IOS_DEPS_BUILD_DIR}"
 : "${IOS_DEPS_INSTALL_DIR:?Set IOS_DEPS_INSTALL_DIR}"
 : "${IOS_HOST_BUILD_DIR:?Set IOS_HOST_BUILD_DIR}"
 : "${IOS_HOST_INSTALL_DIR:?Set IOS_HOST_INSTALL_DIR}"
 
+case "${APPLE_TARGET_DEVICE}" in
+  ios|ios-simulator)
+    deps_mode="${APPLE_TARGET_DEVICE}"
+    ;;
+  *)
+    printf 'APPLE_TARGET_DEVICE must be ios or ios-simulator, got %s\n' "${APPLE_TARGET_DEVICE}" >&2
+    exit 2
+    ;;
+esac
+
 ARTIFACT_ROOT="${IOS_DEPS_ARTIFACT_ROOT:-artifacts/ios-deps}"
 mkdir -p "$ARTIFACT_ROOT"
 
-PY=(python3 "$ROOT/tools/ios/build_deps.py" --mode ios-simulator
+PY=(python3 "$ROOT/tools/ios/build_deps.py" --mode "$deps_mode"
   --generator Ninja
   --build-dir "$IOS_DEPS_BUILD_DIR"
   --install-dir "$IOS_DEPS_INSTALL_DIR"

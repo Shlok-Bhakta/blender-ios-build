@@ -13,7 +13,7 @@ on:
           - ios
           - macos
       dep_target:
-        description: "`install` for full chain, or one `external_*` ninja target (ios-simulator only)"
+        description: "`install` for full chain, or one `external_*` ninja target"
         required: true
         default: install
   push:
@@ -51,7 +51,8 @@ env:
   IOS_DEPS_INSTALL_DIR: ${{ github.workspace }}/build/ios-deps/install/ios_simulator
   IOS_HOST_BUILD_DIR: ${{ github.workspace }}/build_darwin
   IOS_HOST_INSTALL_DIR: ${{ github.workspace }}/lib/macos_arm64
-  IOS_DEPS_RELEASE_TAG: ${{ github.ref_name }}-sim-deps
+  IOS_SIM_DEPS_RELEASE_TAG: ${{ github.ref_name }}-sim-deps
+  IOS_DEVICE_DEPS_RELEASE_TAG: ${{ github.ref_name }}-ios-deps
   WITH_COMPILER_CCACHE: ON
   CCACHE_DIR: ${{ github.workspace }}/.ccache
   CCACHE_MAXSIZE: 1500M
@@ -250,7 +251,7 @@ jobs:
         env:
           APPLE_TARGET_DEVICE: ios-simulator
           APPLE_IOS_DEPS_BUILD_ROOT: build/ios-deps/ios_simulator
-          IOS_DEPS_RELEASE_TAG: ${{ env.IOS_DEPS_RELEASE_TAG }}
+          IOS_DEPS_RELEASE_TAG: ${{ env.IOS_SIM_DEPS_RELEASE_TAG }}
         run: |
           mkdir -p artifacts/ios-deps
           python3 tools/ios/build_deps.py --mode ios-simulator --configure-only \
@@ -269,7 +270,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           APPLE_TARGET_DEVICE: ios-simulator
           APPLE_IOS_DEPS_BUILD_ROOT: build/ios-deps/ios_simulator
-          IOS_DEPS_RELEASE_TAG: ${{ env.IOS_DEPS_RELEASE_TAG }}
+          IOS_DEPS_RELEASE_TAG: ${{ env.IOS_SIM_DEPS_RELEASE_TAG }}
         run: |
           bash tools/ios/run_cached_deps_all.sh
 
@@ -279,7 +280,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           APPLE_TARGET_DEVICE: ios-simulator
           APPLE_IOS_DEPS_BUILD_ROOT: build/ios-deps/ios_simulator
-          IOS_DEPS_RELEASE_TAG: ${{ env.IOS_DEPS_RELEASE_TAG }}
+          IOS_DEPS_RELEASE_TAG: ${{ env.IOS_SIM_DEPS_RELEASE_TAG }}
         run: |
           mkdir -p artifacts/ios-deps
           short="${DEP_TARGET#external_}"
@@ -296,6 +297,61 @@ jobs:
             --log-dir "$logdir" \
             --manifest-path "artifacts/ios-deps/${short}-manifest.json"
 
+      - name: Configure iOS device dependency build
+        if: env.TARGET_DEVICE == 'ios'
+        env:
+          APPLE_TARGET_DEVICE: ios
+          APPLE_IOS_DEPS_BUILD_ROOT: ${{ env.DEPS_BUILD_DIR }}
+          IOS_DEPS_RELEASE_TAG: ${{ env.IOS_DEVICE_DEPS_RELEASE_TAG }}
+        run: |
+          mkdir -p artifacts/ios-deps
+          python3 tools/ios/build_deps.py --mode ios --configure-only \
+            --generator Ninja \
+            --build-dir "${DEPS_BUILD_DIR}" \
+            --install-dir "${DEPS_INSTALL_DIR}" \
+            --host-build-dir "${HOST_BUILD_DIR}" \
+            --host-install-dir "${HOST_DEPS_INSTALL_DIR}" \
+            --log-dir artifacts/ios-deps/configure-logs \
+            --manifest-path artifacts/ios-deps/configure-manifest.json \
+            --cmake-arg=-DWITH_COMPILER_CCACHE=ON
+
+      - name: Build iOS device dependencies (GitHub Release cache)
+        if: env.TARGET_DEVICE == 'ios' && env.DEP_TARGET == 'install'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPLE_TARGET_DEVICE: ios
+          APPLE_IOS_DEPS_BUILD_ROOT: ${{ env.DEPS_BUILD_DIR }}
+          IOS_DEPS_BUILD_DIR: ${{ env.DEPS_BUILD_DIR }}
+          IOS_DEPS_INSTALL_DIR: ${{ env.DEPS_INSTALL_DIR }}
+          IOS_HOST_BUILD_DIR: ${{ env.HOST_BUILD_DIR }}
+          IOS_HOST_INSTALL_DIR: ${{ env.HOST_DEPS_INSTALL_DIR }}
+          IOS_DEPS_RELEASE_TAG: ${{ env.IOS_DEVICE_DEPS_RELEASE_TAG }}
+        run: |
+          bash tools/ios/run_cached_deps_all.sh
+
+      - name: Build single iOS device dependency (GitHub Release cache)
+        if: env.TARGET_DEVICE == 'ios' && env.DEP_TARGET != 'install'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPLE_TARGET_DEVICE: ios
+          APPLE_IOS_DEPS_BUILD_ROOT: ${{ env.DEPS_BUILD_DIR }}
+          IOS_DEPS_RELEASE_TAG: ${{ env.IOS_DEVICE_DEPS_RELEASE_TAG }}
+        run: |
+          mkdir -p artifacts/ios-deps
+          short="${DEP_TARGET#external_}"
+          logdir="artifacts/ios-deps/${short}-logs"
+          mkdir -p "$logdir"
+          bash tools/ios/run_release_cached_dep.sh "$short" artifacts/ios-deps \
+            python3 tools/ios/build_deps.py --mode ios --generator Ninja \
+            --build-dir "${DEPS_BUILD_DIR}" \
+            --install-dir "${DEPS_INSTALL_DIR}" \
+            --host-build-dir "${HOST_BUILD_DIR}" \
+            --host-install-dir "${HOST_DEPS_INSTALL_DIR}" \
+            --cmake-arg=-DWITH_COMPILER_CCACHE=ON \
+            --build-target "${DEP_TARGET}" \
+            --log-dir "$logdir" \
+            --manifest-path "artifacts/ios-deps/${short}-manifest.json"
+
       - name: Sync iOS simulator install tree to lib/
         if: env.TARGET_DEVICE == 'ios-simulator'
         run: |
@@ -303,7 +359,7 @@ jobs:
           rsync -a --delete "${IOS_DEPS_INSTALL_DIR}/" "${DEPS_INSTALL_DIR}/"
 
       - name: Build deps via GNUmakefile wrapper
-        if: env.TARGET_DEVICE != 'ios-simulator'
+        if: env.TARGET_DEVICE == 'macos'
         run: |
           make deps "${TARGET_DEVICE}" \
             DEPS_TARGET="${DEP_TARGET}" \
@@ -369,7 +425,12 @@ jobs:
           echo "Host tools cache hit: ${{ steps.restore-host-tools-cache.outputs.cache-hit }}"
           if [ "${TARGET_DEVICE}" = "ios-simulator" ]; then
             echo "Deps source cache hit: ${{ steps.restore-ios-deps-source-cache.outputs.cache-hit }}"
-            echo "iOS simulator release tag: ${IOS_DEPS_RELEASE_TAG}"
+            echo "iOS simulator release tag: ${IOS_SIM_DEPS_RELEASE_TAG}"
+            ls "${DEPS_INSTALL_DIR}" || true
+          elif [ "${TARGET_DEVICE}" = "ios" ]; then
+            echo "Deps source cache hit: ${{ steps.restore-deps-source-cache.outputs.cache-hit }}"
+            echo "Deps state cache hit: ${{ steps.restore-deps-cache.outputs.cache-hit }}"
+            echo "iOS device release tag: ${IOS_DEVICE_DEPS_RELEASE_TAG}"
             ls "${DEPS_INSTALL_DIR}" || true
           else
             echo "Deps source cache hit: ${{ steps.restore-deps-source-cache.outputs.cache-hit }}"
