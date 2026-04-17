@@ -55,6 +55,7 @@ png external_png
 jpeg external_jpeg
 tiff external_tiff
 imath external_imath
+openjph external_openjph
 openexr external_openexr
 brotli external_brotli
 freetype external_freetype

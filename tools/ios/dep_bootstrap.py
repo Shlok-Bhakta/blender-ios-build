@@ -30,7 +30,9 @@ COMMON_KEY_FILES = [
 
 def ios_deps_build_root() -> Path:
     """CMake build tree for Apple cross-deps (e.g. build/ios-deps/ios_simulator)."""
-    return Path(os.environ.get("APPLE_IOS_DEPS_BUILD_ROOT", "build/ios-deps/ios_simulator"))
+    return Path(
+        os.environ.get("APPLE_IOS_DEPS_BUILD_ROOT", "build/ios-deps/ios_simulator")
+    )
 
 
 def apple_sdk_name() -> str:
@@ -52,6 +54,7 @@ def apple_platform_asset_slug() -> str:
     if sdk == "iphonesimulator":
         return "iphonesimulator"
     return "iphoneos"
+
 
 DEP_CONFIG = {
     "zlib": {
@@ -88,7 +91,9 @@ DEP_CONFIG = {
         "cmake_prefixes": ["JPEG"],
         "key_files": [
             Path("build_files/build_environment/cmake/jpeg.cmake"),
-            Path("build_files/build_environment/cmake/install_libjpeg_turbo_cmake.cmake"),
+            Path(
+                "build_files/build_environment/cmake/install_libjpeg_turbo_cmake.cmake"
+            ),
         ],
     },
     "tiff": {
@@ -103,6 +108,13 @@ DEP_CONFIG = {
         "cmake_prefixes": ["IMATH"],
         "key_files": [
             Path("build_files/build_environment/cmake/imath.cmake"),
+        ],
+    },
+    "openjph": {
+        "folder": "openjph",
+        "cmake_prefixes": ["OPENJPH"],
+        "key_files": [
+            Path("build_files/build_environment/cmake/openjph.cmake"),
         ],
     },
     "openexr": {
@@ -614,9 +626,7 @@ def compute_metadata(branch: str, dep: str) -> dict[str, object]:
     source_hash_label = primary_package["hash_type"].lower()
     source_hash_value = primary_package["hash"]
 
-    asset_stem = (
-        f"ios-dep-{dep}-{source_hash_label}-{source_hash_value}-{platform_slug}-{machine}"
-    )
+    asset_stem = f"ios-dep-{dep}-{source_hash_label}-{source_hash_value}-{platform_slug}-{machine}"
     legacy_asset_stem = f"{asset_stem}-{short_key}"
 
     release_tag = os.environ.get("IOS_DEPS_RELEASE_TAG", f"{branch}-deps")
