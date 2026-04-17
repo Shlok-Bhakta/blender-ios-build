@@ -21,6 +21,7 @@ if(WIN32)
 endif()
 
 if(UNIX)
+  set(SQLITE_CONFIGURE_ENV ${CONFIGURE_ENV})
   if(NOT APPLE)
     set(SQLITE_LDFLAGS -Wl,--as-needed)
   endif()
@@ -71,11 +72,11 @@ if(UNIX)
       cd ${BUILD_DIR}/sqlite/src/external_sqlite/ &&
       ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/sqlite ${SQLITE_CONFIGURATION_ARGS}
 
-    BUILD_COMMAND ${CONFIGURE_ENV} &&
+    BUILD_COMMAND ${SQLITE_CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/sqlite/src/external_sqlite/ &&
       make -j${MAKE_THREADS}
 
-    INSTALL_COMMAND ${CONFIGURE_ENV} &&
+    INSTALL_COMMAND ${SQLITE_CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/sqlite/src/external_sqlite/ &&
       make install
 
