@@ -31,8 +31,8 @@ set(OPENVDB_EXTRA_ARGS
   -DTBB_ROOT=${LIBDIR}/tbb/
   -DTBB_DIR=${LIBDIR}/tbb/lib/cmake/TBB
   -DTbb_INCLUDE_DIR=${LIBDIR}/tbb/include
-  -DTbb_tbb_LIBRARY_RELEASE=${LIBDIR}/tbb/lib/libtbb.dylib
-  -DTbb_tbb_LIBRARY_DEBUG=${LIBDIR}/tbb/lib/libtbb.dylib
+  -DTbb_tbb_LIBRARY_RELEASE=${LIBDIR}/tbb/lib/libtbb${SHAREDLIBEXT}
+  -DTbb_tbb_LIBRARY_DEBUG=${LIBDIR}/tbb/lib/libtbb_debug${SHAREDLIBEXT}
   -DOPENVDB_CORE_SHARED=ON
   -DOPENVDB_CORE_STATIC=OFF
   -DOPENVDB_BUILD_BINARIES=OFF

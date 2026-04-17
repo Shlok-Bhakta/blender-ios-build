@@ -198,12 +198,14 @@ ${LIBDIR}/ssl/lib64/pkgconfig:${LIBDIR}/lzma/lib/pkgconfig:${LIBDIR}/zlib/share/
           ${PATCH_DIR}/python_ios.diff
       )
       set(PYTHON_CONFIGURE_COMMAND ${CONFIGURE_COMMAND_NO_TARGET})
+      set(PYTHON_C_PREPROCESSOR "${CONFIGURE_C_COMPILER} -E")
+      set(PYTHON_CXX_PREPROCESSOR "${CONFIGURE_CXX_COMPILER} -E")
       # Cross autoconf looks for $host-cpp; point preprocessing at the same Clang we use for CC/CXX.
       # libmpdec and other sub-makes otherwise invoke $host_alias-ar (not installed on macOS).
       set(PYTHON_CONFIGURE_ENV
         ${PYTHON_CONFIGURE_ENV} &&
-        export CPP=${CONFIGURE_C_COMPILER}\ -E &&
-        export CXXCPP=${CONFIGURE_CXX_COMPILER}\ -E &&
+        export CPP=${PYTHON_C_PREPROCESSOR} &&
+        export CXXCPP=${PYTHON_CXX_PREPROCESSOR} &&
         export AR=ar &&
         export RANLIB=ranlib
       )
