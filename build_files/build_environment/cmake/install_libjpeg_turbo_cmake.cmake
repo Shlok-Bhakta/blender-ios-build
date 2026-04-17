@@ -32,7 +32,7 @@ foreach(
 endforeach()
 
 execute_process(
-  COMMAND find "${_src}/CMakeFiles/Export" -name libjpeg-turboTargets.cmake
+  COMMAND find "${_src}/CMakeFiles/Export" -name libjpeg-turboTargets*.cmake
   OUTPUT_VARIABLE _find_out
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
