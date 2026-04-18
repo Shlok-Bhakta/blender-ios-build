@@ -22,7 +22,6 @@ KEY_SCHEMA_VERSION = 3
 # Only existing files participate in cache keys (see compute_metadata).
 COMMON_KEY_FILES = [
     Path("build_files/build_environment/CMakeLists.txt"),
-    Path("build_files/build_environment/cmake/options.cmake"),
 ]
 
 
