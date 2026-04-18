@@ -342,6 +342,15 @@ jobs:
         run: |
           bash tools/ios/run_cached_deps_all.sh
 
+      - name: Normalize cached iOS device dependency paths
+        if: env.TARGET_DEVICE == 'ios' && env.DEP_TARGET == 'install'
+        run: |
+          prefixed_deps_build_dir="${GITHUB_WORKSPACE}/${DEPS_BUILD_DIR#/}"
+          if [ -d "${prefixed_deps_build_dir}" ]; then
+            mkdir -p "${DEPS_BUILD_DIR}"
+            rsync -a "${prefixed_deps_build_dir}/" "${DEPS_BUILD_DIR}/"
+          fi
+
       - name: Build single iOS device dependency (GitHub Release cache)
         if: env.TARGET_DEVICE == 'ios' && env.DEP_TARGET != 'install'
         env:

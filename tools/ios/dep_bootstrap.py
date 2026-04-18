@@ -521,6 +521,11 @@ def detect_sdk_version() -> str:
 
 
 def relpath(path: Path) -> str:
+    if path.is_absolute():
+        try:
+            return path.relative_to(REPO_ROOT).as_posix()
+        except ValueError:
+            return path.as_posix().lstrip("/")
     return path.as_posix()
 
 
