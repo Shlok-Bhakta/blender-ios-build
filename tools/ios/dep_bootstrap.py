@@ -515,6 +515,13 @@ def parse_args() -> argparse.Namespace:
     )
     extract.add_argument("--input", type=Path, required=True)
 
+    matches = subparsers.add_parser(
+        "matches",
+        help="Check whether a cached manifest is compatible with expected metadata.",
+    )
+    matches.add_argument("--expected", type=Path, required=True)
+    matches.add_argument("--cached", type=Path, required=True)
+
     return parser.parse_args()
 
 
@@ -763,6 +770,53 @@ def command_extract(args: argparse.Namespace) -> int:
     return 0
 
 
+def manifests_match(
+    expected: dict[str, object], cached: dict[str, object]
+) -> str | None:
+    comparable_fields = (
+        "apple_sdk",
+        "deps_build_root",
+        "machine",
+        "platform_slug",
+        "sdk_version",
+        "source_file",
+        "source_hash",
+        "source_hash_type",
+        "source_packages",
+        "xcode_version",
+    )
+
+    for field in comparable_fields:
+        if expected.get(field) != cached.get(field):
+            return None
+
+    expected_key_files = expected.get("key_files", {})
+    cached_key_files = cached.get("key_files", {})
+    if not isinstance(expected_key_files, dict) or not isinstance(
+        cached_key_files, dict
+    ):
+        return None
+
+    for path, digest in expected_key_files.items():
+        if cached_key_files.get(path) != digest:
+            return None
+
+    if expected.get("key") == cached.get("key"):
+        return "exact"
+
+    return "compatible"
+
+
+def command_matches(args: argparse.Namespace) -> int:
+    expected = json.loads(args.expected.read_text(encoding="ascii"))
+    cached = json.loads(args.cached.read_text(encoding="ascii"))
+    match_type = manifests_match(expected, cached)
+    if match_type is None:
+        return 1
+    print(match_type)
+    return 0
+
+
 def main() -> int:
     args = parse_args()
     if args.command == "metadata":
@@ -771,6 +825,8 @@ def main() -> int:
         return command_bundle(args)
     if args.command == "extract":
         return command_extract(args)
+    if args.command == "matches":
+        return command_matches(args)
     raise ValueError(f"Unsupported command: {args.command}")
 
 

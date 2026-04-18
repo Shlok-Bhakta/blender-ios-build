@@ -59,6 +59,7 @@ source_file="$(metadata_field source_file)"
 if gh release view "${release_tag}" -R "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
   manifest_path="${download_dir}/${manifest_asset_name}"
   if gh release download "${release_tag}" -R "${GITHUB_REPOSITORY}" -p "${manifest_asset_name}" -D "${download_dir}" >/dev/null 2>&1; then
+    match_type="$({ python3 tools/ios/dep_bootstrap.py matches --expected "${metadata_path}" --cached "${manifest_path}"; } 2>/dev/null || true)"
     cached_key="$({ python3 - "${manifest_path}" <<'PY'
 import json
 import sys
@@ -69,10 +70,14 @@ print(metadata.get("key", ""))
 PY
     } 2>/dev/null || true)"
 
-    if [ -n "${cached_key}" ] && [ "${cached_key}" = "${cache_key}" ]; then
+    if [ -n "${match_type}" ]; then
       if gh release download "${release_tag}" -R "${GITHUB_REPOSITORY}" -p "${asset_name}" -D "${download_dir}" >/dev/null 2>&1; then
         python3 tools/ios/dep_bootstrap.py extract --input "${download_dir}/${asset_name}"
-        printf '[dep-cache][%s] restore-hit\n' "${dep}" | tee -a "${cache_log}"
+        if [ "${match_type}" = "compatible" ] && [ -n "${cached_key}" ] && [ "${cached_key}" != "${cache_key}" ]; then
+          printf '[dep-cache][%s] restore-hit-compatible cached_key=%s current_key=%s\n' "${dep}" "${cached_key}" "${cache_key}" | tee -a "${cache_log}"
+        else
+          printf '[dep-cache][%s] restore-hit\n' "${dep}" | tee -a "${cache_log}"
+        fi
         exit 0
       fi
       printf '[dep-cache][%s] manifest-hit asset-miss\n' "${dep}" | tee -a "${cache_log}"
