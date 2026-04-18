@@ -523,11 +523,11 @@ help: .FORCE
 #
 
 package_archive: .FORCE
-	$(BUILD_COMMAND) -C "$(BUILD_DIR)" package_archive
+	cmake --build "$(BUILD_DIR)" --target package_archive
 	@echo archive in "$(BUILD_DIR)/release"
 
 package_ipa: .FORCE
-	$(BUILD_COMMAND) -C "$(BUILD_DIR)" package_ipa
+	cmake --build "$(BUILD_DIR)" --target package_ipa
 	@echo ipa in "$(BUILD_DIR)/release"
 
 
