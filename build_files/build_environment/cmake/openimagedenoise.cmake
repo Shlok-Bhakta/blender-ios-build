@@ -11,8 +11,11 @@ set(OIDN_EXTRA_ARGS
 
 if(APPLE AND WITH_APPLE_CROSSPLATFORM)
   list(APPEND OIDN_EXTRA_ARGS
-    -DISPC_EXECUTABLE=${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}/ispc/bin/ispc
     -DPython_EXECUTABLE=${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR}/python/bin/python${PYTHON_SHORT_VERSION}
+  )
+elseif(APPLE)
+  list(APPEND OIDN_EXTRA_ARGS
+    -DPython_EXECUTABLE=${PYTHON_BINARY}
   )
 else()
   list(APPEND OIDN_EXTRA_ARGS
@@ -119,8 +122,14 @@ unset(OIDN_PATCH_COMMAND)
 add_dependencies(
   external_openimagedenoise
   external_tbb
-  external_ispc
 )
+
+if(NOT APPLE)
+  add_dependencies(
+    external_openimagedenoise
+    external_ispc
+  )
+endif()
 
 if(NOT (APPLE AND WITH_APPLE_CROSSPLATFORM))
   add_dependencies(
