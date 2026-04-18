@@ -26,6 +26,7 @@ endif()
 if(APPLE)
   set(OIDN_EXTRA_ARGS
     ${OIDN_EXTRA_ARGS}
+    -DOIDN_DEVICE_CPU=OFF
     -DOIDN_DEVICE_METAL=ON
   )
 else()
