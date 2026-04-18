@@ -59,6 +59,37 @@ set(ISPC_EXTRA_ARGS
   ${ISPC_EXTRA_ARGS_UNIX}
 )
 
+set(ISPC_CMAKE_FLAGS ${DEFAULT_CMAKE_FLAGS})
+set(ISPC_INSTALL_DIR ${LIBDIR}/ispc)
+
+if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  set(ISPC_HOST_INSTALL_DIR ${CMAKE_DEPS_CROSSCOMPILE_INSTALLDIR})
+  set(ISPC_CMAKE_FLAGS
+    -DCMAKE_BUILD_TYPE=${BUILD_MODE}
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+    -DCMAKE_CXX_STANDARD=20
+    ${CCACHE_CMAKE_FLAGS}
+  )
+  set(ISPC_INSTALL_DIR ${ISPC_HOST_INSTALL_DIR}/ispc)
+  set(ISPC_EXTRA_ARGS
+    -DISPC_INCLUDE_EXAMPLES=Off
+    -DISPC_INCLUDE_TESTS=Off
+    -DISPC_INCLUDE_RT=Off
+    -DISPC_INCLUDE_UTILS=Off
+    -DISPC_LIBRARY=Off
+    -DLLVM_CONFIG_EXECUTABLE=${ISPC_HOST_INSTALL_DIR}/llvm/bin/llvm-config
+    -DLLVM_DIR=${ISPC_HOST_INSTALL_DIR}/llvm/lib/cmake/llvm/
+    -DCLANG_EXECUTABLE=${ISPC_HOST_INSTALL_DIR}/llvm/bin/clang
+    -DCLANGPP_EXECUTABLE=${ISPC_HOST_INSTALL_DIR}/llvm/bin/clang++
+    -DISPC_INCLUDE_TESTS=Off
+    -DPython3_ROOT_DIR=${ISPC_HOST_INSTALL_DIR}/python/
+    -DPython3_EXECUTABLE=${ISPC_HOST_INSTALL_DIR}/python/bin/python${PYTHON_SHORT_VERSION}
+    -DGIT_BINARY=GIT_BINARY-NOTFOUND
+    ${ISPC_EXTRA_ARGS_APPLE}
+  )
+  unset(ISPC_HOST_INSTALL_DIR)
+endif()
+
 ExternalProject_Add(external_ispc
   URL file://${PACKAGE_DIR}/${ISPC_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -71,20 +102,22 @@ ExternalProject_Add(external_ispc
     ${PATCH_DIR}/ispc.diff
 
   CMAKE_ARGS
-    -DCMAKE_INSTALL_PREFIX=${LIBDIR}/ispc
+    -DCMAKE_INSTALL_PREFIX=${ISPC_INSTALL_DIR}
     -Wno-dev
-    ${DEFAULT_CMAKE_FLAGS}
+    ${ISPC_CMAKE_FLAGS}
     ${ISPC_EXTRA_ARGS}
     ${BUILD_DIR}/ispc/src/external_ispc
 
-  INSTALL_DIR ${LIBDIR}/ispc
+  INSTALL_DIR ${ISPC_INSTALL_DIR}
 )
 
-add_dependencies(
-  external_ispc
-  external_llvm
-  external_python
-)
+if(NOT (APPLE AND WITH_APPLE_CROSSPLATFORM))
+  add_dependencies(
+    external_ispc
+    external_llvm
+    external_python
+  )
+endif()
 
 if(WIN32)
   add_dependencies(
