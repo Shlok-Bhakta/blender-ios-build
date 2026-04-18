@@ -33,7 +33,7 @@
 #include "mtl_shader_interface.hh"
 #include "mtl_texture.hh"
 
-#include <Cocoa/Cocoa.h>
+#include <Foundation/Foundation.h>
 #include <Metal/Metal.h>
 #include <QuartzCore/QuartzCore.h>
 #include <chrono>

@@ -151,21 +151,31 @@ elseif(WITH_GHOST_SDL)
     bf::dependencies::optional::sdl
   )
 elseif(APPLE AND NOT WITH_GHOST_X11)
-  list(APPEND SRC
-    intern/GHOST_SystemCocoa.mm
-    intern/GHOST_WindowCocoa.mm
-
-    intern/GHOST_SystemCocoa.hh
-    intern/GHOST_WindowCocoa.hh
-    intern/GHOST_WindowViewCocoa.hh
-  )
-
-  if(WITH_INPUT_NDOF)
+  if(WITH_APPLE_CROSSPLATFORM)
     list(APPEND SRC
-      intern/GHOST_NDOFManagerCocoa.mm
+      intern/GHOST_SystemIOS.mm
+      intern/GHOST_WindowIOS.mm
 
-      intern/GHOST_NDOFManagerCocoa.hh
+      intern/GHOST_SystemIOS.hh
+      intern/GHOST_WindowIOS.hh
     )
+  else()
+    list(APPEND SRC
+      intern/GHOST_SystemCocoa.mm
+      intern/GHOST_WindowCocoa.mm
+
+      intern/GHOST_SystemCocoa.hh
+      intern/GHOST_WindowCocoa.hh
+      intern/GHOST_WindowViewCocoa.hh
+    )
+
+    if(WITH_INPUT_NDOF)
+      list(APPEND SRC
+        intern/GHOST_NDOFManagerCocoa.mm
+
+        intern/GHOST_NDOFManagerCocoa.hh
+      )
+    endif()
   endif()
 
 elseif(WITH_GHOST_X11 OR WITH_GHOST_WAYLAND)
@@ -492,10 +502,17 @@ if(APPLE)
 endif()
 
 if(APPLE)
-  list(APPEND SRC
-    intern/GHOST_SystemPathsCocoa.hh
-    intern/GHOST_SystemPathsCocoa.mm
-  )
+  if(WITH_APPLE_CROSSPLATFORM)
+    list(APPEND SRC
+      intern/GHOST_SystemPathsIOS.hh
+      intern/GHOST_SystemPathsIOS.mm
+    )
+  else()
+    list(APPEND SRC
+      intern/GHOST_SystemPathsCocoa.hh
+      intern/GHOST_SystemPathsCocoa.mm
+    )
+  endif()
 
 elseif(UNIX)
   list(APPEND SRC

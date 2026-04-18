@@ -227,7 +227,7 @@ MTLContext::MTLContext(GHOST_IWindow *ghost_window, GHOST_IContext *ghost_contex
   /* Enable increased concurrent shader compiler limit.
    * NOTE: Disable warning for missing method when building on older OS's, as compiled code will
    * still work correctly when run on a system with the API available. */
-  if (@available(macOS 13.3, *)) {
+  if (@available(macOS 13.3, iOS 16.4, *)) {
     [this->device setShouldMaximizeConcurrentCompilation:YES];
   }
 #pragma clang diagnostic pop

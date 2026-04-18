@@ -133,11 +133,37 @@ function(add_package_archive packagename extension)
   )
 endfunction()
 
-if(APPLE)
-  add_package_archive(
-    "${PROJECT_NAME}-${BLENDER_VERSION}-${BUILD_REV}-OSX-${CMAKE_OSX_ARCHITECTURES}"
-    "zip"
+function(add_package_ipa packagename)
+  set(build_ipa python ${CMAKE_SOURCE_DIR}/build_files/package_spec/build_ipa.py)
+  set(package_output ${CMAKE_BINARY_DIR}/release/${packagename}.ipa)
+
+  add_custom_target(package_ipa DEPENDS ${package_output})
+
+  add_custom_command(
+    OUTPUT ${package_output}
+    COMMAND ${build_ipa} ${packagename} ${CMAKE_BINARY_DIR}/bin/Blender.app release
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   )
+endfunction()
+
+if(APPLE)
+  if(WITH_APPLE_CROSSPLATFORM)
+    set(_apple_crossplatform_package_name
+      "${PROJECT_NAME}-${BLENDER_VERSION}-${BUILD_REV}-${APPLE_TARGET_DEVICE}-${CMAKE_OSX_ARCHITECTURES}")
+    add_package_archive(
+      "${_apple_crossplatform_package_name}"
+      "zip"
+    )
+    if(APPLE_TARGET_DEVICE STREQUAL "ios")
+      add_package_ipa("${_apple_crossplatform_package_name}")
+    endif()
+    unset(_apple_crossplatform_package_name)
+  else()
+    add_package_archive(
+      "${PROJECT_NAME}-${BLENDER_VERSION}-${BUILD_REV}-OSX-${CMAKE_OSX_ARCHITECTURES}"
+      "zip"
+    )
+  endif()
 elseif(UNIX)
   # platform name could be tweaked, to include glibc, and ensure processor is correct (i386 vs i686)
   string(TOLOWER ${CMAKE_SYSTEM_NAME} PACKAGE_SYSTEM_NAME)

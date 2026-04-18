@@ -16,11 +16,17 @@
 
 #include "GHOST_ContextMTL.hh"
 
-#import <Cocoa/Cocoa.h>
+#if defined(WITH_APPLE_CROSSPLATFORM)
+#  import <UIKit/UIKit.h>
+#else
+#  import <Cocoa/Cocoa.h>
+#endif
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
 
 #include <cassert>
+#include <cstdlib>
+#include <cstdio>
 #include <mutex>
 #include <vector>
 
@@ -28,6 +34,10 @@ static const MTLPixelFormat METAL_FRAMEBUFFERPIXEL_FORMAT_EDR = MTLPixelFormatRG
 
 static void ghost_fatal_error_dialog(const char *msg)
 {
+#if defined(WITH_APPLE_CROSSPLATFORM)
+  fprintf(stderr, "Error opening window:\n%s", msg);
+  exit(1);
+#else
   @autoreleasepool {
     NSString *message = [NSString stringWithFormat:@"Error opening window:\n%s", msg];
 
@@ -42,13 +52,14 @@ static void ghost_fatal_error_dialog(const char *msg)
   }
 
   exit(1);
+#endif
 }
 
 MTLCommandQueue *GHOST_ContextMTL::s_sharedMetalCommandQueue = nil;
 int GHOST_ContextMTL::s_sharedCount = 0;
 
 GHOST_ContextMTL::GHOST_ContextMTL(const GHOST_ContextParams &context_params,
-                                   NSView *metalView,
+                                   GHOST_MTL_VIEW *metalView,
                                    CAMetalLayer *metalLayer)
     : GHOST_Context(context_params),
       metal_view_(metalView),
@@ -71,7 +82,7 @@ GHOST_ContextMTL::GHOST_ContextMTL(const GHOST_ContextParams &context_params,
       /* Prepare offscreen GHOST Context Metal device. */
       id<MTLDevice> metalDevice = MTLCreateSystemDefaultDevice();
 
-      if (context_params_.is_debug) {
+      if (metalDevice && context_params_.is_debug) {
         printf("Selected Metal Device: %s\n", [metalDevice.name UTF8String]);
       }
 
@@ -89,9 +100,13 @@ GHOST_ContextMTL::GHOST_ContextMTL(const GHOST_ContextParams &context_params,
 
         {
           const GHOST_TVSyncModes vsync = getVSync();
+#if !defined(WITH_APPLE_CROSSPLATFORM)
           if (vsync != GHOST_kVSyncModeUnset) {
             metal_layer_.displaySyncEnabled = (vsync == GHOST_kVSyncModeOff) ? NO : YES;
           }
+#else
+          (void)vsync;
+#endif
         }
 
         /* Enable EDR support. This is done by:
@@ -100,12 +115,14 @@ GHOST_ContextMTL::GHOST_ContextMTL(const GHOST_ContextParams &context_params,
          * 3. Setting the extended sRGB color space so that the OS knows how to interpret the
          *    values.
          */
-        metal_layer_.wantsExtendedDynamicRangeContent = YES;
         metal_layer_.pixelFormat = METAL_FRAMEBUFFERPIXEL_FORMAT_EDR;
+#if !defined(WITH_APPLE_CROSSPLATFORM)
+        metal_layer_.wantsExtendedDynamicRangeContent = YES;
         const CFStringRef name = kCGColorSpaceExtendedSRGB;
         CGColorSpaceRef colorspace = CGColorSpaceCreateWithName(name);
         metal_layer_.colorspace = colorspace;
         CGColorSpaceRelease(colorspace);
+#endif
 
         metalInit();
       }
@@ -322,20 +339,6 @@ void GHOST_ContextMTL::metalInit()
           "GHOST_ContextMTL::metalInit: newRenderPipelineStateWithDescriptor:error: failed!");
     }
 
-    /* Create a render pipeline to composite things rendered with Metal on top
-     * of the frame-buffer contents. Uses the same vertex and fragment shader
-     * as the blit above, but with alpha blending enabled. */
-    desc.label = @"Metal Overlay";
-    desc.colorAttachments[0].blendingEnabled = YES;
-    desc.colorAttachments[0].sourceRGBBlendFactor = MTLBlendFactorSourceAlpha;
-    desc.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
-
-    if (error) {
-      ghost_fatal_error_dialog(
-          "GHOST_ContextMTL::metalInit: newRenderPipelineStateWithDescriptor:error: failed (when "
-          "creating the Metal overlay pipeline)!");
-    }
-
     [desc.fragmentFunction release];
     [desc.vertexFunction release];
   }
@@ -364,7 +367,7 @@ void GHOST_ContextMTL::metalInitFramebuffer()
 void GHOST_ContextMTL::metalUpdateFramebuffer()
 {
   @autoreleasepool {
-    const NSSize drawableSize = metal_layer_.drawableSize;
+    const CGSize drawableSize = metal_layer_.drawableSize;
     const size_t width = size_t(drawableSize.width);
     const size_t height = size_t(drawableSize.height);
 
@@ -423,6 +426,15 @@ void GHOST_ContextMTL::metalUpdateFramebuffer()
 void GHOST_ContextMTL::metalSwapBuffers()
 {
   @autoreleasepool {
+    if (contextPresentCallback == nullptr) {
+      static bool warned_missing_present_callback = false;
+      if (!warned_missing_present_callback) {
+        warned_missing_present_callback = true;
+        fprintf(stderr, "GHOST_ContextMTL: present callback not registered yet\n");
+      }
+      return;
+    }
+
     updateDrawingContext();
 
     id<CAMetalDrawable> drawable = [metal_layer_ nextDrawable];
@@ -439,7 +451,6 @@ void GHOST_ContextMTL::metalSwapBuffers()
       attachment.storeAction = MTLStoreActionStore;
     }
 
-    assert(contextPresentCallback);
     assert(default_framebuffer_metal_texture_[current_swapchain_index].texture != nil);
     (*contextPresentCallback)(passDescriptor,
                               (id<MTLRenderPipelineState>)metal_render_pipeline_,

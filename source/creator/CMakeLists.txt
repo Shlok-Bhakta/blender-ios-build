@@ -149,6 +149,12 @@ set(SRC
   creator_intern.h
 )
 
+if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  list(APPEND SRC
+    creator_ios.mm
+  )
+endif()
+
 if(CMAKE_GENERATOR MATCHES "^Visual Studio.+")
   # This helps visual studio find the debugger visualizers
   list(APPEND SRC ${CMAKE_SOURCE_DIR}/tools/utils_ide/natvis/Blender.natvis)
@@ -336,6 +342,11 @@ if(WITH_PYTHON_MODULE)
 
 else()
   add_executable(blender ${EXETYPE} ${SRC})
+  if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+    target_sources(blender PRIVATE
+      ${CMAKE_SOURCE_DIR}/release/ios/Blender.app/LaunchScreen.storyboard
+    )
+  endif()
   if(WITH_CPU_CHECK)
     # blender_cpu_check *NEEDS* to be linked first, there can be no exceptions
     # to this, this is to ensure this will be the first code to run once the
@@ -429,14 +440,20 @@ elseif(APPLE)
       set(TARGETDIR_LIB ${PYTHON_SITE_PACKAGES}/bpy/lib)
     endif()
   else()
-    set(TARGETDIR_VER "Blender.app/Contents/Resources/${BLENDER_VERSION}")
-    set(TARGETDIR_LIB "Blender.app/Contents/Resources/lib")
-    set(TARGETDIR_TEXT "Blender.app/Contents/Resources/text")
+    if(WITH_APPLE_CROSSPLATFORM)
+      set(TARGETDIR_VER "Blender.app/Assets/${BLENDER_VERSION}")
+      set(TARGETDIR_LIB "Blender.app/Assets/lib")
+      set(TARGETDIR_TEXT "Blender.app/Assets/text")
+    else()
+      set(TARGETDIR_VER "Blender.app/Contents/Resources/${BLENDER_VERSION}")
+      set(TARGETDIR_LIB "Blender.app/Contents/Resources/lib")
+      set(TARGETDIR_TEXT "Blender.app/Contents/Resources/text")
+    endif()
   endif()
   set(TARGETDIR_SITE_PACKAGES "${TARGETDIR_VER}/python/lib/python${PYTHON_VERSION}/site-packages")
   # Skip re-linking on CPACK / install.
   set_target_properties(blender PROPERTIES BUILD_WITH_INSTALL_RPATH true)
-  if(WITH_BLENDER_THUMBNAILER)
+  if(WITH_BLENDER_THUMBNAILER AND NOT WITH_APPLE_CROSSPLATFORM)
     set_target_properties(blender-thumbnailer PROPERTIES BUILD_WITH_INSTALL_RPATH true)
   endif()
 endif()
@@ -1668,7 +1685,11 @@ elseif(APPLE)
     set_target_properties(blender PROPERTIES OUTPUT_NAME Blender)
   endif()
 
-  set(OSX_APP_SOURCEDIR ${CMAKE_SOURCE_DIR}/release/darwin/Blender.app)
+  if(WITH_APPLE_CROSSPLATFORM)
+    set(OSX_APP_SOURCEDIR ${CMAKE_SOURCE_DIR}/release/ios/Blender.app)
+  else()
+    set(OSX_APP_SOURCEDIR ${CMAKE_SOURCE_DIR}/release/darwin/Blender.app)
+  endif()
 
   # Setup `Info.plist`.
   execute_process(
@@ -1677,11 +1698,29 @@ elseif(APPLE)
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 
-  set_target_properties(blender PROPERTIES
-    MACOSX_BUNDLE_INFO_PLIST ${OSX_APP_SOURCEDIR}/Contents/Info.plist
-    MACOSX_BUNDLE_SHORT_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH}"
-    MACOSX_BUNDLE_LONG_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH} ${BLENDER_DATE}"
-  )
+  if(WITH_APPLE_CROSSPLATFORM)
+    if(APPLE_TARGET_DEVICE STREQUAL "ios")
+      set(BLENDER_IOS_PLATFORM_NAME "iPhoneOS")
+    elseif(APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
+      set(BLENDER_IOS_PLATFORM_NAME "iPhoneSimulator")
+    else()
+      message(FATAL_ERROR "Unsupported APPLE_TARGET_DEVICE='${APPLE_TARGET_DEVICE}'")
+    endif()
+    set(BLENDER_IOS_MINIMUM_OS_VERSION "${CMAKE_OSX_DEPLOYMENT_TARGET}")
+
+    set_target_properties(blender PROPERTIES
+      MACOSX_BUNDLE_INFO_PLIST ${OSX_APP_SOURCEDIR}/Info.plist
+      MACOSX_BUNDLE_SHORT_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH}"
+      MACOSX_BUNDLE_LONG_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH} ${BLENDER_DATE}"
+      RESOURCE "${CMAKE_SOURCE_DIR}/release/ios/Blender.app/LaunchScreen.storyboard"
+    )
+  else()
+    set_target_properties(blender PROPERTIES
+      MACOSX_BUNDLE_INFO_PLIST ${OSX_APP_SOURCEDIR}/Contents/Info.plist
+      MACOSX_BUNDLE_SHORT_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH}"
+      MACOSX_BUNDLE_LONG_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH} ${BLENDER_DATE}"
+    )
+  endif()
 
   # Xcode Archiving support for distributing the application (Testflight, App Store Connect, etc...)
   set_target_properties(blender PROPERTIES
@@ -1689,7 +1728,13 @@ elseif(APPLE)
     XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)"
   )
 
-  if(WITH_BLENDER_THUMBNAILER)
+  if(WITH_APPLE_CROSSPLATFORM)
+    set_target_properties(blender PROPERTIES
+      XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
+    )
+  endif()
+
+  if(WITH_BLENDER_THUMBNAILER AND NOT WITH_APPLE_CROSSPLATFORM)
     set(OSX_THUMBNAILER_SOURCEDIR ${OSX_APP_SOURCEDIR}/Contents/PlugIns/blender-thumbnailer.appex)
     set_target_properties(blender-thumbnailer PROPERTIES
       BUNDLE_EXTENSION appex
@@ -1722,21 +1767,33 @@ elseif(APPLE)
     DESTINATION "."
   )
 
-  install(
-    FILES ${OSX_APP_SOURCEDIR}/Contents/PkgInfo
-    DESTINATION "Blender.app/Contents"
-  )
-
-  install_dir(
-    ${OSX_APP_SOURCEDIR}/Contents/Resources
-    "Blender.app/Contents"
-  )
-
-  if(WITH_BLENDER_THUMBNAILER)
+  if(WITH_APPLE_CROSSPLATFORM)
     install(
-      TARGETS blender-thumbnailer
-      DESTINATION "./Blender.app/Contents/PlugIns"
+      FILES ${OSX_APP_SOURCEDIR}/PkgInfo
+      DESTINATION "Blender.app"
     )
+
+    install_dir(
+      ${OSX_APP_SOURCEDIR}/Assets
+      "Blender.app"
+    )
+  else()
+    install(
+      FILES ${OSX_APP_SOURCEDIR}/Contents/PkgInfo
+      DESTINATION "Blender.app/Contents"
+    )
+
+    install_dir(
+      ${OSX_APP_SOURCEDIR}/Contents/Resources
+      "Blender.app/Contents"
+    )
+
+    if(WITH_BLENDER_THUMBNAILER)
+      install(
+        TARGETS blender-thumbnailer
+        DESTINATION "./Blender.app/Contents/PlugIns"
+      )
+    endif()
   endif()
 
   if(PLATFORM_BUNDLED_LIBRARIES AND TARGETDIR_LIB)

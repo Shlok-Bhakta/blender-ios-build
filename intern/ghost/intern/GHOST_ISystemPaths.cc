@@ -16,7 +16,11 @@
 #  include "GHOST_SystemPathsWin32.hh"
 #else
 #  ifdef __APPLE__
-#    include "GHOST_SystemPathsCocoa.hh"
+#    ifdef WITH_APPLE_CROSSPLATFORM
+#      include "GHOST_SystemPathsIOS.hh"
+#    else
+#      include "GHOST_SystemPathsCocoa.hh"
+#    endif
 #  else
 #    include "GHOST_SystemPathsUnix.hh"
 #  endif
@@ -32,7 +36,11 @@ GHOST_TSuccess GHOST_ISystemPaths::create()
     system_paths_ = new GHOST_SystemPathsWin32();
 #else
 #  ifdef __APPLE__
+#    ifdef WITH_APPLE_CROSSPLATFORM
+    system_paths_ = new GHOST_SystemPathsIOS();
+#    else
     system_paths_ = new GHOST_SystemPathsCocoa();
+#    endif
 #  else
     system_paths_ = new GHOST_SystemPathsUnix();
 #  endif

@@ -27,8 +27,8 @@
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
-	<key>UIMainStoryboardFile</key>
-	<string>Main</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
 	<key>CFBundleExecutable</key>
 	<string>Blender</string>
 	<key>CFBundleGetInfoString</key>
@@ -43,14 +43,23 @@
 	<string>Blender</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>${BLENDER_IOS_PLATFORM_NAME}</string>
+	</array>
 	<key>CFBundleShortVersionString</key>
 	<string>${MACOSX_BUNDLE_SHORT_VERSION_STRING}</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>${MACOSX_BUNDLE_SHORT_VERSION_STRING}</string>
-	<key>NSHighResolutionCapable</key>
-	<true/>
+	<key>MinimumOSVersion</key>
+	<string>${BLENDER_IOS_MINIMUM_OS_VERSION}</string>
+	<key>UIDeviceFamily</key>
+	<array>
+		<integer>1</integer>
+		<integer>2</integer>
+	</array>
 	<key>UIRequiresFullScreen</key>
 	<true/>
 	<key>UIViewControllerBasedStatusBarAppearance</key>

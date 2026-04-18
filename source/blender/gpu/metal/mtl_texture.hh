@@ -19,7 +19,7 @@
 #include <string>
 #include <thread>
 
-#include <Cocoa/Cocoa.h>
+#include <Foundation/Foundation.h>
 #include <Metal/Metal.h>
 #include <QuartzCore/QuartzCore.h>
 
@@ -664,8 +664,8 @@ inline MTLTextureUsage mtl_usage_from_gpu(eGPUTextureUsage usage)
   if (usage & GPU_TEXTURE_USAGE_FORMAT_VIEW) {
     mtl_usage = mtl_usage | MTLTextureUsagePixelFormatView;
   }
-#if defined(MAC_OS_VERSION_14_0)
-  if (@available(macOS 14.0, *)) {
+#if defined(MAC_OS_VERSION_14_0) || defined(__IPHONE_17_0)
+  if (@available(macOS 14.0, iOS 17.0, *)) {
     if (usage & GPU_TEXTURE_USAGE_ATOMIC) {
       mtl_usage = mtl_usage | MTLTextureUsageShaderAtomic;
     }

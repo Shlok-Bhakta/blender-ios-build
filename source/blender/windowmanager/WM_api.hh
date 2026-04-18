@@ -155,6 +155,8 @@ void WM_exit_ex(bContext *C, bool do_python_exit, bool do_user_exit_actions);
  */
 void WM_exit(bContext *C, int exit_code) ATTR_NORETURN;
 
+void WM_main_entry(bContext *C);
+void WM_main_loop_body(bContext *C);
 void WM_main(bContext *C) ATTR_NORETURN;
 
 /**

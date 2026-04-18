@@ -29,7 +29,7 @@
 #include "gpu_capabilities_private.hh"
 #include "gpu_platform_private.hh"
 
-#include <Cocoa/Cocoa.h>
+#include <Foundation/Foundation.h>
 #include <Metal/Metal.h>
 #include <QuartzCore/QuartzCore.h>
 #include <sys/sysctl.h>
@@ -212,7 +212,9 @@ void MTLBackend::platform_init(MTLContext *ctx)
 
   /* macOS is the only supported platform, but check to ensure we are not building with Metal
    * enablement on another platform. */
+#if !defined(WITH_APPLE_CROSSPLATFORM)
   BLI_assert_msg(os == GPU_OS_MAC, "Platform must be macOS");
+#endif
 
   /* Determine Vendor from name. */
   if (strstr(vendor, "ATI") || strstr(vendor, "AMD")) {
@@ -295,6 +297,9 @@ static const char *mtl_extensions_get_null(int /*i*/)
 
 bool supports_barycentric_whitelist(id<MTLDevice> device)
 {
+#if defined(WITH_APPLE_CROSSPLATFORM)
+  return false;
+#else
   NSString *gpu_name = [device name];
   BLI_assert([gpu_name length]);
   const char *vendor = [gpu_name UTF8String];
@@ -313,6 +318,7 @@ bool supports_barycentric_whitelist(id<MTLDevice> device)
     should_support_barycentrics = true;
   }
   return supported_gpu && should_support_barycentrics;
+#endif
 }
 
 bool is_apple_sillicon(id<MTLDevice> device)
@@ -376,11 +382,13 @@ bool MTLBackend::metal_is_supported()
   /* Device compatibility information using Metal Feature-set tables.
    * See: https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf */
 
+  bool supported_os_version = true;
+#if !defined(WITH_APPLE_CROSSPLATFORM)
   NSOperatingSystemVersion version = [[NSProcessInfo processInfo] operatingSystemVersion];
 
   /* Metal Viewport requires macOS Version 10.15 onward. */
-  bool supported_os_version = version.majorVersion >= 11 ||
-                              (version.majorVersion == 10 ? version.minorVersion >= 15 : false);
+  supported_os_version = version.majorVersion >= 11 ||
+                         (version.majorVersion == 10 ? version.minorVersion >= 15 : false);
   if (!supported_os_version) {
     printf(
         "OS Version too low to run minimum required metal version. Required at least 10.15, got "
@@ -389,6 +397,7 @@ bool MTLBackend::metal_is_supported()
         (long)version.minorVersion);
     return false;
   }
+#endif
 
   id<MTLDevice> device = MTLCreateSystemDefaultDevice();
 
@@ -397,21 +406,30 @@ bool MTLBackend::metal_is_supported()
   bool forceIntel = forceIntelStr ? (atoi(forceIntelStr) != 0) : false;
 
   if (forceIntel) {
+#if !defined(WITH_APPLE_CROSSPLATFORM)
     NSArray<id<MTLDevice>> *allDevices = MTLCopyAllDevices();
     for (id<MTLDevice> _device in allDevices) {
       if (_device.lowPower) {
         device = _device;
       }
     }
+#endif
   }
 
   /* Metal Viewport requires argument buffer tier-2 support and Barycentric Coordinates.
    * These are available on most hardware configurations supporting Metal 2.2. */
   bool supports_argument_buffers_tier2 = ([device argumentBuffersSupport] ==
                                           MTLArgumentBuffersTier2);
+#if defined(WITH_APPLE_CROSSPLATFORM)
+  bool supports_barycentrics = true;
+#else
   bool supports_barycentrics = [device supportsShaderBarycentricCoordinates] ||
                                supports_barycentric_whitelist(device);
-  bool supported_metal_version = [device supportsFamily:MTLGPUFamilyMac2];
+#endif
+  bool supported_metal_version = true;
+#if !defined(WITH_APPLE_CROSSPLATFORM)
+  supported_metal_version = [device supportsFamily:MTLGPUFamilyMac2];
+#endif
 
   bool result = supports_argument_buffers_tier2 && supports_barycentrics && supported_os_version &&
                 supported_metal_version;
@@ -445,12 +463,14 @@ void MTLBackend::capabilities_init(MTLContext *ctx)
   /* Initialize Capabilities. */
   MTLBackend::capabilities.supports_argument_buffers_tier2 = ([device argumentBuffersSupport] ==
                                                               MTLArgumentBuffersTier2);
+#if !defined(WITH_APPLE_CROSSPLATFORM)
   MTLBackend::capabilities.supports_family_mac1 = [device supportsFamily:MTLGPUFamilyMac1];
   MTLBackend::capabilities.supports_family_mac2 = [device supportsFamily:MTLGPUFamilyMac2];
   MTLBackend::capabilities.supports_family_mac_catalyst1 = [device
       supportsFamily:MTLGPUFamilyMacCatalyst1];
   MTLBackend::capabilities.supports_family_mac_catalyst2 = [device
       supportsFamily:MTLGPUFamilyMacCatalyst2];
+#endif
   /* NOTE(Metal): Texture gather is supported on AMD, but results are non consistent
    * with Apple Silicon GPUs. Disabling for now to avoid erroneous rendering. */
   MTLBackend::capabilities.supports_texture_gather = [device hasUnifiedMemory];
@@ -472,8 +492,8 @@ void MTLBackend::capabilities_init(MTLContext *ctx)
 
   /* Texture atomics supported in Metal 3.1. */
   MTLBackend::capabilities.supports_texture_atomics = false;
-#if defined(MAC_OS_VERSION_14_0)
-  if (@available(macOS 14.0, *)) {
+#if defined(MAC_OS_VERSION_14_0) || defined(__IPHONE_17_0)
+  if (@available(macOS 14.0, iOS 17.0, *)) {
     MTLBackend::capabilities.supports_texture_atomics = true;
   }
 #endif

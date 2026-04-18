@@ -11,7 +11,13 @@
 #include "GHOST_Context.hh"
 #include "GHOST_Types.hh"
 
-#include <Cocoa/Cocoa.h>
+#if defined(WITH_APPLE_CROSSPLATFORM)
+#  include <UIKit/UIKit.h>
+#  define GHOST_MTL_VIEW UIView
+#else
+#  include <Cocoa/Cocoa.h>
+#  define GHOST_MTL_VIEW NSView
+#endif
 #include <Metal/Metal.h>
 #include <QuartzCore/QuartzCore.h>
 
@@ -20,7 +26,6 @@
 @class MTLDevice;
 @class MTLRenderPipelineState;
 @class MTLTexture;
-@class NSView;
 
 class GHOST_ContextMTL : public GHOST_Context {
   friend class GHOST_XrGraphicsBindingMetal;
@@ -45,7 +50,7 @@ class GHOST_ContextMTL : public GHOST_Context {
    * Constructor.
    */
   GHOST_ContextMTL(const GHOST_ContextParams &context_params,
-                   NSView *metalView,
+                   GHOST_MTL_VIEW *metalView,
                    CAMetalLayer *metalLayer);
 
   /**
@@ -139,7 +144,7 @@ class GHOST_ContextMTL : public GHOST_Context {
 
  private:
   /** Metal state */
-  NSView *metal_view_;
+  GHOST_MTL_VIEW *metal_view_;
   CAMetalLayer *metal_layer_;
   MTLRenderPipelineState *metal_render_pipeline_;
   bool owns_metal_device_;
@@ -166,9 +171,9 @@ class GHOST_ContextMTL : public GHOST_Context {
   void (*contextPresentCallback)(MTLRenderPassDescriptor *,
                                  id<MTLRenderPipelineState>,
                                  id<MTLTexture>,
-                                 id<CAMetalDrawable>);
+                                 id<CAMetalDrawable>) = nullptr;
   /* XR texture blitting callback. */
-  void (*xrBlitCallback)(id<MTLTexture>, int, int, int, int);
+  void (*xrBlitCallback)(id<MTLTexture>, int, int, int, int) = nullptr;
 
   int mtl_SwapInterval;
 
