@@ -23,8 +23,6 @@ KEY_SCHEMA_VERSION = 3
 COMMON_KEY_FILES = [
     Path("build_files/build_environment/CMakeLists.txt"),
     Path("build_files/build_environment/cmake/options.cmake"),
-    Path("build_files/cmake/platform/platform_apple_xcode.cmake"),
-    Path("build_files/cmake/platform/platform_apple.cmake"),
 ]
 
 
@@ -284,6 +282,22 @@ DEP_CONFIG = {
             Path("build_files/build_environment/cmake/tbb.cmake"),
         ],
     },
+    "sse2neon": {
+        "folder": "sse2neon",
+        "cmake_prefixes": ["SSE2NEON"],
+        "key_files": [
+            Path("build_files/build_environment/cmake/sse2neon.cmake"),
+        ],
+    },
+    "embree": {
+        "folder": "embree",
+        "cmake_prefixes": ["EMBREE", "TBB"],
+        "key_files": [
+            Path("build_files/build_environment/cmake/embree.cmake"),
+            Path("build_files/build_environment/cmake/tbb.cmake"),
+            Path("build_files/build_environment/patches/embree_ios.diff"),
+        ],
+    },
     "fftw": {
         "folder": "fftw3",
         "cmake_prefixes": ["FFTW"],
@@ -429,6 +443,17 @@ DEP_CONFIG = {
         "cmake_prefixes": ["PYTHON"],
         "key_files": [
             Path("build_files/build_environment/cmake/python.cmake"),
+        ],
+    },
+    "openimagedenoise": {
+        "folder": "openimagedenoise",
+        "cmake_prefixes": ["OIDN", "TBB", "PYTHON", "ISPC"],
+        "key_files": [
+            Path("build_files/build_environment/cmake/openimagedenoise.cmake"),
+            Path("build_files/build_environment/cmake/tbb.cmake"),
+            Path("build_files/build_environment/cmake/python.cmake"),
+            Path("build_files/build_environment/cmake/ispc.cmake"),
+            Path("build_files/build_environment/patches/oidn.diff"),
         ],
     },
     "cython": {

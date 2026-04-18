@@ -87,6 +87,8 @@ openjpeg external_openjpeg
 webp external_webp
 gmp external_gmp
 tbb external_tbb
+sse2neon external_sse2neon
+embree external_embree
 opensubdiv external_opensubdiv
 ogg external_ogg
 opus external_opus
@@ -101,6 +103,7 @@ lame external_lame
 aom external_aom
 fftw external_fftw
 python external_python
+openimagedenoise external_openimagedenoise
 pybind11 external_pybind11
 nanobind external_nanobind
 manifold external_manifold
