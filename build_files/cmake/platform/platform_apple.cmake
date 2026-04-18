@@ -36,6 +36,7 @@ if(WITH_APPLE_CROSSPLATFORM)
   set(WITH_JACK OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
   set(WITH_HYDRA OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
   set(WITH_CYCLES_OSL OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
+  set(WITH_CYCLES_EMBREE OFF CACHE BOOL "${_apple_crossplatform_msg}" FORCE)
   unset(_apple_crossplatform_msg)
 
   set(WITH_CROSSCOMPILED_TOOLS ON CACHE BOOL "Use host-built tools for Apple cross-platform builds" FORCE)
