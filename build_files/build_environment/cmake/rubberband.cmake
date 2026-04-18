@@ -15,6 +15,43 @@ $PKG_CONFIG_PATH"
   )
 endif()
 
+set(RUBBERBAND_MESON_ARGS)
+
+if(APPLE AND WITH_APPLE_CROSSPLATFORM)
+  if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
+    set(RUBBERBAND_HOST_CPU_FAMILY x86_64)
+    set(RUBBERBAND_HOST_CPU x86_64)
+  else()
+    set(RUBBERBAND_HOST_CPU_FAMILY aarch64)
+    set(RUBBERBAND_HOST_CPU arm64)
+  endif()
+
+  set(RUBBERBAND_MESON_CROSS_FILE ${CMAKE_CURRENT_BINARY_DIR}/rubberband-meson-cross.ini)
+  file(WRITE ${RUBBERBAND_MESON_CROSS_FILE}
+    "[binaries]\n"
+    "c = '${CONFIGURE_C_COMPILER}'\n"
+    "cpp = '${CONFIGURE_CXX_COMPILER}'\n"
+    "ar = 'ar'\n"
+    "strip = 'strip'\n"
+    "pkg-config = 'pkg-config'\n\n"
+    "[built-in options]\n"
+    "c_args = ['-isysroot', '${CMAKE_OSX_SYSROOT}', '${APPLE_OS_MINVERSION_CFLAG}', '-arch', '${CMAKE_OSX_ARCHITECTURES}']\n"
+    "cpp_args = ['-isysroot', '${CMAKE_OSX_SYSROOT}', '${APPLE_OS_MINVERSION_CFLAG}', '-std=c++20', '-stdlib=libc++', '-arch', '${CMAKE_OSX_ARCHITECTURES}']\n"
+    "c_link_args = ['-isysroot', '${CMAKE_OSX_SYSROOT}', '${APPLE_OS_MINVERSION_CFLAG}', '-arch', '${CMAKE_OSX_ARCHITECTURES}', '-headerpad_max_install_names']\n"
+    "cpp_link_args = ['-isysroot', '${CMAKE_OSX_SYSROOT}', '${APPLE_OS_MINVERSION_CFLAG}', '-arch', '${CMAKE_OSX_ARCHITECTURES}', '-headerpad_max_install_names']\n\n"
+    "[properties]\n"
+    "needs_exe_wrapper = true\n\n"
+    "[host_machine]\n"
+    "system = 'darwin'\n"
+    "cpu_family = '${RUBBERBAND_HOST_CPU_FAMILY}'\n"
+    "cpu = '${RUBBERBAND_HOST_CPU}'\n"
+    "endian = 'little'\n"
+  )
+  set(RUBBERBAND_MESON_ARGS --cross-file ${RUBBERBAND_MESON_CROSS_FILE})
+  unset(RUBBERBAND_HOST_CPU_FAMILY)
+  unset(RUBBERBAND_HOST_CPU)
+endif()
+
 ExternalProject_Add(external_rubberband
   URL file://${PACKAGE_DIR}/${RUBBERBAND_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -30,6 +67,7 @@ ExternalProject_Add(external_rubberband
       --prefix ${LIBDIR}/rubberband
       --libdir lib
       ${MESON_BUILD_TYPE}
+      ${RUBBERBAND_MESON_ARGS}
       -Dauto_features=disabled
       -Ddefault_library=static
       -Dfft=fftw
