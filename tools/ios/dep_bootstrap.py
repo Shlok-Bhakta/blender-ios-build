@@ -271,6 +271,13 @@ DEP_CONFIG = {
             Path("build_files/build_environment/cmake/tbb.cmake"),
         ],
     },
+    "zstd": {
+        "folder": "zstd",
+        "cmake_prefixes": ["ZSTD"],
+        "key_files": [
+            Path("build_files/build_environment/cmake/zstd.cmake"),
+        ],
+    },
     "opensubdiv": {
         "folder": "opensubdiv",
         "cmake_prefixes": ["OPENSUBDIV", "TBB"],
@@ -462,6 +469,58 @@ DEP_CONFIG = {
             Path("build_files/build_environment/cmake/python.cmake"),
             Path("build_files/build_environment/cmake/ispc.cmake"),
             Path("build_files/build_environment/patches/oidn.diff"),
+        ],
+    },
+    "haru": {
+        "folder": "haru",
+        "cmake_prefixes": ["HARU"],
+        "key_files": [
+            Path("build_files/build_environment/cmake/haru.cmake"),
+        ],
+    },
+    "xr_openxr_sdk": {
+        "folder": "xr_openxr_sdk",
+        "cmake_prefixes": ["XR_OPENXR_SDK"],
+        "key_files": [
+            Path("build_files/build_environment/cmake/xr_openxr.cmake"),
+        ],
+    },
+    "abseil": {
+        "folder": "abseil",
+        "cmake_prefixes": ["ABSEIL"],
+        "key_files": [
+            Path("build_files/build_environment/cmake/abseil.cmake"),
+        ],
+    },
+    "eigen": {
+        "folder": "eigen",
+        "cmake_prefixes": ["EIGEN", "TBB"],
+        "key_files": [
+            Path("build_files/build_environment/cmake/eigen.cmake"),
+            Path("build_files/build_environment/cmake/tbb.cmake"),
+            Path("build_files/build_environment/patches/eigen_tbb_support.diff"),
+        ],
+    },
+    "ceres": {
+        "folder": "ceres",
+        "cmake_prefixes": ["CERES", "ABSEIL", "EIGEN", "TBB"],
+        "key_files": [
+            Path("build_files/build_environment/cmake/ceres.cmake"),
+            Path("build_files/build_environment/cmake/abseil.cmake"),
+            Path("build_files/build_environment/cmake/eigen.cmake"),
+            Path("build_files/build_environment/cmake/tbb.cmake"),
+        ],
+    },
+    "rubberband": {
+        "folder": "rubberband",
+        "cmake_prefixes": ["RUBBERBAND", "FFTW", "PYTHON"],
+        "key_files": [
+            Path("build_files/build_environment/cmake/rubberband.cmake"),
+            Path("build_files/build_environment/cmake/fftw.cmake"),
+            Path("build_files/build_environment/cmake/python_site_packages.cmake"),
+            Path(
+                "build_files/build_environment/patches/rubberband_remove_dll_exports.diff"
+            ),
         ],
     },
     "cython": {
