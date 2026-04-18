@@ -376,7 +376,11 @@ endif()
 
 test_neon_support()
 if(SUPPORTS_NEON_BUILD)
-  find_package(sse2neon REQUIRED)
+  if(WITH_APPLE_CROSSPLATFORM)
+    find_package(sse2neon)
+  else()
+    find_package(sse2neon REQUIRED)
+  endif()
 endif()
 
 if(WITH_LLVM)
