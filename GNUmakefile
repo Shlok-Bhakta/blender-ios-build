@@ -523,11 +523,11 @@ help: .FORCE
 #
 
 package_archive: .FORCE
-	make -C "$(BUILD_DIR)" -s package_archive
+	$(BUILD_COMMAND) -C "$(BUILD_DIR)" package_archive
 	@echo archive in "$(BUILD_DIR)/release"
 
 package_ipa: .FORCE
-	make -C "$(BUILD_DIR)" -s package_ipa
+	$(BUILD_COMMAND) -C "$(BUILD_DIR)" package_ipa
 	@echo ipa in "$(BUILD_DIR)/release"
 
 
