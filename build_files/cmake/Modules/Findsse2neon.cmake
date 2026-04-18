@@ -24,13 +24,17 @@ set(_sse2neon_SEARCH_DIRS
   ${SSE2NEON_ROOT_DIR}
 )
 
+set(_sse2neon_INCLUDE_SEARCH_DIRS ${_sse2neon_SEARCH_DIRS})
+foreach(_sse2neon_dir ${_sse2neon_SEARCH_DIRS})
+  list(APPEND _sse2neon_INCLUDE_SEARCH_DIRS "${_sse2neon_dir}/include")
+endforeach()
+unset(_sse2neon_dir)
+
 find_path(SSE2NEON_INCLUDE_DIR
   NAMES
     sse2neon.h
   HINTS
-    ${_sse2neon_SEARCH_DIRS}
-  PATH_SUFFIXES
-    include
+    ${_sse2neon_INCLUDE_SEARCH_DIRS}
 )
 
 # handle the QUIETLY and REQUIRED arguments and set SSE2NEON_FOUND to TRUE if
@@ -48,3 +52,4 @@ mark_as_advanced(
 )
 
 unset(_sse2neon_SEARCH_DIRS)
+unset(_sse2neon_INCLUDE_SEARCH_DIRS)
