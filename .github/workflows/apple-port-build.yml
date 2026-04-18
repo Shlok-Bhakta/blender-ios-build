@@ -16,6 +16,11 @@ on:
         description: "`install` for full chain, or one `external_*` ninja target"
         required: true
         default: install
+      build_ipa:
+        description: Build and upload an unsigned IPA when targeting ios/install
+        required: true
+        type: boolean
+        default: false
   push:
     branches:
       - main-iosport
@@ -24,6 +29,11 @@ on:
       - CMakeLists.txt
       - GNUmakefile
       - build_files/**
+      - intern/ghost/**
+      - release/ios/**
+      - source/blender/gpu/metal/**
+      - source/blender/windowmanager/**
+      - source/creator/**
       - tools/ios/**
       - source/blender/blentranslation/msgfmt/CMakeLists.txt
       - source/blender/datatoc/CMakeLists.txt
@@ -43,10 +53,13 @@ env:
   CACHE_FEATURES: ninja-ccache-v1
   TARGET_DEVICE: ${{ github.event.inputs.apple_target_device || 'ios-simulator' }}
   DEP_TARGET: ${{ github.event.inputs.dep_target || 'install' }}
+  BUILD_IPA: ${{ github.event.inputs.build_ipa || 'false' }}
   HOST_BUILD_DIR: ${{ github.workspace }}/build_darwin
   DEPS_BUILD_DIR: ${{ github.workspace }}/build_deps_${{ github.event.inputs.apple_target_device || 'ios-simulator' }}
   DEPS_INSTALL_DIR: ${{ github.workspace }}/lib/${{ github.event.inputs.apple_target_device || 'ios-simulator' }}_arm64
   HOST_DEPS_INSTALL_DIR: ${{ github.workspace }}/lib/macos_arm64
+  APP_BUILD_DIR_BASE: ${{ github.workspace }}/build_ios_app
+  APP_BUILD_DIR: ${{ github.workspace }}/build_ios_app_release
   IOS_DEPS_BUILD_DIR: ${{ github.workspace }}/build/ios-deps/ios_simulator
   IOS_DEPS_INSTALL_DIR: ${{ github.workspace }}/build/ios-deps/install/ios_simulator
   IOS_HOST_BUILD_DIR: ${{ github.workspace }}/build_darwin
@@ -358,6 +371,13 @@ jobs:
           mkdir -p "${DEPS_INSTALL_DIR}"
           rsync -a --delete "${IOS_DEPS_INSTALL_DIR}/" "${DEPS_INSTALL_DIR}/"
 
+      - name: Materialize iOS device dependency install tree
+        if: env.TARGET_DEVICE == 'ios' && env.DEP_TARGET == 'install'
+        run: |
+          cmake --install "${DEPS_BUILD_DIR}"
+          test -d "${DEPS_INSTALL_DIR}"
+          test -d "${DEPS_INSTALL_DIR}/python"
+
       - name: Build deps via GNUmakefile wrapper
         if: env.TARGET_DEVICE == 'macos'
         run: |
@@ -403,6 +423,25 @@ jobs:
             ${{ env.DEPS_INSTALL_DIR }}
           key: deps-state-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ env.TARGET_DEVICE }}-${{ hashFiles('GNUmakefile', 'build_files/build_environment/**') }}
 
+      - name: Build Blender iOS app
+        if: env.TARGET_DEVICE == 'ios' && env.DEP_TARGET == 'install' && env.BUILD_IPA == 'true'
+        run: |
+          set -o pipefail
+          mkdir -p artifacts/ios-app
+          make release ios \
+            BUILD_DIR="${APP_BUILD_DIR_BASE}" \
+            BUILD_CMAKE_ARGS="-G Ninja -DWITH_COMPILER_CCACHE=YES -DBLENDER_HOST_TOOLS_DIR=${HOST_BUILD_DIR}/bin" \
+            2>&1 | tee artifacts/ios-app/build.log
+
+      - name: Package unsigned IPA
+        if: env.TARGET_DEVICE == 'ios' && env.DEP_TARGET == 'install' && env.BUILD_IPA == 'true'
+        run: |
+          set -o pipefail
+          make package_ipa BUILD_DIR="${APP_BUILD_DIR}"
+          ls -lh "${APP_BUILD_DIR}/release"
+          unzip -l "${APP_BUILD_DIR}"/release/*.ipa | sed -n '1,20p'
+          shasum -a 256 "${APP_BUILD_DIR}"/release/*.ipa | tee artifacts/ios-app/ipa.sha256
+
       - name: Show compiler cache stats
         if: always()
         run: |
@@ -416,11 +455,34 @@ jobs:
             ${{ env.CCACHE_DIR }}
           key: apple-ccache-${{ env.CACHE_VERSION }}-${{ env.CACHE_FEATURES }}-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'GNUmakefile', 'build_files/cmake/**', 'build_files/build_environment/**', 'source/blender/blentranslation/msgfmt/**', 'source/blender/datatoc/**', 'source/blender/gpu/shader_tool/**', 'source/blender/makesdna/**', 'source/blender/makesrna/**', 'tools/ios/**') }}-stable
 
+      - name: Upload unsigned IPA artifact
+        if: success() && env.TARGET_DEVICE == 'ios' && env.DEP_TARGET == 'install' && env.BUILD_IPA == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-ios-unsigned-ipa
+          if-no-files-found: error
+          path: |
+            ${{ env.APP_BUILD_DIR }}/release/*.ipa
+            artifacts/ios-app/ipa.sha256
+
+      - name: Upload iOS app logs
+        if: failure() && env.TARGET_DEVICE == 'ios' && env.BUILD_IPA == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-ios-app-logs
+          if-no-files-found: ignore
+          path: |
+            artifacts/ios-app/**/*.log
+            ${{ env.APP_BUILD_DIR }}/CMakeCache.txt
+            ${{ env.APP_BUILD_DIR }}/CMakeFiles/CMakeError.log
+            ${{ env.APP_BUILD_DIR }}/CMakeFiles/CMakeOutput.log
+
       - name: Summarize outputs
         if: always()
         run: |
           echo "Built target: ${DEP_TARGET}"
           echo "Target device: ${TARGET_DEVICE}"
+          echo "Build IPA: ${BUILD_IPA}"
           echo "Compiler cache hit: ${{ steps.restore-ccache.outputs.cache-hit }}"
           echo "Host tools cache hit: ${{ steps.restore-host-tools-cache.outputs.cache-hit }}"
           if [ "${TARGET_DEVICE}" = "ios-simulator" ]; then
@@ -431,6 +493,7 @@ jobs:
             echo "Deps source cache hit: ${{ steps.restore-deps-source-cache.outputs.cache-hit }}"
             echo "iOS device release tag: ${IOS_DEVICE_DEPS_RELEASE_TAG}"
             ls "${DEPS_INSTALL_DIR}" || true
+            ls -lh "${APP_BUILD_DIR}/release" || true
           else
             echo "Deps source cache hit: ${{ steps.restore-deps-source-cache.outputs.cache-hit }}"
             echo "Deps state cache hit: ${{ steps.restore-deps-cache.outputs.cache-hit }}"
