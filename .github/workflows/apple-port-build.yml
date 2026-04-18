@@ -383,7 +383,8 @@ jobs:
       - name: Materialize iOS device dependency install tree
         if: env.TARGET_DEVICE == 'ios' && env.DEP_TARGET == 'install'
         run: |
-          cmake --install "${DEPS_BUILD_DIR}"
+          mkdir -p "${DEPS_INSTALL_DIR}"
+          rsync -a --delete "${DEPS_BUILD_DIR}/Release/" "${DEPS_INSTALL_DIR}/"
           test -d "${DEPS_INSTALL_DIR}"
           test -d "${DEPS_INSTALL_DIR}/python"
 
