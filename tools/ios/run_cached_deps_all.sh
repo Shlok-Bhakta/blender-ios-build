@@ -192,6 +192,7 @@ libheif external_libheif
 opencolorio external_opencolorio
 openimageio external_openimageio
 openvdb external_openvdb
+potrace external_potrace
 shaderc external_shaderc
 spirv-reflect external_spirv_reflect
 DEPS

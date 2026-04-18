@@ -282,6 +282,14 @@ DEP_CONFIG = {
             Path("build_files/build_environment/cmake/tbb.cmake"),
         ],
     },
+    "potrace": {
+        "folder": "potrace",
+        "cmake_prefixes": ["POTRACE"],
+        "key_files": [
+            Path("build_files/build_environment/cmake/potrace.cmake"),
+            Path("build_files/build_environment/patches/cmakelists_potrace.txt"),
+        ],
+    },
     "sse2neon": {
         "folder": "sse2neon",
         "cmake_prefixes": ["SSE2NEON"],
