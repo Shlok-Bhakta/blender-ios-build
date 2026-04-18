@@ -120,8 +120,14 @@ add_dependencies(
   external_openimagedenoise
   external_tbb
   external_ispc
-  external_python
 )
+
+if(NOT (APPLE AND WITH_APPLE_CROSSPLATFORM))
+  add_dependencies(
+    external_openimagedenoise
+    external_python
+  )
+endif()
 
 if(NOT (APPLE OR WIN32 OR BLENDER_PLATFORM_ARM))
   add_dependencies(
