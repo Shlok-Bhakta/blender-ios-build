@@ -16,6 +16,7 @@ import plistlib
 import re
 import subprocess
 import sys
+import tempfile
 from typing import Iterable, Sequence
 
 
@@ -227,6 +228,33 @@ def macho_candidates(path: Path) -> Iterable[Path]:
                     yield child
 
 
+def binary_platforms(binary: Path) -> set[str]:
+    file_result = run_tool(["/usr/bin/file", "-b", str(binary)])
+    if "current ar archive" not in file_result.stdout:
+        platform_result = run_tool(["xcrun", "vtool", "-show-build", str(binary)])
+        return set(re.findall(r"^\s*platform\s+(\S+)", platform_result.stdout, re.MULTILINE))
+
+    platforms: set[str] = set()
+    with tempfile.TemporaryDirectory() as directory:
+        extract_result = subprocess.run(
+            ["xcrun", "ar", "-x", str(binary)],
+            cwd=directory,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if extract_result.returncode != 0:
+            return platforms
+        for member in Path(directory).iterdir():
+            if not member.is_file():
+                continue
+            platform_result = run_tool(["xcrun", "vtool", "-show-build", str(member)])
+            platforms.update(
+                re.findall(r"^\s*platform\s+(\S+)", platform_result.stdout, re.MULTILINE)
+            )
+    return platforms
+
+
 def audit_abi(path: Path, target: str, architecture: str) -> list[Finding]:
     findings: list[Finding] = []
     expected_platform = {"ios-simulator": "IOSSIMULATOR", "ios-device": "IOS"}[target]
@@ -246,8 +274,7 @@ def audit_abi(path: Path, target: str, architecture: str) -> list[Finding]:
                 binary,
             )
 
-        platform_result = run_tool(["xcrun", "vtool", "-show-build", str(binary)])
-        platforms = set(re.findall(r"^\s*platform\s+(\S+)", platform_result.stdout, re.MULTILINE))
+        platforms = binary_platforms(binary)
         if expected_platform not in platforms:
             add_finding(
                 findings,

@@ -168,6 +168,23 @@ class AbiAuditTests(AuditorTestCase):
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_accepts_arm64_simulator_static_archive(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            binary = root / "simulator.o"
+            archive = root / "libfixture.a"
+            self.compile_object("iphonesimulator", binary, simulator=True)
+            subprocess.run(
+                ["xcrun", "ar", "rcs", os.fspath(archive), os.fspath(binary)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            result = self.run_audit(
+                "abi", archive, "--target", "ios-simulator", "--arch", "arm64"
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
 
 class PortMapAuditTests(AuditorTestCase):
     def test_port_map_matches_exact_donor_delta(self) -> None:

@@ -38,6 +38,20 @@ if(WIN32 AND BUILD_MODE STREQUAL Release)
   )
 endif()
 
+if(WITH_APPLE_CROSSPLATFORM)
+  ExternalProject_Add_Step(external_xml2 harvest_ios
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/xml2/include
+      ${HARVEST_TARGET}/xml2/include
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+      ${HARVEST_TARGET}/xml2/lib
+    COMMAND ${CMAKE_COMMAND} -E copy
+      ${LIBDIR}/xml2/lib/libxml2.a
+      ${HARVEST_TARGET}/xml2/lib/libxml2.a
+    DEPENDEES install
+  )
+endif()
+
 if(UNIX)
   if(APPLE)
     harvest(external_xml2 xml2/lib xml2/lib "*.a")

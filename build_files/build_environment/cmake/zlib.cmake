@@ -12,6 +12,11 @@ else()
   set(ZLIB_PATCH_COMMAND echo .)
 endif()
 
+set(ZLIB_EXTRA_ARGS)
+if(WITH_APPLE_CROSSPLATFORM)
+  list(APPEND ZLIB_EXTRA_ARGS -DZLIB_BUILD_EXAMPLES=OFF)
+endif()
+
 ExternalProject_Add(external_zlib
   URL file://${PACKAGE_DIR}/${ZLIB_FILE}
   URL_HASH ${ZLIB_HASH_TYPE}=${ZLIB_HASH}
@@ -22,6 +27,7 @@ ExternalProject_Add(external_zlib
   CMAKE_ARGS
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
     -DCMAKE_INSTALL_PREFIX=${LIBDIR}/zlib
+    ${ZLIB_EXTRA_ARGS}
     ${DEFAULT_CMAKE_FLAGS}
 
   INSTALL_DIR ${LIBDIR}/zlib
@@ -61,6 +67,21 @@ else()
       ${LIBDIR}/zlib/lib/libz_pic.a
     # Make sure that our libraries do not pick up the shared libraries by mistake
     COMMAND sh -c "rm -f ${LIBDIR}/zlib/lib/*.so*"
+    DEPENDEES install
+  )
+endif()
+
+if(WITH_APPLE_CROSSPLATFORM)
+  ExternalProject_Add_Step(external_zlib harvest_ios
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+      ${HARVEST_TARGET}/zlib/include
+      ${HARVEST_TARGET}/zlib/lib
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/zlib/include
+      ${HARVEST_TARGET}/zlib/include
+    COMMAND ${CMAKE_COMMAND} -E copy
+      ${LIBDIR}/zlib/lib/libz.a
+      ${HARVEST_TARGET}/zlib/lib/libz.a
     DEPENDEES install
   )
 endif()

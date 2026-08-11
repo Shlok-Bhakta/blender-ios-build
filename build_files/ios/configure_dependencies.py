@@ -81,16 +81,11 @@ def volume_uuid() -> str:
 def build_inputs(repository: Path, target: str, deployment_target: str, profile: str) -> dict[str, str]:
     sdk = "iphonesimulator" if target == "ios-simulator" else "iphoneos"
     dependency_root = repository / "build_files" / "build_environment"
-    framework_paths = list((dependency_root / "patches").glob("*ios*.diff"))
-    framework_paths.extend(
-        (
-            dependency_root / "CMakeLists.txt",
-            dependency_root / "cmake" / "options.cmake",
-            dependency_root / "cmake" / "ios_platform.cmake",
-            Path(__file__),
-            Path(__file__).with_name("audit.py"),
-        )
-    )
+    # Every recipe participates because iOS adaptations are intentionally kept as
+    # narrow conditionals in the current v5.2 recipes instead of a detached fork.
+    framework_paths = list((dependency_root / "cmake").glob("*.cmake"))
+    framework_paths.extend((dependency_root / "patches").glob("*ios*.diff"))
+    framework_paths.append(dependency_root / "CMakeLists.txt")
     xcode_lines = checked_output(["xcodebuild", "-version"]).splitlines()
     return {
         "baseline_sha": checked_output(["git", "rev-parse", "v5.2.0"], repository),

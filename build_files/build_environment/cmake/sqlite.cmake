@@ -24,6 +24,13 @@ if(UNIX)
   if(NOT APPLE)
     set(SQLITE_LDFLAGS -Wl,--as-needed)
   endif()
+  if(WITH_APPLE_CROSSPLATFORM)
+    set(SQLITE_LDFLAGS "${PLATFORM_LDFLAGS}")
+    set(SQLITE_CONFIGURE_ENV
+      ${SQLITE_CONFIGURE_ENV} &&
+      export CC=${CMAKE_C_COMPILER}
+    )
+  endif()
   set(SQLITE_CFLAGS "\
 -DSQLITE_SECURE_DELETE \
 -DSQLITE_ENABLE_COLUMN_METADATA \
@@ -43,6 +50,9 @@ if(UNIX)
 -DSQLITE_MAX_VARIABLE_NUMBER=250000 \
 -fPIC"
   )
+  if(WITH_APPLE_CROSSPLATFORM)
+    set(SQLITE_CFLAGS "${SQLITE_CFLAGS} ${PLATFORM_CFLAGS} -DSQLITE_NOHAVE_SYSTEM=1")
+  endif()
   set(SQLITE_CONFIGURE_ENV
     ${SQLITE_CONFIGURE_ENV} &&
     export LDFLAGS=${SQLITE_LDFLAGS} &&
@@ -77,5 +87,19 @@ if(UNIX)
       make install
 
     INSTALL_DIR ${LIBDIR}/sqlite
+  )
+endif()
+
+if(WITH_APPLE_CROSSPLATFORM)
+  ExternalProject_Add_Step(external_sqlite harvest_ios
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/sqlite/include
+      ${HARVEST_TARGET}/sqlite/include
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+      ${HARVEST_TARGET}/sqlite/lib
+    COMMAND ${CMAKE_COMMAND} -E copy
+      ${LIBDIR}/sqlite/lib/libsqlite3.a
+      ${HARVEST_TARGET}/sqlite/lib/libsqlite3.a
+    DEPENDEES install
   )
 endif()

@@ -18,7 +18,15 @@ if(WIN32)
     INSTALL_DIR ${LIBDIR}/ssl
   )
 else()
-  if(APPLE)
+  if(WITH_APPLE_CROSSPLATFORM)
+    if(APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
+      set(SSL_OS_COMPILER "iossimulator-arm64-xcrun")
+    else()
+      set(SSL_OS_COMPILER "ios64-xcrun")
+    endif()
+    set(SSL_BUILD_ACTION build_libs)
+    set(SSL_INSTALL_ACTION install_sw)
+  elseif(APPLE)
     set(SSL_OS_COMPILER "blender-darwin-${CMAKE_OSX_ARCHITECTURES}")
   else()
     if(BLENDER_PLATFORM_ARM)
@@ -29,6 +37,10 @@ else()
     else()
       set(SSL_OS_COMPILER "blender-linux-x86")
     endif()
+  endif()
+  if(NOT SSL_BUILD_ACTION)
+    set(SSL_BUILD_ACTION)
+    set(SSL_INSTALL_ACTION install)
   endif()
 
   ExternalProject_Add(external_ssl
@@ -57,12 +69,29 @@ else()
 
     BUILD_COMMAND ${CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/ssl/src/external_ssl/ &&
-      make -j${MAKE_THREADS}
+      make -j${MAKE_THREADS} ${SSL_BUILD_ACTION}
 
     INSTALL_COMMAND ${CONFIGURE_ENV} &&
       cd ${BUILD_DIR}/ssl/src/external_ssl/ &&
-      make install
+      make ${SSL_INSTALL_ACTION}
 
     INSTALL_DIR ${LIBDIR}/ssl
+  )
+endif()
+
+if(WITH_APPLE_CROSSPLATFORM)
+  ExternalProject_Add_Step(external_ssl harvest_ios
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/ssl/include
+      ${HARVEST_TARGET}/ssl/include
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+      ${HARVEST_TARGET}/ssl/lib
+    COMMAND ${CMAKE_COMMAND} -E copy
+      ${LIBDIR}/ssl/lib/libcrypto.a
+      ${HARVEST_TARGET}/ssl/lib/libcrypto.a
+    COMMAND ${CMAKE_COMMAND} -E copy
+      ${LIBDIR}/ssl/lib/libssl.a
+      ${HARVEST_TARGET}/ssl/lib/libssl.a
+    DEPENDEES install
   )
 endif()

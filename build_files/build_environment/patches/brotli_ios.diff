@@ -1,0 +1,29 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -215,16 +215,20 @@ if(BROTLI_EMSCRIPTEN)
+ endif()
+ 
+ # Build the brotli executable
+-add_executable(brotli ${BROTLI_CLI_C})
+-target_link_libraries(brotli ${BROTLI_LIBRARIES_STATIC})
++if(NOT WITH_APPLE_CROSSPLATFORM)
++  add_executable(brotli ${BROTLI_CLI_C})
++  target_link_libraries(brotli ${BROTLI_LIBRARIES_STATIC})
++endif()
+ 
+ # Installation
+ if(NOT BROTLI_EMSCRIPTEN)
+ if(NOT BROTLI_BUNDLED_MODE)
+-  install(
+-    TARGETS brotli
+-    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+-  )
++  if(NOT WITH_APPLE_CROSSPLATFORM)
++    install(
++      TARGETS brotli
++      RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
++    )
++  endif()
+ 
+   install(
+     TARGETS ${BROTLI_LIBRARIES_CORE}
