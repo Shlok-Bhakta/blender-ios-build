@@ -6,4 +6,5 @@
 {"packet":"N100","status":"GREEN","summary":"content-addressed dependency framework"}
 {"packet":"N110","status":"GREEN","summary":"93-target dependency inventory"}
 {"packet":"N111","status":"GREEN","summary":"eight audited bootstrap dependency families"}
-{"packet":"N112","status":"NEXT","summary":"font and text dependencies"}
+{"packet":"N112","status":"GREEN","summary":"FreeType plus eight audited prerequisite families"}
+{"packet":"N113","status":"NEXT","summary":"HarfBuzz and FriBidi Meson cross-build plumbing"}

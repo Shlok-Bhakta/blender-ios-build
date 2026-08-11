@@ -79,3 +79,9 @@ and OpenSSL under cache key
 `1ae9905260312a93e8e7174f3abcf94a6b4cc6b380ecc8f9cf329e0989853788`.
 The combined evidence is
 `/Volumes/BlenderBuild/blender-ios/artifacts/n111-1ae9-bootstrap-summary.json`.
+
+Packet N112 extends the same acceptance rule to FreeType 2.13.3 and replays all
+eight prerequisites under cache key
+`0edd9316d7de66d11228410643ad30e3bc52970f61a5b0394c010600f227603e`.
+Evidence:
+`/Volumes/BlenderBuild/blender-ios/artifacts/n112-0edd-font-bootstrap-summary.json`.

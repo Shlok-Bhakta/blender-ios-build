@@ -1,7 +1,8 @@
 # Overnight handoff — 2026-08-11
 
-The branch is at packet N111 green. The next bounded packet is N112 (font and
-text dependencies). No Blender application frame or first pixel is claimed yet.
+The branch is at packet N112 green. The next bounded packet is N113 (HarfBuzz
+and FriBidi cross-build plumbing). No Blender application frame or first pixel
+is claimed yet.
 
 ## Green outcomes
 
@@ -12,6 +13,8 @@ text dependencies). No Blender application frame or first pixel is claimed yet.
 - Eight bootstrap families built and passed member-by-member arm64
   `IOSSIMULATOR` audit under one cache key: zlib, bzip2, xz/liblzma, SQLite,
   libxml2, libdeflate, Brotli, and OpenSSL.
+- FreeType 2.13.3 built on those roots and passed the same archive-member audit;
+  all nine families were replayed under one immutable N112 cache key.
 - The environment doctor is green, including AC power, SDK, external volume
   UUID/writeability/free space, host tools, and pinned Git refs.
 - All 20 iOS control-plane unit tests and the 213/213 donor-map audit pass.
@@ -34,8 +37,8 @@ text dependencies). No Blender application frame or first pixel is claimed yet.
 1. Read `docs/ios/STATUS.json` and
    `/Volumes/BlenderBuild/blender-ios/artifacts/n111-1ae9-bootstrap-summary.json`.
 2. Run `python3 build_files/ios/doctor.py --output /Volumes/BlenderBuild/blender-ios/artifacts/manual-doctor/env.json`.
-3. Start N112 with FreeType, then HarfBuzz/FreeType integration, keeping the
-   final N111 prefix immutable and builds at `--parallel 2`.
+3. Start N113 by adding an explicit Meson cross file for HarfBuzz and FriBidi;
+   keep both prior green prefixes immutable and builds at `--parallel 2`.
 
 Current cache key:
-`1ae9905260312a93e8e7174f3abcf94a6b4cc6b380ecc8f9cf329e0989853788`.
+`0edd9316d7de66d11228410643ad30e3bc52970f61a5b0394c010600f227603e`.
