@@ -100,7 +100,7 @@ _result = service.get_hash(Path(filepath), hash_algorithm)
 
   return hash_value;
 #else
-  UNUSED_VARS(C, hash_algorithm);
+  UNUSED_VARS(hash_algorithm);
   const std::string filepath_str = filepath;
   CLOG_ERROR(&LOG,
              "Blender was built without Python support, cannot compute hash for file [%s]",
@@ -171,7 +171,7 @@ _result = service.file_matches(Path(filepath), hash_algorithm, hexhash, size_in_
 
   return is_match;
 #else
-  UNUSED_VARS(C, hash_algorithm, hexhash, size_in_bytes);
+  UNUSED_VARS(hash_algorithm, hexhash, size_in_bytes);
   const std::string filepath_str = filepath;
   CLOG_ERROR(&LOG,
              "Blender was built without Python support, cannot check hash for file [%s]",

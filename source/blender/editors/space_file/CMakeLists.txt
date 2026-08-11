@@ -56,9 +56,15 @@ if(WIN32)
     fsmenu_system_win32.cc
   )
 elseif(APPLE)
-  list(APPEND SRC
-    fsmenu_system_macos.mm
-  )
+  if(WITH_APPLE_CROSSPLATFORM)
+    list(APPEND SRC
+      fsmenu_system_ios.mm
+    )
+  else()
+    list(APPEND SRC
+      fsmenu_system_macos.mm
+    )
+  endif()
 else() # Generic UNIX
   list(APPEND SRC
     fsmenu_system_unix.cc
