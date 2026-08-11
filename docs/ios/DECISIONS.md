@@ -28,6 +28,19 @@ changed media stops work.
 
 The simulator artifact may use a local/ad-hoc signature if Xcode requires one.
 The device handoff must contain no developer identity, team, provisioning
-profile, signer entitlements, or bundle signature. Exact Xcode settings remain
-provisional until packet N040 proves them with a minimal generated app.
+profile, signer entitlements, or bundle signature.
 
+Packet N040 proved the following Xcode 26.5 build overrides with a minimal UIKit
+app for both SDKs:
+
+```text
+CODE_SIGNING_ALLOWED=NO
+CODE_SIGNING_REQUIRED=NO
+CODE_SIGN_STYLE=Manual
+```
+
+The arm64 simulator executable is linker-signed ad hoc, with no team identifier,
+profile, or `_CodeSignature` directory. The arm64 device bundle is reported by
+`codesign` as not signed at all and contains neither an embedded profile nor a
+`_CodeSignature` directory. Both executables pass the target-platform ABI audit.
+Evidence: `/Volumes/BlenderBuild/blender-ios/artifacts/20260811T044431Z-8f74cae544cd-signing-probe/signing-report.json`.

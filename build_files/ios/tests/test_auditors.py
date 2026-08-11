@@ -185,5 +185,23 @@ class PortMapAuditTests(AuditorTestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
+class SigningProbeContractTests(unittest.TestCase):
+    def test_probe_contains_no_identity_or_profile_inputs(self) -> None:
+        probe_directory = IOS_DIR / "signing_probe"
+        sources = [
+            probe_directory / "CMakeLists.txt",
+            probe_directory / "Info.plist.in",
+            probe_directory / "main.m",
+        ]
+        combined = "\n".join(source.read_text() for source in sources)
+        for forbidden in (
+            "security find-identity",
+            "DEVELOPMENT_TEAM",
+            "PROVISIONING_PROFILE",
+            "CODE_SIGN_IDENTITY",
+        ):
+            self.assertNotIn(forbidden, combined)
+
+
 if __name__ == "__main__":
     unittest.main()
