@@ -47,6 +47,14 @@ if(WIN32)
   list(APPEND INC ../../intern/utfconv)
 endif()
 
+if(APPLE)
+  if(WITH_APPLE_CROSSPLATFORM)
+    set(OSX_APP_SOURCEDIR ${CMAKE_SOURCE_DIR}/release/ios/Blender.app)
+  else()
+    set(OSX_APP_SOURCEDIR ${CMAKE_SOURCE_DIR}/release/darwin/Blender.app)
+  endif()
+endif()
+
 if(WITH_LIBMV)
   list(APPEND INC ../../intern/libmv)
   add_definitions(-DWITH_LIBMV)
@@ -434,9 +442,15 @@ elseif(APPLE)
       set(TARGETDIR_LIB ${PYTHON_SITE_PACKAGES}/bpy/lib)
     endif()
   else()
-    set(TARGETDIR_VER "Blender.app/Contents/Resources/${BLENDER_VERSION}")
-    set(TARGETDIR_LIB "Blender.app/Contents/Resources/lib")
-    set(TARGETDIR_TEXT "Blender.app/Contents/Resources/text")
+    if(WITH_APPLE_CROSSPLATFORM)
+      set(TARGETDIR_VER "Blender.app/Assets/${BLENDER_VERSION}")
+      set(TARGETDIR_LIB "Blender.app/Assets/lib")
+      set(TARGETDIR_TEXT "Blender.app/Assets/text")
+    else()
+      set(TARGETDIR_VER "Blender.app/Contents/Resources/${BLENDER_VERSION}")
+      set(TARGETDIR_LIB "Blender.app/Contents/Resources/lib")
+      set(TARGETDIR_TEXT "Blender.app/Contents/Resources/text")
+    endif()
   endif()
   set(TARGETDIR_SITE_PACKAGES "${TARGETDIR_VER}/python/lib/python${PYTHON_VERSION}/site-packages")
   # Skip re-linking on CPACK / install.
@@ -1689,8 +1703,6 @@ elseif(APPLE)
     set_target_properties(blender PROPERTIES OUTPUT_NAME Blender)
   endif()
 
-  set(OSX_APP_SOURCEDIR ${CMAKE_SOURCE_DIR}/release/darwin/Blender.app)
-
   # Setup `Info.plist`.
   execute_process(
     COMMAND date "+%Y-%m-%d"
@@ -1698,11 +1710,19 @@ elseif(APPLE)
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 
-  set_target_properties(blender PROPERTIES
-    MACOSX_BUNDLE_INFO_PLIST ${OSX_APP_SOURCEDIR}/Contents/Info.plist
-    MACOSX_BUNDLE_SHORT_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH}"
-    MACOSX_BUNDLE_LONG_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH} ${BLENDER_DATE}"
-  )
+  if(WITH_APPLE_CROSSPLATFORM)
+    set_target_properties(blender PROPERTIES
+      MACOSX_BUNDLE_INFO_PLIST ${OSX_APP_SOURCEDIR}/Info.plist
+      MACOSX_BUNDLE_SHORT_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH}"
+      MACOSX_BUNDLE_LONG_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH} ${BLENDER_DATE}"
+    )
+  else()
+    set_target_properties(blender PROPERTIES
+      MACOSX_BUNDLE_INFO_PLIST ${OSX_APP_SOURCEDIR}/Contents/Info.plist
+      MACOSX_BUNDLE_SHORT_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH}"
+      MACOSX_BUNDLE_LONG_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH} ${BLENDER_DATE}"
+    )
+  endif()
 
   # Xcode Archiving support for distributing the application (Testflight, App Store Connect, etc...)
   set_target_properties(blender PROPERTIES
@@ -1743,15 +1763,22 @@ elseif(APPLE)
     DESTINATION "."
   )
 
-  install(
-    FILES ${OSX_APP_SOURCEDIR}/Contents/PkgInfo
-    DESTINATION "Blender.app/Contents"
-  )
+  if(WITH_APPLE_CROSSPLATFORM)
+    install(
+      FILES ${OSX_APP_SOURCEDIR}/PkgInfo
+      DESTINATION "Blender.app"
+    )
+  else()
+    install(
+      FILES ${OSX_APP_SOURCEDIR}/Contents/PkgInfo
+      DESTINATION "Blender.app/Contents"
+    )
 
-  install_dir(
-    ${OSX_APP_SOURCEDIR}/Contents/Resources
-    "Blender.app/Contents"
-  )
+    install_dir(
+      ${OSX_APP_SOURCEDIR}/Contents/Resources
+      "Blender.app/Contents"
+    )
+  endif()
 
   if(WITH_BLENDER_THUMBNAILER)
     install(
