@@ -1,8 +1,7 @@
 # Overnight handoff — 2026-08-11
 
-The branch is at packet N112 green. The next bounded packet is N113 (HarfBuzz
-and FriBidi cross-build plumbing). No Blender application frame or first pixel
-is claimed yet.
+The branch is at packet N113 green. The next bounded packet is N114 (image-codec
+dependencies). No Blender application frame or first pixel is claimed yet.
 
 ## Green outcomes
 
@@ -15,6 +14,9 @@ is claimed yet.
   libxml2, libdeflate, Brotli, and OpenSSL.
 - FreeType 2.13.3 built on those roots and passed the same archive-member audit;
   all nine families were replayed under one immutable N112 cache key.
+- HarfBuzz 10.0.1 and FriBidi 1.0.12 build through explicit Meson native/cross
+  files. Their five-family stack passes the simulator archive audit, and their
+  false target-Python dependency edges are gone.
 - The environment doctor is green, including AC power, SDK, external volume
   UUID/writeability/free space, host tools, and pinned Git refs.
 - All 20 iOS control-plane unit tests and the 213/213 donor-map audit pass.
@@ -31,14 +33,18 @@ is claimed yet.
   install target during cross-compilation. The iOS lane performs a narrow static
   archive/header install. Failed logs are retained under the `cf72`, `63a7`, and
   `8501` N111 artifact prefixes.
+- FriBidi initially exposed native-generator contamination and then the
+  Apple-Silicon local-signing requirement. Failed setup logs remain under the
+  `3944`, `b1fa`, and `1bff` N113 build prefixes; the successful correction is
+  the `b034` generation.
 
 ## Resume
 
 1. Read `docs/ios/STATUS.json` and
    `/Volumes/BlenderBuild/blender-ios/artifacts/n111-1ae9-bootstrap-summary.json`.
 2. Run `python3 build_files/ios/doctor.py --output /Volumes/BlenderBuild/blender-ios/artifacts/manual-doctor/env.json`.
-3. Start N113 by adding an explicit Meson cross file for HarfBuzz and FriBidi;
-   keep both prior green prefixes immutable and builds at `--parallel 2`.
+3. Start N114 with the image-codec roots from `DEPENDENCY_DAG.json`; keep prior
+   green prefixes immutable and builds at `--parallel 2`.
 
 Current cache key:
-`0edd9316d7de66d11228410643ad30e3bc52970f61a5b0394c010600f227603e`.
+`b0340de3aebc1a84777d6b423050aa638e7d9b428282f844f1b7e95e5ca60591`.

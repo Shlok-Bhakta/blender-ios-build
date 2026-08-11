@@ -85,3 +85,21 @@ eight prerequisites under cache key
 `0edd9316d7de66d11228410643ad30e3bc52970f61a5b0394c010600f227603e`.
 Evidence:
 `/Volumes/BlenderBuild/blender-ios/artifacts/n112-0edd-font-bootstrap-summary.json`.
+
+## ADR-0006: Split Meson build-machine generators from iOS target code
+
+- Status: accepted
+- Date: 2026-08-11
+
+Meson dependencies receive separate native and cross files. Target C/C++
+compilers carry the arm64 simulator triple and SDK; native generators use the
+host SDK and local ad-hoc linker signing required to execute arm64 tools from
+the external volume. No identity or team is involved. Generic `CFLAGS`,
+`CXXFLAGS`, `LDFLAGS`, and `IPHONEOS_DEPLOYMENT_TARGET` are cleared at Meson
+setup so they cannot contaminate the native compiler.
+
+This removes false iOS dependency edges from HarfBuzz and FriBidi to target
+Python and its site packages. The generated graph falls from 301 to 286 edges.
+Packet N113 proves HarfBuzz 10.0.1 and FriBidi 1.0.12, including FreeType,
+Brotli, and zlib integration, under cache key
+`b0340de3aebc1a84777d6b423050aa638e7d9b428282f844f1b7e95e5ca60591`.

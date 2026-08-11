@@ -3,4 +3,5 @@
 {"packet":"N110","status":"GREEN","artifact":"docs/ios/DEPENDENCY_DAG.json"}
 {"packet":"N111","status":"GREEN","artifact":"/Volumes/BlenderBuild/blender-ios/artifacts/n111-1ae9-bootstrap-summary.json","cache_key":"1ae9905260312a93e8e7174f3abcf94a6b4cc6b380ecc8f9cf329e0989853788"}
 {"packet":"N112","status":"GREEN","artifact":"/Volumes/BlenderBuild/blender-ios/artifacts/n112-0edd-font-bootstrap-summary.json","cache_key":"0edd9316d7de66d11228410643ad30e3bc52970f61a5b0394c010600f227603e"}
+{"packet":"N113","status":"GREEN","artifact":"/Volumes/BlenderBuild/blender-ios/artifacts/n113-b034-text-stack-summary.json","cache_key":"b0340de3aebc1a84777d6b423050aa638e7d9b428282f844f1b7e95e5ca60591"}
 {"packet":"N900","status":"GREEN","artifact":"/Volumes/BlenderBuild/blender-ios/artifacts/n900-doctor/env.json"}
