@@ -34,9 +34,10 @@ class DependencySummaryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             report = summarize(
-                [self.write_manifest(root, "zlib"), self.write_manifest(root, "ssl")]
+                [self.write_manifest(root, "zlib"), self.write_manifest(root, "ssl")], "N112"
             )
         self.assertEqual(report["status"], "GREEN")
+        self.assertEqual(report["packet"], "N112")
         self.assertEqual([item["family"] for item in report["families"]], ["ssl", "zlib"])
 
     def test_rejects_mixed_cache_generations(self) -> None:

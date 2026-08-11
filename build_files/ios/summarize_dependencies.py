@@ -14,7 +14,7 @@ import sys
 from typing import Sequence
 
 
-def summarize(paths: Sequence[Path]) -> dict[str, object]:
+def summarize(paths: Sequence[Path], packet: str = "N111") -> dict[str, object]:
     if not paths:
         raise ValueError("at least one dependency manifest is required")
     manifests = [json.loads(path.read_text()) for path in paths]
@@ -32,7 +32,7 @@ def summarize(paths: Sequence[Path]) -> dict[str, object]:
 
     return {
         "schema_version": 1,
-        "packet": "N111",
+        "packet": packet,
         "status": "GREEN",
         "target": targets.pop(),
         "cache_key": cache_keys.pop(),
@@ -50,10 +50,11 @@ def summarize(paths: Sequence[Path]) -> dict[str, object]:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", action="append", required=True, type=Path)
+    parser.add_argument("--packet", default="N111")
     parser.add_argument("--output", required=True, type=Path)
     arguments = parser.parse_args(sys.argv[1:] if argv is None else argv)
     try:
-        report = summarize(arguments.manifest)
+        report = summarize(arguments.manifest, arguments.packet)
     except (OSError, ValueError, json.JSONDecodeError) as error:
         print(f"dependency summary failed: {error}", file=sys.stderr)
         return 1
