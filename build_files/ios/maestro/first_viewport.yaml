@@ -1,0 +1,13 @@
+appId: org.blenderfoundation.blender.ios
+name: Blender iOS first interactive viewport
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd:
+    timeout: 10000
+- takeScreenshot: blender-splash
+- tapOn:
+    point: 10%,50%
+- waitForAnimationToEnd:
+    timeout: 10000
+- takeScreenshot: blender-viewport
