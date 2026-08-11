@@ -9,6 +9,8 @@ set(SRC
   datatoc.cc
 )
 
-# `SRC_DNA_INC` is defined in the parent directory.
-add_executable(datatoc ${SRC})
-optimize_debug_target(datatoc)
+if(NOT WITH_APPLE_CROSSPLATFORM)
+  # `SRC_DNA_INC` is defined in the parent directory.
+  add_executable(datatoc ${SRC})
+  optimize_debug_target(datatoc)
+endif()

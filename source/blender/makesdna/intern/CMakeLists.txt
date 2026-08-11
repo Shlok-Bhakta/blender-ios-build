@@ -86,15 +86,17 @@ endif()
 
 # `SRC_DNA_INC` is defined in the parent directory.
 
-add_c_and_cxx_flags_custom_test(makesdna)
+if(NOT WITH_APPLE_CROSSPLATFORM)
+  add_c_and_cxx_flags_custom_test(makesdna)
 
-add_executable(makesdna ${SRC} ${SRC_DNA_INC})
-setup_platform_linker_flags(makesdna)
-setup_platform_linker_libs(makesdna)
-blender_target_include_dirs(makesdna ${INC})
-blender_target_include_dirs_sys(makesdna ${INC_SYS})
-target_link_libraries(makesdna ${LIB})
-target_link_libraries(makesdna PRIVATE bf::dependencies::pthreads)
+  add_executable(makesdna ${SRC} ${SRC_DNA_INC})
+  setup_platform_linker_flags(makesdna)
+  setup_platform_linker_libs(makesdna)
+  blender_target_include_dirs(makesdna ${INC})
+  blender_target_include_dirs_sys(makesdna ${INC_SYS})
+  target_link_libraries(makesdna ${LIB})
+  target_link_libraries(makesdna PRIVATE bf::dependencies::pthreads)
+endif()
 
 # Output dna.cc
 add_custom_command(

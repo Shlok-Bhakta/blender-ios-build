@@ -22,6 +22,129 @@ function(print_found_status
   endif()
 endfunction()
 
+# Keep the first iOS configuration intentionally small. The desktop branch
+# below assumes AppKit, Carbon, Epoxy, and host SDK libraries, none of which
+# describe an iOS application.
+if(WITH_APPLE_CROSSPLATFORM)
+  if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    message(FATAL_ERROR "WITH_APPLE_CROSSPLATFORM requires CMAKE_SYSTEM_NAME=iOS")
+  endif()
+  if(NOT DEFINED LIBDIR OR NOT EXISTS "${LIBDIR}")
+    message(FATAL_ERROR "iOS requires a harvested dependency sysroot in LIBDIR: ${LIBDIR}")
+  endif()
+  if(NOT DEFINED IOS_HOST_TOOLS_DIR)
+    message(FATAL_ERROR "iOS requires revision-matched native tools in IOS_HOST_TOOLS_DIR")
+  endif()
+
+  foreach(_host_tool makesdna makesrna datatoc shader_tool)
+    if(NOT EXISTS "${IOS_HOST_TOOLS_DIR}/${_host_tool}")
+      message(FATAL_ERROR "Missing iOS host tool: ${IOS_HOST_TOOLS_DIR}/${_host_tool}")
+    endif()
+    if(NOT TARGET ${_host_tool})
+      add_executable(${_host_tool} IMPORTED GLOBAL)
+      set_property(TARGET ${_host_tool} PROPERTY
+        IMPORTED_LOCATION "${IOS_HOST_TOOLS_DIR}/${_host_tool}"
+      )
+    endif()
+  endforeach()
+  unset(_host_tool)
+
+  set(WITH_OPENGL_BACKEND OFF CACHE BOOL "OpenGL is unavailable on iOS" FORCE)
+  set(WITH_VULKAN_BACKEND OFF CACHE BOOL "Vulkan is unavailable on iOS" FORCE)
+  set(WITH_SDL OFF CACHE BOOL "SDL windowing is unused on iOS" FORCE)
+  set(WITH_INPUT_NDOF OFF CACHE BOOL "NDOF is unavailable on iOS" FORCE)
+  set(WITH_BLENDER_THUMBNAILER OFF CACHE BOOL "No Finder extension on iOS" FORCE)
+
+  file(GLOB LIB_SUBDIRS "${LIBDIR}/*")
+  set(CMAKE_PREFIX_PATH ${LIB_SUBDIRS})
+  set(CMAKE_FIND_FRAMEWORK NEVER)
+
+  # Python remains excluded from the application, but source generators are
+  # native scripts and still require a host-side interpreter at build time.
+  find_program(PYTHON_EXECUTABLE NAMES python3 REQUIRED)
+
+  set(ZLIB_ROOT "${LIBDIR}/zlib")
+  find_package(ZLIB REQUIRED)
+
+  set(FREETYPE_ROOT_DIR "${LIBDIR}/freetype")
+  find_package(Freetype REQUIRED)
+  set(BROTLI_LIBRARIES
+    "${LIBDIR}/brotli/lib/libbrotlicommon-static.a"
+    "${LIBDIR}/brotli/lib/libbrotlidec-static.a"
+  )
+
+  set(libdeflate_ROOT "${LIBDIR}/deflate")
+  find_package(OpenEXR REQUIRED CONFIG)
+  set(PNG_ROOT "${LIBDIR}/png")
+  find_package(PNG REQUIRED)
+  set(JPEG_ROOT "${LIBDIR}/jpeg")
+  find_package(JPEG REQUIRED)
+  set(fmt_ROOT "${LIBDIR}/fmt")
+  find_package(fmt REQUIRED CONFIG)
+
+  # Static TIFF and OpenImageIO exports retain these dependency target names.
+  if(NOT TARGET CMath::CMath)
+    add_library(CMath::CMath INTERFACE IMPORTED)
+  endif()
+  set(OpenJPEG_DIR "${LIBDIR}/openjpeg/lib/cmake/openjpeg-2.5")
+  find_package(OpenJPEG REQUIRED CONFIG)
+  foreach(_webp_component webp webpdemux libwebpmux)
+    if(NOT TARGET WebP::${_webp_component})
+      add_library(WebP::${_webp_component} STATIC IMPORTED)
+      if(_webp_component STREQUAL "libwebpmux")
+        set(_webp_archive webpmux)
+      else()
+        set(_webp_archive ${_webp_component})
+      endif()
+      set_target_properties(WebP::${_webp_component} PROPERTIES
+        IMPORTED_LOCATION "${LIBDIR}/webp/lib/lib${_webp_archive}.a"
+        INTERFACE_INCLUDE_DIRECTORIES "${LIBDIR}/webp/include"
+      )
+    endif()
+  endforeach()
+  unset(_webp_archive)
+  unset(_webp_component)
+
+  set(minizip-ng_ROOT "${LIBDIR}/minizipng")
+  set(minizip-ng_INCLUDE_DIR "${LIBDIR}/minizipng/include/minizip-ng/minizip")
+  set(minizip-ng_LIBRARY "${LIBDIR}/minizipng/lib/libminizip.a")
+  set(minizip-ng_STATIC_LIBRARY ON)
+  find_package(OpenImageIO REQUIRED CONFIG)
+  find_package(OpenColorIO 2.0.0 REQUIRED CONFIG)
+  find_package(Eigen3 REQUIRED CONFIG)
+  set(ZSTD_ROOT_DIR "${LIBDIR}/zstd")
+  find_package(Zstd REQUIRED)
+
+  if(WITH_PUGIXML)
+    set(pugixml_DIR "${LIBDIR}/pugixml/lib/cmake/pugixml")
+    find_package(PugiXML REQUIRED)
+  endif()
+
+  string(APPEND PLATFORM_CFLAGS " -pipe -funsigned-char -fno-strict-aliasing -ffp-contract=off")
+  set(PLATFORM_LINKFLAGS "\
+-fexceptions -framework Foundation -framework UIKit -framework CoreGraphics \
+-framework Metal -framework MetalKit -framework QuartzCore"
+  )
+  set(EXETYPE MACOSX_BUNDLE)
+  set(CMAKE_C_FLAGS_DEBUG "-g")
+  set(CMAKE_CXX_FLAGS_DEBUG "-g")
+  set(CMAKE_C_FLAGS_RELEASE "-O2")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+  string(APPEND CMAKE_CXX_FLAGS " -ftemplate-depth=1024")
+
+  set(CMAKE_C_ARCHIVE_CREATE "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
+  set(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
+  if(NOT CMAKE_RANLIB MATCHES ".*llvm-ranlib$")
+    set(CMAKE_C_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
+    set(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
+  endif()
+
+  set(CMAKE_XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "org.blenderfoundation.blender.ios")
+  message(STATUS "Using iOS dependency sysroot: ${LIBDIR}")
+  message(STATUS "Using iOS host tools: ${IOS_HOST_TOOLS_DIR}")
+  return()
+endif()
+
 # ------------------------------------------------------------------------
 # Find system provided libraries.
 
