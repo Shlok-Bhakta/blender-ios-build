@@ -1,0 +1,5 @@
+{"packet":"N040","status":"GREEN","artifact":"/Volumes/BlenderBuild/blender-ios/artifacts/20260811T044431Z-8f74cae544cd-signing-probe/signing-report.json"}
+{"packet":"N100","status":"GREEN","artifact":"/Volumes/BlenderBuild/blender-ios/artifacts/20260811T051226Z-c141dbd31097-deps-configure/result.json"}
+{"packet":"N110","status":"GREEN","artifact":"docs/ios/DEPENDENCY_DAG.json"}
+{"packet":"N111","status":"GREEN","artifact":"/Volumes/BlenderBuild/blender-ios/artifacts/n111-1ae9-bootstrap-summary.json","cache_key":"1ae9905260312a93e8e7174f3abcf94a6b4cc6b380ecc8f9cf329e0989853788"}
+{"packet":"N900","status":"GREEN","artifact":"/Volumes/BlenderBuild/blender-ios/artifacts/n900-doctor/env.json"}

@@ -51,7 +51,12 @@ stop; never fall back to an internal path.
 
 ## Safety boundary
 
-No packet may use `sudo`, install global software, read signing identities or
-profiles, sign a device bundle, merge/rebase/push, rewrite history, or broaden
-its allowed files. Stop after two unsuccessful architectural approaches and
-preserve the evidence.
+Administrative or host-wide changes require explicit operator authorization;
+that authorization was granted for this dedicated build Mac. The N100/N111
+bootstrap installed `autoconf`, `automake`, `bison`, `dos2unix`, `flex`,
+`libtool`, `meson`, `pkgconf`, and `yasm` with Homebrew, without `sudo`.
+Credentials must never be written to source, logs, or artifacts.
+
+No packet may inspect signing identities or profiles, sign a device bundle,
+merge/rebase/push, rewrite history, or broaden its allowed files. Stop after two
+unsuccessful architectural approaches and preserve the evidence.

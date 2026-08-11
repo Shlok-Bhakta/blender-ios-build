@@ -62,3 +62,20 @@ The generic iOS framework uses an explicit SDK path and target triple, arm64,
 include, and package discovery. Program discovery remains host-only. The first
 simulator configure is green at cache key
 `b4566ec98fb7113e621f79f71f83fb3f49f6c2607886c05c0bcf2c1f5b2bddfd`.
+
+## ADR-0005: Accept dependency families only after archive-member ABI audit
+
+- Status: accepted
+- Date: 2026-08-11
+
+An installed header or a successfully linked library is insufficient evidence
+for cross-compilation. Each harvested family receives a manifest with file
+checksums, architecture information, and the `LC_BUILD_VERSION` platform for
+every object in each static archive. A family is green only when all members are
+arm64 `IOSSIMULATOR` and all manifests share one cache key.
+
+Packet N111 proves zlib, bzip2, xz/liblzma, SQLite, libxml2, libdeflate, Brotli,
+and OpenSSL under cache key
+`1ae9905260312a93e8e7174f3abcf94a6b4cc6b380ecc8f9cf329e0989853788`.
+The combined evidence is
+`/Volumes/BlenderBuild/blender-ios/artifacts/n111-1ae9-bootstrap-summary.json`.
