@@ -1,64 +1,50 @@
 # Overnight handoff — 2026-08-11
 
-The branch is at packet N115 green. The next bounded packet is N116. No Blender
-application frame or first pixel is claimed yet.
+First pixel is green. The next bounded packet is N210: integrate the proven
+UIKit/Metal shell with Blender's GHOST system, window, and context.
 
 ## Green outcomes
 
-- Frozen baseline and read-only donor refs are intact.
-- The exact 213-file donor delta remains classified.
-- Simulator-local and unsigned-device signing lanes are independently proven.
-- The content-addressed iOS dependency framework configured successfully.
-- Eight bootstrap families built and passed member-by-member arm64
-  `IOSSIMULATOR` audit under one cache key: zlib, bzip2, xz/liblzma, SQLite,
-  libxml2, libdeflate, Brotli, and OpenSSL.
-- FreeType 2.13.3 built on those roots and passed the same archive-member audit;
-  all nine families were replayed under one immutable N112 cache key.
-- HarfBuzz 10.0.1 and FriBidi 1.0.12 build through explicit Meson native/cross
-  files. Their five-family stack passes the simulator archive audit, and their
-  false target-Python dependency edges are gone.
-- libjpeg-turbo, libpng, libtiff, OpenJPEG, WebP, and zlib build as the N114
-  image-codec stack. All harvested static archive members are arm64
-  `IOSSIMULATOR` under one immutable cache key.
-- oneTBB, OpenSubdiv, and Embree build as static N115 geometry libraries. All
-  harvested archive members are arm64 `IOSSIMULATOR` under one immutable cache
-  key.
-- The environment doctor is green, including AC power, SDK, external volume
-  UUID/writeability/free space, host tools, and pinned Git refs.
-- All 20 iOS control-plane unit tests and the 213/213 donor-map audit pass.
+- The frozen v5.2.0 baseline and read-only donor refs remain intact.
+- The N116 first-pixel dependency closure contains 1,181 harvested files under
+  cache key `e4b775f99fd0d6b27a0ec7bc6425dd9923357c59b1020567af077ec135b09957`.
+  Every binary is arm64 `IOSSIMULATOR`.
+- OpenColorIO and OpenImageIO build statically without target Python, desktop
+  monitor frameworks, tools, TBB, or libheif.
+- Blender's reduced iOS graph configures against the audited sysroot with Xcode
+  26.5 and the iOS 26.5 simulator SDK.
+- Revision-matched native `makesdna`, `makesrna`, `datatoc`, and `shader_tool`
+  executables generate target sources successfully.
+- The reduced Blender compile passes generated shaders, DNA, RNA, and core
+  libraries through action 3,906. Its next failure is the expected Cocoa GHOST
+  include, not a dependency or target-ABI error.
+- The repository-native UIKit/Metal shell installs and launches on the booted
+  iPhone 17 simulator. Runtime evidence records `boot`, the Apple iOS simulator
+  GPU, and `first_frame` after command-buffer completion.
+- The captured 1206×2622 screenshot visibly shows the Metal-cleared frame and
+  “BLENDER iOS” overlay.
+- All 20 iOS control-plane unit tests pass.
 
-## Preserved red evidence
+## Evidence
 
-- The first zlib attempt tried to link upstream example executables with hidden
-  library symbols. The iOS recipe now disables examples. Log:
-  `/Volumes/BlenderBuild/blender-ios/artifacts/n111-zlib-build.log`.
-- SQLite 3.51 initially could not discover its cross C compiler. The recipe now
-  exports the CMake-selected compiler explicitly. Log:
-  `/Volumes/BlenderBuild/blender-ios/artifacts/n111-434d-sqlite-build.log`.
-- Brotli 1.0.9 has an always-successful Emscripten probe and therefore omits its
-  install target during cross-compilation. The iOS lane performs a narrow static
-  archive/header install. Failed logs are retained under the `cf72`, `63a7`, and
-  `8501` N111 artifact prefixes.
-- FriBidi initially exposed native-generator contamination and then the
-  Apple-Silicon local-signing requirement. Failed setup logs remain under the
-  `3944`, `b1fa`, and `1bff` N113 build prefixes; the successful correction is
-  the `b034` generation.
-- The first N114 codec configure hit CMake 4's compatibility floor; the failed
-  build is retained in `n114-e9d0-image-codecs-build.log`. A later PNG configure
-  inherited a quoted `aarch64` processor value and is retained in
-  `n114-0b3f-image-codecs-build.log`. The iOS-only corrections are green in the
-  `ec24` generation.
-- The first N115 Embree attempt inherited macOS deployment and x86 SSE flags;
-  it is retained in `n115-b4db-geometry-build.log`. The iOS-only platform and
-  ISA correction is green in the `9e31` generation.
+- Dependency audit:
+  `/Volumes/BlenderBuild/blender-ios/artifacts/n116-e4b7-first-pixel-closure-manifest.json`
+- Reduced configure:
+  `/Volumes/BlenderBuild/blender-ios/artifacts/n150-e4b7-blender-configure.log`
+- Reduced compile boundary:
+  `/Volumes/BlenderBuild/blender-ios/artifacts/n150-e4b7-blender-build.log`
+- First-pixel result:
+  `/Volumes/BlenderBuild/blender-ios/artifacts/p500-first-pixel-result.json`
+- Screenshot:
+  `/Volumes/BlenderBuild/blender-ios/artifacts/p500-first-pixel.png`
 
 ## Resume
 
-1. Read `docs/ios/STATUS.json` and
-   `/Volumes/BlenderBuild/blender-ios/artifacts/n115-9e31-geometry-summary.json`.
-2. Run `python3 build_files/ios/doctor.py --output /Volumes/BlenderBuild/blender-ios/artifacts/manual-doctor/env.json`.
-3. Build the N116 mandatory color/Python dependency closure; keep prior green
-   prefixes immutable and builds at `--parallel 2`.
+1. Read `docs/ios/STATUS.json` and the P500 result above.
+2. Keep the first-pixel shell runnable while adapting only the donor's iOS GHOST
+   system/window/context surface to the v5.2.0 interfaces.
+3. Reconfigure and resume the existing `ios-simulator-minimal-e4b7` Ninja tree
+   at `--parallel 2`; the known boundary is `GHOST_SystemCocoa.mm` including
+   unavailable `Cocoa/Cocoa.h`.
 
-Current cache key:
-`9e317f684ffac13636fc5d91f0720b2a33a38569e7895f3c3bfffdb08dd10f9e`.
+Current source milestone: `36f78477019578c8d608229671bb43654caef31c`.

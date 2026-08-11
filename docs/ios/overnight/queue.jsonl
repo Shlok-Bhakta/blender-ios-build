@@ -10,4 +10,7 @@
 {"packet":"N113","status":"GREEN","summary":"HarfBuzz and FriBidi Meson cross-build plumbing"}
 {"packet":"N114","status":"GREEN","summary":"six audited image-codec dependency families"}
 {"packet":"N115","status":"GREEN","summary":"TBB, OpenSubdiv, and Embree static simulator archives audited"}
-{"packet":"N116","status":"NEXT","summary":"mandatory color, math, compression, and Python dependency closure"}
+{"packet":"N116","status":"GREEN","summary":"audited first-pixel color, image, font, math, and compression closure; target Python deferred"}
+{"packet":"N150","status":"YELLOW","summary":"reduced Blender configure and host-tools bridge green; link reaches the Cocoa GHOST boundary"}
+{"packet":"P500","status":"GREEN","summary":"UIKit lifecycle and Metal first frame launched and captured on iPhone 17 simulator"}
+{"packet":"N210","status":"NEXT","summary":"replace Cocoa selection with iOS GHOST system, window, and Metal context"}

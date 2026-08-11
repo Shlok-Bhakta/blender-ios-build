@@ -136,3 +136,37 @@ Packet N115 proves all three families under cache key
 `9e317f684ffac13636fc5d91f0720b2a33a38569e7895f3c3bfffdb08dd10f9e`.
 Every archive member is arm64 `IOSSIMULATOR`. Evidence:
 `/Volumes/BlenderBuild/blender-ios/artifacts/n115-9e31-geometry-summary.json`.
+
+## ADR-0009: Keep first-pixel dependencies static and defer embedded Python
+
+- Status: accepted
+- Date: 2026-08-11
+
+The first-pixel profile keeps Python, TBB, HarfBuzz, FriBidi, Cycles, USD,
+OpenVDB, Embree, OpenSubdiv, OSL, and media integration out of the application
+link. Host Python remains available only for source generation. The target
+closure includes the mandatory color, image, font, compression, and math
+libraries as static arm64 simulator artifacts.
+
+Packet N116 proves 1,181 harvested files under cache key
+`e4b775f99fd0d6b27a0ec7bc6425dd9923357c59b1020567af077ec135b09957`.
+Every binary is arm64 `IOSSIMULATOR`, OpenColorIO exports no macOS-only
+frameworks, and OpenImageIO is built without target Python or tools. Evidence:
+`/Volumes/BlenderBuild/blender-ios/artifacts/n116-e4b7-first-pixel-closure-manifest.json`.
+
+## ADR-0010: Prove the UIKit/Metal launch contract before completing GHOST
+
+- Status: accepted
+- Date: 2026-08-11
+
+The revision-matched native tools (`makesdna`, `makesrna`, `datatoc`, and
+`shader_tool`) are built from the frozen worktree and consumed as host
+executables by the simulator build. Blender's reduced graph configures and its
+core compiles until the known Cocoa-to-iOS GHOST boundary.
+
+A repository-native UIKit shell independently proves the application lifecycle,
+Metal device and command queue, drawable presentation, and visible first frame.
+It uses no signing identity or provisioning profile. Packet P500 launched on an
+iPhone 17 / iOS 26.5 simulator and emitted `boot`, `metal_ready`, and
+`first_frame`; evidence is
+`/Volumes/BlenderBuild/blender-ios/artifacts/p500-first-pixel-result.json`.

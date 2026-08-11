@@ -15,6 +15,10 @@
 | Text-shaping dependency packet | T2/T3 | arm64 iOS Simulator 18.0 | green: HarfBuzz, FriBidi, FreeType, Brotli, and zlib; every archive member is `IOSSIMULATOR` | `/Volumes/BlenderBuild/blender-ios/artifacts/n113-b034-text-stack-summary.json` |
 | Image-codec dependency packet | T2/T3 | arm64 iOS Simulator 18.0 | green: JPEG, PNG, TIFF, OpenJPEG, WebP, and zlib; every archive member is arm64 `IOSSIMULATOR` | `/Volumes/BlenderBuild/blender-ios/artifacts/n114-ec24-image-codecs-summary.json` |
 | Geometry dependency packet | T2/T3 | arm64 iOS Simulator 18.0 | green: TBB, OpenSubdiv, and Embree; every static archive member is arm64 `IOSSIMULATOR` | `/Volumes/BlenderBuild/blender-ios/artifacts/n115-9e31-geometry-summary.json` |
+| First-pixel dependency closure | T2/T3 | arm64 iOS Simulator 18.0 | green: 1,181 files; every binary is arm64 `IOSSIMULATOR` | `/Volumes/BlenderBuild/blender-ios/artifacts/n116-e4b7-first-pixel-closure-manifest.json` |
+| Reduced Blender configure | T1/T2 | Ninja + iOS Simulator SDK 26.5 | green: generated 6,139-action graph from audited sysroot and native host tools | `/Volumes/BlenderBuild/blender-ios/artifacts/n150-e4b7-blender-configure.log` |
+| Reduced Blender compile probe | T2 | arm64 iOS Simulator 18.0 | expected boundary: core and generated sources compile through action 3,906; next failure is Cocoa GHOST include on iOS | `/Volumes/BlenderBuild/blender-ios/artifacts/n150-e4b7-blender-build.log` |
+| UIKit/Metal first pixel | T2/T3 | iPhone 17 simulator / iOS 26.5 | green: install, cold launch, Metal device, completed first frame, screenshot | `/Volumes/BlenderBuild/blender-ios/artifacts/p500-first-pixel-result.json` |
 
 Only proven outcomes are recorded here. A download is not a built dependency, a
 compiled library is not accepted before ABI audit, and a linked app is not a
