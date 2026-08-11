@@ -20,6 +20,13 @@ endif()
 set(TBB_LIBRARY tbb)
 set(TBB_STATIC_LIBRARY Off)
 
+if(WITH_APPLE_CROSSPLATFORM)
+  list(APPEND TBB_EXTRA_ARGS
+    -DBUILD_SHARED_LIBS=Off
+    -DTBBMALLOC_PROXY_BUILD=Off
+  )
+endif()
+
 ExternalProject_Add(external_tbb
   URL file://${PACKAGE_DIR}/${TBB_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -56,4 +63,16 @@ else()
   harvest(external_tbb tbb/include tbb/include "*.h")
   harvest(external_tbb tbb/lib/cmake/TBB tbb/lib/cmake/TBB "*.cmake")
   harvest_rpath_lib(external_tbb tbb/lib tbb/lib "*${SHAREDLIBEXT}*")
+endif()
+
+if(WITH_APPLE_CROSSPLATFORM)
+  ExternalProject_Add_Step(external_tbb harvest_ios
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/tbb/include
+      ${HARVEST_TARGET}/tbb/include
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/tbb/lib
+      ${HARVEST_TARGET}/tbb/lib
+    DEPENDEES install
+  )
 endif()

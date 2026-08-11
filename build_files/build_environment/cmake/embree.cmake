@@ -81,6 +81,33 @@ if(TBB_STATIC_LIBRARY)
   )
 endif()
 
+if(WITH_APPLE_CROSSPLATFORM)
+  set(EMBREE_EXTRA_ARGS
+    ${EMBREE_EXTRA_ARGS}
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+    -DCMAKE_SYSTEM_PROCESSOR=aarch64
+    -DEMBREE_MAX_ISA=NEON
+    -DEMBREE_STATIC_LIB=ON
+    -DEMBREE_SYCL_SUPPORT=OFF
+    -DEMBREE_INSTALL_DEPENDENCIES=OFF
+    -DTBB_DIR=${LIBDIR}/tbb/lib/cmake/TBB
+  )
+endif()
+
+set(EMBREE_PATCH_COMMAND
+  ${PATCH_CMD} -p 1 -d
+    ${BUILD_DIR}/embree/src/external_embree <
+    ${PATCH_DIR}/embree.diff
+)
+if(WITH_APPLE_CROSSPLATFORM)
+  set(EMBREE_PATCH_COMMAND
+    ${EMBREE_PATCH_COMMAND} &&
+    ${PATCH_CMD} -p 1 -d
+      ${BUILD_DIR}/embree/src/external_embree <
+      ${PATCH_DIR}/embree_ios.diff
+  )
+endif()
+
 ExternalProject_Add(external_embree
   URL file://${PACKAGE_DIR}/${EMBREE_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -88,10 +115,7 @@ ExternalProject_Add(external_embree
   CMAKE_GENERATOR ${PLATFORM_ALT_GENERATOR}
   PREFIX ${BUILD_DIR}/embree
 
-  PATCH_COMMAND
-    ${PATCH_CMD} -p 1 -d
-      ${BUILD_DIR}/embree/src/external_embree <
-      ${PATCH_DIR}/embree.diff
+  PATCH_COMMAND ${EMBREE_PATCH_COMMAND}
 
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=${LIBDIR}/embree
@@ -151,4 +175,19 @@ else()
   harvest(external_embree embree/include embree/include "*.h")
   harvest(external_embree embree/lib embree/lib "*.a")
   harvest_rpath_lib(external_embree embree/lib embree/lib "*${SHAREDLIBEXT}*")
+endif()
+
+if(WITH_APPLE_CROSSPLATFORM)
+  ExternalProject_Add_Step(external_embree harvest_ios
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/embree/include
+      ${HARVEST_TARGET}/embree/include
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/embree/lib
+      ${HARVEST_TARGET}/embree/lib
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/embree/share
+      ${HARVEST_TARGET}/embree/share
+    DEPENDEES install
+  )
 endif()
