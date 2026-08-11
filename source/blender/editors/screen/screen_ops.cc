@@ -7812,6 +7812,7 @@ static void keymap_modal_set(wmKeyConfig *keyconf)
   WM_modalkeymap_assign(keymap, "SCREEN_OT_area_move");
 }
 
+#ifdef WITH_PYTHON
 static bool blend_file_drop_poll(bContext * /*C*/, wmDrag *drag, const wmEvent * /*event*/)
 {
   if (drag->type == WM_DRAG_PATH) {
@@ -7828,6 +7829,7 @@ static void blend_file_drop_copy(bContext * /*C*/, wmDrag *drag, wmDropBox *drop
   /* copy drag path to properties */
   RNA_string_set(drop->ptr, "filepath", WM_drag_get_single_path(drag));
 }
+#endif
 
 static bool screen_drop_scene_poll(bContext *C, wmDrag *drag, const wmEvent * /*event*/)
 {
@@ -7883,8 +7885,10 @@ void ED_keymap_screen(wmKeyConfig *keyconf)
 
   /* dropbox for entire window */
   ListBaseT<wmDropBox> *lb = WM_dropboxmap_find("Window", SPACE_EMPTY, RGN_TYPE_WINDOW);
+#ifdef WITH_PYTHON
   WM_dropbox_add(
       lb, "WM_OT_drop_blend_file", blend_file_drop_poll, blend_file_drop_copy, nullptr, nullptr);
+#endif
   WM_dropbox_add(
       lb, "UI_OT_drop_color", ui::drop_color_poll, ui::drop_color_copy, nullptr, nullptr);
   WM_dropbox_add(lb,
