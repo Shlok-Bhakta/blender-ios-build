@@ -9,4 +9,5 @@
 {"packet":"N112","status":"GREEN","summary":"FreeType plus eight audited prerequisite families"}
 {"packet":"N113","status":"GREEN","summary":"HarfBuzz and FriBidi Meson cross-build plumbing"}
 {"packet":"N114","status":"GREEN","summary":"six audited image-codec dependency families"}
-{"packet":"N115","status":"NEXT","summary":"next dependency roots selected from the audited DAG"}
+{"packet":"N115","status":"GREEN","summary":"TBB, OpenSubdiv, and Embree static simulator archives audited"}
+{"packet":"N116","status":"NEXT","summary":"mandatory color, math, compression, and Python dependency closure"}

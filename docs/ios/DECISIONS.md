@@ -120,3 +120,19 @@ under cache key
 `ec24602d8e68ccfaae25ad54e8130ee036d50ea0169fcf7ad71b43b9a45bafcb`.
 Every object in every harvested archive is arm64 `IOSSIMULATOR`. Evidence:
 `/Volumes/BlenderBuild/blender-ios/artifacts/n114-ec24-image-codecs-summary.json`.
+
+## ADR-0008: Use static geometry libraries and simulator-native ISA flags
+
+- Status: accepted
+- Date: 2026-08-11
+
+The iOS lane builds oneTBB, OpenSubdiv, and Embree as static libraries. Embree
+uses arm64 NEON and does not inherit macOS-only deployment or x86 SSE flags;
+OpenSubdiv disables OpenGL and TBB integration for this reduced lane. Explicit
+iOS harvest steps retain headers, CMake metadata, and archives while avoiding
+runtime dylib bundling before the application shell exists.
+
+Packet N115 proves all three families under cache key
+`9e317f684ffac13636fc5d91f0720b2a33a38569e7895f3c3bfffdb08dd10f9e`.
+Every archive member is arm64 `IOSSIMULATOR`. Evidence:
+`/Volumes/BlenderBuild/blender-ios/artifacts/n115-9e31-geometry-summary.json`.

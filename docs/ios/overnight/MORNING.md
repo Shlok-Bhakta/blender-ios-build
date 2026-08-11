@@ -1,6 +1,6 @@
 # Overnight handoff — 2026-08-11
 
-The branch is at packet N114 green. The next bounded packet is N115. No Blender
+The branch is at packet N115 green. The next bounded packet is N116. No Blender
 application frame or first pixel is claimed yet.
 
 ## Green outcomes
@@ -20,6 +20,9 @@ application frame or first pixel is claimed yet.
 - libjpeg-turbo, libpng, libtiff, OpenJPEG, WebP, and zlib build as the N114
   image-codec stack. All harvested static archive members are arm64
   `IOSSIMULATOR` under one immutable cache key.
+- oneTBB, OpenSubdiv, and Embree build as static N115 geometry libraries. All
+  harvested archive members are arm64 `IOSSIMULATOR` under one immutable cache
+  key.
 - The environment doctor is green, including AC power, SDK, external volume
   UUID/writeability/free space, host tools, and pinned Git refs.
 - All 20 iOS control-plane unit tests and the 213/213 donor-map audit pass.
@@ -45,14 +48,17 @@ application frame or first pixel is claimed yet.
   inherited a quoted `aarch64` processor value and is retained in
   `n114-0b3f-image-codecs-build.log`. The iOS-only corrections are green in the
   `ec24` generation.
+- The first N115 Embree attempt inherited macOS deployment and x86 SSE flags;
+  it is retained in `n115-b4db-geometry-build.log`. The iOS-only platform and
+  ISA correction is green in the `9e31` generation.
 
 ## Resume
 
 1. Read `docs/ios/STATUS.json` and
-   `/Volumes/BlenderBuild/blender-ios/artifacts/n114-ec24-image-codecs-summary.json`.
+   `/Volumes/BlenderBuild/blender-ios/artifacts/n115-9e31-geometry-summary.json`.
 2. Run `python3 build_files/ios/doctor.py --output /Volumes/BlenderBuild/blender-ios/artifacts/manual-doctor/env.json`.
-3. Select the N115 roots from `DEPENDENCY_DAG.json`; keep prior green prefixes
-   immutable and builds at `--parallel 2`.
+3. Build the N116 mandatory color/Python dependency closure; keep prior green
+   prefixes immutable and builds at `--parallel 2`.
 
 Current cache key:
-`ec24602d8e68ccfaae25ad54e8130ee036d50ea0169fcf7ad71b43b9a45bafcb`.
+`9e317f684ffac13636fc5d91f0720b2a33a38569e7895f3c3bfffdb08dd10f9e`.

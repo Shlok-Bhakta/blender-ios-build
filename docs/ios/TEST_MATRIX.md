@@ -14,6 +14,7 @@
 | FreeType dependency packet | T2/T3 | arm64 iOS Simulator 18.0 | green: FreeType + 8 inherited families under one cache key | `/Volumes/BlenderBuild/blender-ios/artifacts/n112-0edd-font-bootstrap-summary.json` |
 | Text-shaping dependency packet | T2/T3 | arm64 iOS Simulator 18.0 | green: HarfBuzz, FriBidi, FreeType, Brotli, and zlib; every archive member is `IOSSIMULATOR` | `/Volumes/BlenderBuild/blender-ios/artifacts/n113-b034-text-stack-summary.json` |
 | Image-codec dependency packet | T2/T3 | arm64 iOS Simulator 18.0 | green: JPEG, PNG, TIFF, OpenJPEG, WebP, and zlib; every archive member is arm64 `IOSSIMULATOR` | `/Volumes/BlenderBuild/blender-ios/artifacts/n114-ec24-image-codecs-summary.json` |
+| Geometry dependency packet | T2/T3 | arm64 iOS Simulator 18.0 | green: TBB, OpenSubdiv, and Embree; every static archive member is arm64 `IOSSIMULATOR` | `/Volumes/BlenderBuild/blender-ios/artifacts/n115-9e31-geometry-summary.json` |
 
 Only proven outcomes are recorded here. A download is not a built dependency, a
 compiled library is not accepted before ABI audit, and a linked app is not a
