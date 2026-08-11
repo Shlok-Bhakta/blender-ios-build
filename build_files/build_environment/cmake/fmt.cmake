@@ -7,6 +7,10 @@ set(FMT_EXTRA_ARGS
   -DFMT_DOC=OFF
 )
 
+if(WITH_APPLE_CROSSPLATFORM)
+  list(APPEND FMT_EXTRA_ARGS -DBUILD_SHARED_LIBS=OFF)
+endif()
+
 ExternalProject_Add(external_fmt
   URL file://${PACKAGE_DIR}/${FMT_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -34,4 +38,16 @@ else()
   harvest(external_fmt fmt/include fmt/include "*.h")
   harvest(external_fmt fmt/lib/cmake/fmt fmt/lib/cmake/fmt "*.cmake")
   harvest(external_fmt fmt/lib fmt/lib "*.a")
+endif()
+
+if(WITH_APPLE_CROSSPLATFORM)
+  ExternalProject_Add_Step(external_fmt harvest_ios
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/fmt/include
+      ${HARVEST_TARGET}/fmt/include
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/fmt/lib
+      ${HARVEST_TARGET}/fmt/lib
+    DEPENDEES install
+  )
 endif()

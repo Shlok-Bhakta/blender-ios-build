@@ -2,8 +2,11 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-set(PYSTRING_EXTRA_ARGS
-)
+set(PYSTRING_EXTRA_ARGS)
+
+if(WITH_APPLE_CROSSPLATFORM)
+  list(APPEND PYSTRING_EXTRA_ARGS -DBUILD_SHARED_LIBS=OFF)
+endif()
 
 ExternalProject_Add(external_pystring
   URL file://${PACKAGE_DIR}/${PYSTRING_FILE}
@@ -32,6 +35,18 @@ if(WIN32)
       ${LIBDIR}/pystring/include
       ${HARVEST_TARGET}/pystring/include
 
+    DEPENDEES install
+  )
+endif()
+
+if(WITH_APPLE_CROSSPLATFORM)
+  ExternalProject_Add_Step(external_pystring harvest_ios
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/pystring/include
+      ${HARVEST_TARGET}/pystring/include
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/pystring/lib
+      ${HARVEST_TARGET}/pystring/lib
     DEPENDEES install
   )
 endif()

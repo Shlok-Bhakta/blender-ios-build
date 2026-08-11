@@ -8,6 +8,13 @@ set(EIGEN_EXTRA_ARGS
   -DTBB_DIR=${LIBDIR}/tbb/lib/cmake/TBB
 )
 
+if(WITH_APPLE_CROSSPLATFORM)
+  list(APPEND EIGEN_EXTRA_ARGS
+    -DEIGEN_BUILD_BLAS=OFF
+    -DEIGEN_BUILD_LAPACK=OFF
+  )
+endif()
+
 ExternalProject_Add(external_eigen
   URL file://${PACKAGE_DIR}/${EIGEN_FILE}
   URL_HASH ${EIGEN_HASH_TYPE}=${EIGEN_HASH}
@@ -42,4 +49,16 @@ else()
   harvest(external_eigen eigen/include eigen/include "*")
   # Extra / at the end to ensure that harvest doesn't ignore the cmake directory
   harvest(external_eigen eigen/share/eigen3/cmake/ eigen/share/eigen3/cmake/ "*.cmake")
+endif()
+
+if(WITH_APPLE_CROSSPLATFORM)
+  ExternalProject_Add_Step(external_eigen harvest_ios
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/eigen/include
+      ${HARVEST_TARGET}/eigen/include
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/eigen/share
+      ${HARVEST_TARGET}/eigen/share
+    DEPENDEES install
+  )
 endif()

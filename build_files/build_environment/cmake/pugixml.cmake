@@ -2,8 +2,14 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-set(PUGIXML_EXTRA_ARGS
-)
+set(PUGIXML_EXTRA_ARGS)
+
+if(WITH_APPLE_CROSSPLATFORM)
+  list(APPEND PUGIXML_EXTRA_ARGS
+    -DBUILD_SHARED_LIBS=OFF
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+  )
+endif()
 
 ExternalProject_Add(external_pugixml
   URL file://${PACKAGE_DIR}/${PUGIXML_FILE}
@@ -40,4 +46,16 @@ if(WIN32)
 else()
   harvest(external_pugixml pugixml/include pugixml/include "*.hpp")
   harvest(external_pugixml pugixml/lib pugixml/lib "*.a")
+endif()
+
+if(WITH_APPLE_CROSSPLATFORM)
+  ExternalProject_Add_Step(external_pugixml harvest_ios
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/pugixml/include
+      ${HARVEST_TARGET}/pugixml/include
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/pugixml/lib
+      ${HARVEST_TARGET}/pugixml/lib
+    DEPENDEES install
+  )
 endif()

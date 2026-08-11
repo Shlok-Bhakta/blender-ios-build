@@ -24,6 +24,14 @@ set(OPENEXR_EXTRA_ARGS
   -Dopenjph_DIR=${LIBDIR}/openjph/lib/cmake/openjph
 )
 
+if(WITH_APPLE_CROSSPLATFORM)
+  list(APPEND OPENEXR_EXTRA_ARGS
+    -DBUILD_SHARED_LIBS=OFF
+    -DOPENEXR_BUILD_EXAMPLES=OFF
+    -DOPENEXR_BUILD_TOOLS=OFF
+  )
+endif()
+
 ExternalProject_Add(external_openexr
   URL file://${PACKAGE_DIR}/${OPENEXR_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -74,6 +82,18 @@ else()
   harvest(external_openexr openexr/include openexr/include "*.h")
   harvest(external_openexr openexr/lib/cmake/OpenEXR openexr/lib/cmake/OpenEXR "*.cmake")
   harvest_rpath_lib(external_openexr openexr/lib openexr/lib "*${SHAREDLIBEXT}*")
+endif()
+
+if(WITH_APPLE_CROSSPLATFORM)
+  ExternalProject_Add_Step(external_openexr harvest_ios
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/openexr/include
+      ${HARVEST_TARGET}/openexr/include
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/openexr/lib
+      ${HARVEST_TARGET}/openexr/lib
+    DEPENDEES install
+  )
 endif()
 
 add_dependencies(
