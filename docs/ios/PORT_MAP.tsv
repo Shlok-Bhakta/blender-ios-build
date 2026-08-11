@@ -1,2 +1,214 @@
 path	change	packet	action	owner_tier	status	test	notes
-
+.gitattributes	M	P000	adapt	S	mapped	T0 static path contract	repository metadata
+.gitignore	M	P000	adapt	S	mapped	T0 static path contract	repository metadata
+.gitmodules	M	P110	adapt	S	mapped	T0 dependency source contract	dependency source metadata
+CMakeLists.txt	M	P100	adapt	F	mapped	T0 iOS configure contract	platform configuration
+GNUmakefile	M	P100	adapt	F	mapped	T0 iOS configure contract	platform configuration
+build_files/build_environment/CMakeLists.txt	M	P110	adapt	F	mapped	T0 cache-key contract and T3 ABI harness	generic iOS dependency framework
+build_files/build_environment/cmake/alembic.cmake	M	P115	adapt	M	mapped	T3 per-library ABI audit	geometry and scene family
+build_files/build_environment/cmake/aom.cmake	M	P113	adapt	M	mapped	T3 per-library ABI audit	audio and media family
+build_files/build_environment/cmake/brotli.cmake	M	P111	adapt	S	mapped	T3 per-library ABI audit	bootstrap compression, XML, SQLite, and crypto family
+build_files/build_environment/cmake/bzip2.cmake	M	P111	adapt	S	mapped	T3 per-library ABI audit	bootstrap compression, XML, SQLite, and crypto family
+build_files/build_environment/cmake/ceres.cmake	M	P115	adapt	M	mapped	T3 per-library ABI audit	geometry and scene family
+build_files/build_environment/cmake/deflate.cmake	M	P111	adapt	S	mapped	T3 per-library ABI audit	bootstrap compression, XML, SQLite, and crypto family
+build_files/build_environment/cmake/download.cmake	M	P110	adapt	F	mapped	T0 cache-key contract and T3 ABI harness	generic iOS dependency framework
+build_files/build_environment/cmake/eigen.cmake	M	P115	adapt	M	mapped	T3 per-library ABI audit	geometry and scene family
+build_files/build_environment/cmake/embree.cmake	M	P115	adapt	M	mapped	T3 per-library ABI audit	geometry and scene family
+build_files/build_environment/cmake/ffi.cmake	M	P117	adapt	F	mapped	T3 per-library ABI audit	Python and host-generator family
+build_files/build_environment/cmake/ffmpeg.cmake	M	P113	adapt	M	mapped	T3 per-library ABI audit	audio and media family
+build_files/build_environment/cmake/fftw.cmake	M	P111	adapt	S	mapped	T3 per-library ABI audit	bootstrap compression, XML, SQLite, and crypto family
+build_files/build_environment/cmake/flac.cmake	M	P113	adapt	M	mapped	T3 per-library ABI audit	audio and media family
+build_files/build_environment/cmake/freetype.cmake	M	P112	adapt	S	mapped	T3 per-library ABI audit	text and font family
+build_files/build_environment/cmake/fribidi.cmake	M	P112	adapt	S	mapped	T3 per-library ABI audit	text and font family
+build_files/build_environment/cmake/gmp.cmake	M	P111	adapt	S	mapped	T3 per-library ABI audit	bootstrap compression, XML, SQLite, and crypto family
+build_files/build_environment/cmake/harfbuzz.cmake	M	P112	adapt	S	mapped	T3 per-library ABI audit	text and font family
+build_files/build_environment/cmake/imath.cmake	M	P114	adapt	M	mapped	T3 per-library ABI audit	color and image family
+build_files/build_environment/cmake/ios_defines.cmake	A	P110	adapt	F	mapped	T0 cache-key contract and T3 ABI harness	generic iOS dependency framework
+build_files/build_environment/cmake/ispc.cmake	M	P116	adapt	F	mapped	T3 per-library ABI audit	LLVM, ISPC, and OSL family
+build_files/build_environment/cmake/lame.cmake	M	P113	adapt	M	mapped	T3 per-library ABI audit	audio and media family
+build_files/build_environment/cmake/llvm.cmake	M	P116	adapt	F	mapped	T3 per-library ABI audit	LLVM, ISPC, and OSL family
+build_files/build_environment/cmake/lzma.cmake	M	P111	adapt	S	mapped	T3 per-library ABI audit	bootstrap compression, XML, SQLite, and crypto family
+build_files/build_environment/cmake/manifold.cmake	M	P115	adapt	M	mapped	T3 per-library ABI audit	geometry and scene family
+build_files/build_environment/cmake/materialx.cmake	M	P115	adapt	M	mapped	T3 per-library ABI audit	geometry and scene family
+build_files/build_environment/cmake/nasm.cmake	M	P117	adapt	F	mapped	T3 per-library ABI audit	Python and host-generator family
+build_files/build_environment/cmake/numpy.cmake	M	P117	adapt	F	mapped	T3 per-library ABI audit	Python and host-generator family
+build_files/build_environment/cmake/openal.cmake	M	P113	adapt	M	mapped	T3 per-library ABI audit	audio and media family
+build_files/build_environment/cmake/opencolorio.cmake	M	P114	adapt	M	mapped	T3 per-library ABI audit	color and image family
+build_files/build_environment/cmake/openimagedenoise.cmake	M	P114	adapt	M	mapped	T3 per-library ABI audit	color and image family
+build_files/build_environment/cmake/openimageio.cmake	M	P114	adapt	M	mapped	T3 per-library ABI audit	color and image family
+build_files/build_environment/cmake/opensubdiv.cmake	M	P115	adapt	M	mapped	T3 per-library ABI audit	geometry and scene family
+build_files/build_environment/cmake/openvdb.cmake	M	P115	adapt	M	mapped	T3 per-library ABI audit	geometry and scene family
+build_files/build_environment/cmake/options.cmake	M	P110	adapt	F	mapped	T0 cache-key contract and T3 ABI harness	generic iOS dependency framework
+build_files/build_environment/cmake/opus.cmake	M	P113	adapt	M	mapped	T3 per-library ABI audit	audio and media family
+build_files/build_environment/cmake/osl.cmake	M	P116	adapt	F	mapped	T3 per-library ABI audit	LLVM, ISPC, and OSL family
+build_files/build_environment/cmake/png.cmake	M	P114	adapt	M	mapped	T3 per-library ABI audit	color and image family
+build_files/build_environment/cmake/python.cmake	M	P117	adapt	F	mapped	T3 per-library ABI audit	Python and host-generator family
+build_files/build_environment/cmake/python_site_packages.cmake	M	P117	adapt	F	mapped	T3 per-library ABI audit	Python and host-generator family
+build_files/build_environment/cmake/rubberband.cmake	M	P113	adapt	M	mapped	T3 per-library ABI audit	audio and media family
+build_files/build_environment/cmake/sndfile.cmake	M	P113	adapt	M	mapped	T3 per-library ABI audit	audio and media family
+build_files/build_environment/cmake/sqlite.cmake	M	P111	adapt	S	mapped	T3 per-library ABI audit	bootstrap compression, XML, SQLite, and crypto family
+build_files/build_environment/cmake/ssl.cmake	M	P111	adapt	S	mapped	T3 per-library ABI audit	bootstrap compression, XML, SQLite, and crypto family
+build_files/build_environment/cmake/theora.cmake	M	P113	adapt	M	mapped	T3 per-library ABI audit	audio and media family
+build_files/build_environment/cmake/thorvg.cmake	M	P114	adapt	M	mapped	T3 per-library ABI audit	color and image family
+build_files/build_environment/cmake/tiff.cmake	M	P114	adapt	M	mapped	T3 per-library ABI audit	color and image family
+build_files/build_environment/cmake/usd.cmake	M	P115	adapt	M	mapped	T3 per-library ABI audit	geometry and scene family
+build_files/build_environment/cmake/x264.cmake	M	P113	adapt	M	mapped	T3 per-library ABI audit	audio and media family
+build_files/build_environment/cmake/x265.cmake	M	P113	adapt	M	mapped	T3 per-library ABI audit	audio and media family
+build_files/build_environment/cmake/xml2.cmake	M	P111	adapt	S	mapped	T3 per-library ABI audit	bootstrap compression, XML, SQLite, and crypto family
+build_files/build_environment/cmake/zlib.cmake	M	P111	adapt	S	mapped	T3 per-library ABI audit	bootstrap compression, XML, SQLite, and crypto family
+build_files/build_environment/patches/brotli_ios.diff	A	P111	adapt	S	mapped	T3 per-library ABI audit	bootstrap compression, XML, SQLite, and crypto family
+build_files/build_environment/patches/embree_ios.diff	A	P115	adapt	M	mapped	T3 per-library ABI audit	geometry and scene family
+build_files/build_environment/patches/ffmpeg_ios.diff	A	P113	adapt	M	mapped	T3 per-library ABI audit	audio and media family
+build_files/build_environment/patches/ispc_ios.diff	A	P116	adapt	F	mapped	T3 per-library ABI audit	LLVM, ISPC, and OSL family
+build_files/build_environment/patches/libb2_apple_ios.diff	A	P111	adapt	S	mapped	T3 per-library ABI audit	bootstrap compression, XML, SQLite, and crypto family
+build_files/build_environment/patches/llvm_ios.diff	A	P116	adapt	F	mapped	T3 per-library ABI audit	LLVM, ISPC, and OSL family
+build_files/build_environment/patches/opencolorio_ios.diff	A	P114	adapt	M	mapped	T3 per-library ABI audit	color and image family
+build_files/build_environment/patches/openimageio_ios.diff	A	P114	adapt	M	mapped	T3 per-library ABI audit	color and image family
+build_files/build_environment/patches/osl_ios.diff	A	P116	adapt	F	mapped	T3 per-library ABI audit	LLVM, ISPC, and OSL family
+build_files/build_environment/patches/python_ios.diff	A	P117	adapt	F	mapped	T3 per-library ABI audit	Python and host-generator family
+build_files/build_environment/patches/rubberband_ios.diff	A	P113	adapt	M	mapped	T3 per-library ABI audit	audio and media family
+build_files/build_environment/patches/usd_ios.diff	A	P115	adapt	M	mapped	T3 per-library ABI audit	geometry and scene family
+build_files/build_environment/patches/x265_apple_ios.diff	A	P113	adapt	M	mapped	T3 per-library ABI audit	audio and media family
+build_files/cmake/platform/platform_apple.cmake	M	P100	adapt	F	mapped	T0 iOS configure contract	platform configuration
+build_files/cmake/platform/platform_apple_xcode.cmake	M	P100	adapt	F	mapped	T0 iOS configure contract	platform configuration
+build_files/cmake/testing.cmake	M	P100	adapt	M	mapped	T0 iOS configure contract	build support
+build_files/utils/make_update.py	M	P100	adapt	M	mapped	T0 iOS configure contract	build support
+extern/draco/CMakeLists.txt	M	P115	adapt	M	mapped	T2 geometry dependency compile	target compatibility
+extern/quadriflow/src/hierarchy.cpp	M	P150	adapt	M	mapped	T2 reduced target link	target compiler compatibility
+extern/quadriflow/src/localsat.cpp	M	P150	adapt	M	mapped	T2 reduced target link	target compiler compatibility
+intern/cycles/blender/addon/properties.py	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/blender/addon/ui.py	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/cmake/external_libs.cmake	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/device/metal/bvh.mm	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/device/metal/device.mm	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/device/metal/device_impl.mm	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/device/metal/kernel.mm	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/device/metal/queue.mm	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/device/metal/util.mm	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/kernel/bvh/util.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/kernel/closure/alloc.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/kernel/closure/bsdf.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/kernel/closure/bsdf_principled_hair_huang.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/kernel/closure/bsdf_ray_portal.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/kernel/closure/bsdf_transparent.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/kernel/closure/emissive.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/kernel/closure/volume.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/kernel/film/denoising_passes.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/kernel/geom/object.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/kernel/geom/triangle.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/kernel/integrator/shade_volume.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/kernel/integrator/volume_shader.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/kernel/types.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/kernel/util/image_3d.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/util/math_float3.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/cycles/util/projection.h	M	P540	defer	F	mapped	T6 named Cycles feasibility smoke	after Workbench first pixel
+intern/ghost/CMakeLists.txt	M	P210	adapt	F	mapped	T2 GHOST backend registration compile	platform registration
+intern/ghost/GHOST_ISystem.hh	M	P220	adapt	F	mapped	T2 system compile and T4 ghost_system marker	GHOST system seam
+intern/ghost/GHOST_Types.hh	M	P310	adapt	M	mapped	T1 touch and pointer translator tests	input event seam
+intern/ghost/intern/GHOST_ContextIOS.hh	A	P230	rewrite	F	mapped	T2 context compile and T4 metal_context marker	Metal context
+intern/ghost/intern/GHOST_ContextIOS.mm	A	P230	rewrite	F	mapped	T2 context compile and T4 metal_context marker	Metal context
+intern/ghost/intern/GHOST_EventTouch.hh	A	P310	rewrite	M	mapped	T1 touch and pointer translator tests	input event seam
+intern/ghost/intern/GHOST_EventTrackpad.hh	M	P310	adapt	M	mapped	T1 touch and pointer translator tests	input event seam
+intern/ghost/intern/GHOST_ISystem.cc	M	P220	adapt	F	mapped	T2 system compile and T4 ghost_system marker	GHOST system seam
+intern/ghost/intern/GHOST_SystemHeadless.hh	M	P220	adapt	F	mapped	T2 system compile and T4 ghost_system marker	GHOST system seam
+intern/ghost/intern/GHOST_SystemIOS.hh	A	P220	rewrite	F	mapped	T2 system compile and T4 ghost_system marker	GHOST system seam
+intern/ghost/intern/GHOST_SystemIOS.mm	A	P220	rewrite	F	mapped	T2 system compile and T4 ghost_system marker	GHOST system seam
+intern/ghost/intern/GHOST_SystemPathsCocoa.mm	M	P220	adapt	F	mapped	T2 system compile and T4 ghost_system marker	GHOST system seam
+intern/ghost/intern/GHOST_WindowCocoa.mm	M	P240	adapt	F	mapped	T2 window compile and T4 window_created marker	window seam
+intern/ghost/intern/GHOST_WindowIOS.hh	A	P240	rewrite	F	mapped	T2 window compile and T4 window_created marker	window seam
+intern/ghost/intern/GHOST_WindowIOS.mm	A	P240	rewrite	F	mapped	T2 window compile and T4 window_created marker	window seam
+intern/ghost/intern/GHOST_WindowViewCocoa.hh	M	P240	adapt	F	mapped	T2 window compile and T4 window_created marker	window seam
+intern/opensubdiv/internal/evaluator/eval_output_gpu.h	M	P510	defer	M	mapped	T6 OpenSubdiv smoke	after Workbench first pixel
+intern/opensubdiv/internal/evaluator/gpu_compute_evaluator.cc	M	P510	defer	M	mapped	T6 OpenSubdiv smoke	after Workbench first pixel
+lib/ios_arm64	A	P110	drop	S	mapped	T0 storage path contract	source-tree install link conflicts with external immutable prefixes
+release/darwin/Blender.app/Contents/Resources/Blender_Legacy_Document_Icon.icns	M	P140	drop	S	mapped	T3 bundle resource audit	desktop asset churn is not required
+release/darwin/Blender.app/Contents/Resources/blender_icon.icns	M	P140	drop	S	mapped	T3 bundle resource audit	desktop asset churn is not required
+release/ios/Blender.app/Assets/arrowdown.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/arrowleft.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/arrowright.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/arrowup.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/blender_icon.icns	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/crossc.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/eraser.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/eyedropper.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/knife.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/paint_cursor_cross.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/paint_cursor_dot.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/pen.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/scrollew.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/scrollns.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/scrollnsew.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/splith.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/splitv.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/zoomin.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Assets/zoomout.pdf	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/Blender.app/Info.plist	A	P200	adapt	F	mapped	T3 bundle audit and T4 scene_connected marker	UIKit app shell
+release/ios/Blender.app/Main.storyboard	A	P200	adapt	F	mapped	T3 bundle audit and T4 scene_connected marker	UIKit app shell
+release/ios/Blender.app/PkgInfo	A	P200	adapt	F	mapped	T3 bundle audit and T4 scene_connected marker	UIKit app shell
+release/ios/Blender.app/blender	A	P200	adapt	F	mapped	T3 bundle audit and T4 scene_connected marker	UIKit app shell
+release/ios/README.md	A	P140	drop	S	mapped	T0 documentation audit	superseded by port handoff documentation
+release/ios/background.tif	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/buildbot/background.tif	A	P140	reuse	S	mapped	T3 bundle resource audit	donor bundle asset
+release/ios/entitlements.plist	A	P130	rewrite	F	mapped	T0/T3 unsigned signing contamination audit	owner entitlements are excluded from unsigned staging
+scripts/modules/rna_keymap_ui.py	M	P350	adapt	M	mapped	T1 keymap and preference tests	input preference UI
+scripts/presets/keyconfig/keymap_data/blender_default.py	M	P310	adapt	M	mapped	T1 touch translator and keymap tests	touch operator and keymap
+scripts/startup/bl_operators/__init__.py	M	P310	adapt	M	mapped	T1 touch translator and keymap tests	touch operator and keymap
+scripts/startup/bl_operators/touch.py	A	P310	adapt	M	mapped	T1 touch translator and keymap tests	touch operator and keymap
+scripts/startup/bl_ui/space_topbar.py	M	P420	adapt	M	mapped	T5 simulator open/save smoke	sandbox file UI
+scripts/startup/bl_ui/space_userpref.py	M	P350	adapt	M	mapped	T1 keymap and preference tests	input preference UI
+source/blender/blendthumb/CMakeLists.txt	M	P120	adapt	F	mapped	T2 host-tool execution and target-output audit	host/target split
+source/blender/blenkernel/BKE_context.hh	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/blenkernel/intern/appdir.cc	M	P400	adapt	M	mapped	T4 bundled resource path smoke	bundle resource path
+source/blender/blenlib/BLI_vector.hh	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/blenlib/intern/storage_apple.mm	M	P410	adapt	M	mapped	T1 URL ownership and T5 file round-trip	sandbox file access
+source/blender/blentranslation/intern/messages_apple.mm	M	P400	adapt	M	mapped	T4 bundled resource path smoke	bundle resource path
+source/blender/blentranslation/msgfmt/CMakeLists.txt	M	P120	adapt	F	mapped	T2 host-tool execution and target-output audit	host/target split
+source/blender/datatoc/CMakeLists.txt	M	P120	adapt	F	mapped	T2 host-tool execution and target-output audit	host/target split
+source/blender/draw/engines/eevee/shaders/eevee_ray_denoise_spatial_comp.glsl	M	P520	defer	F	mapped	T6 EEVEE smoke	after Workbench first pixel
+source/blender/editors/interface/interface_handlers.cc	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/editors/interface/view2d/view2d_ops.cc	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/editors/sculpt_paint/mesh/paint_vertex.cc	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/editors/space_file/CMakeLists.txt	M	P410	adapt	M	mapped	T1 URL ownership and T5 file round-trip	sandbox file access
+source/blender/editors/space_file/fsmenu_system.mm	A	P410	rewrite	M	mapped	T1 URL ownership and T5 file round-trip	sandbox file access
+source/blender/editors/space_file/fsmenu_system_ios.mm	A	P410	rewrite	M	mapped	T1 URL ownership and T5 file round-trip	sandbox file access
+source/blender/editors/space_node/node_edit.cc	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/editors/space_view3d/view3d_gizmo_navigate.cc	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/editors/space_view3d/view3d_navigate_view_move.cc	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/editors/space_view3d/view3d_navigate_view_rotate.cc	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/gpu/intern/gpu_framebuffer_private.hh	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_backend.mm	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_command_buffer.mm	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_common.hh	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_context.hh	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_context.mm	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_immediate.hh	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_index_buffer.hh	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_index_buffer.mm	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_memory.hh	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_memory.mm	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_query.mm	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_shader.hh	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_shader.mm	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_storage_buffer.mm	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_texture.hh	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_texture.mm	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_texture_util.mm	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_vertex_buffer.hh	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/metal/mtl_vertex_buffer.mm	M	P500	rewrite	F	mapped	T6 Metal clear and Workbench frame	current Metal backend seam
+source/blender/gpu/shader_tool/CMakeLists.txt	M	P120	adapt	F	mapped	T2 host-tool execution and target-output audit	host/target split
+source/blender/makesdna/DNA_windowmanager_types.h	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/makesdna/intern/CMakeLists.txt	M	P120	adapt	F	mapped	T2 host-tool execution and target-output audit	host/target split
+source/blender/makesrna/intern/CMakeLists.txt	M	P120	adapt	F	mapped	T2 host-tool execution and target-output audit	host/target split
+source/blender/makesrna/intern/rna_screen.cc	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/makesrna/intern/rna_wm.cc	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/python/generic/CMakeLists.txt	M	P430	adapt	F	mapped	T4/T6 bundled Python startup smoke	target Python runtime
+source/blender/python/mathutils/mathutils_Matrix.cc	M	P430	adapt	F	mapped	T4/T6 bundled Python startup smoke	target Python runtime
+source/blender/windowmanager/WM_api.hh	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/windowmanager/WM_types.hh	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/windowmanager/intern/wm.cc	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/windowmanager/intern/wm_event_system.cc	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/windowmanager/intern/wm_files.cc	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/windowmanager/intern/wm_keymap.cc	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/blender/windowmanager/wm_event_types.hh	M	P300	adapt	M	mapped	T1 input/coordinate seam regression	window-manager and editor integration
+source/creator/CMakeLists.txt	M	P130	rewrite	F	mapped	T0/T3 signing-mode audit	isolate donor automatic codesigning
+source/creator/creator.cc	M	P200	adapt	F	mapped	T4 blender_main marker	UIKit process entry

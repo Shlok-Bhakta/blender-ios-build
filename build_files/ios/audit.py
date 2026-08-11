@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
@@ -33,6 +34,16 @@ SIGNING_KEYS = {
     "ProvisioningProfile",
     "PROVISIONING_PROFILE_SPECIFIER",
 }
+PORT_MAP_FIELDS = (
+    "path",
+    "change",
+    "packet",
+    "action",
+    "owner_tier",
+    "status",
+    "test",
+    "notes",
+)
 
 
 @dataclass(frozen=True)
@@ -255,6 +266,90 @@ def audit_abi(path: Path, target: str, architecture: str) -> list[Finding]:
     return findings
 
 
+def donor_paths(repository: Path, base: str, donor: str) -> tuple[set[str], str | None]:
+    result = run_tool(
+        ["git", "-C", str(repository), "diff", "--name-only", f"{base}..{donor}"]
+    )
+    if result.returncode != 0:
+        return set(), result.stderr.strip() or "git diff failed"
+    return {line for line in result.stdout.splitlines() if line}, None
+
+
+def audit_port_map(path: Path, repository: Path, base: str, donor: str) -> list[Finding]:
+    findings: list[Finding] = []
+    try:
+        with path.open(newline="") as handle:
+            reader = csv.DictReader(handle, delimiter="\t")
+            if tuple(reader.fieldnames or ()) != PORT_MAP_FIELDS:
+                add_finding(
+                    findings,
+                    "PORT-MAP-SCHEMA",
+                    f"header must be {PORT_MAP_FIELDS}",
+                    path,
+                )
+            rows = list(reader)
+    except OSError as ex:
+        add_finding(findings, "PORT-MAP-READ", f"cannot read map: {ex}", path)
+        return findings
+
+    expected, error = donor_paths(repository, base, donor)
+    if error:
+        add_finding(findings, "PORT-MAP-DIFF", error, repository)
+        return findings
+
+    mapped: set[str] = set()
+    for row_number, row in enumerate(rows, start=2):
+        row_path = row.get("path", "")
+        if row_path in mapped:
+            add_finding(
+                findings,
+                "PORT-MAP-DUPLICATE",
+                f"row {row_number} duplicates {row_path!r}",
+                path,
+            )
+        mapped.add(row_path)
+        for field in PORT_MAP_FIELDS:
+            if not row.get(field, "").strip():
+                add_finding(
+                    findings,
+                    "PORT-MAP-UNCLASSIFIED",
+                    f"row {row_number} has an empty {field!r}",
+                    path,
+                )
+        if row.get("action") not in {"reuse", "adapt", "rewrite", "drop", "defer"}:
+            add_finding(
+                findings,
+                "PORT-MAP-UNCLASSIFIED",
+                f"row {row_number} has invalid action {row.get('action')!r}",
+                path,
+            )
+        if row.get("owner_tier") not in {"S", "M", "F"}:
+            add_finding(
+                findings,
+                "PORT-MAP-UNCLASSIFIED",
+                f"row {row_number} has invalid owner tier {row.get('owner_tier')!r}",
+                path,
+            )
+
+    missing = sorted(expected.difference(mapped))
+    extra = sorted(mapped.difference(expected))
+    if missing:
+        add_finding(
+            findings,
+            "PORT-MAP-MISSING",
+            f"{len(missing)} donor paths are missing; first: {missing[:5]}",
+            path,
+        )
+    if extra:
+        add_finding(
+            findings,
+            "PORT-MAP-EXTRA",
+            f"{len(extra)} paths are outside the donor delta; first: {extra[:5]}",
+            path,
+        )
+    return findings
+
+
 def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -276,6 +371,12 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     abi_parser.add_argument("path", type=Path)
     abi_parser.add_argument("--target", choices=("ios-simulator", "ios-device"), required=True)
     abi_parser.add_argument("--arch", default="arm64")
+
+    port_map_parser = subparsers.add_parser("port-map")
+    port_map_parser.add_argument("path", type=Path)
+    port_map_parser.add_argument("--repository", type=Path, required=True)
+    port_map_parser.add_argument("--base", required=True)
+    port_map_parser.add_argument("--donor", required=True)
     return parser.parse_args(argv)
 
 
@@ -287,8 +388,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         findings = audit_paths(arguments.paths)
     elif arguments.command == "bundle":
         findings = audit_bundle(arguments.path, arguments.lane, arguments.required_resource)
-    else:
+    elif arguments.command == "abi":
         findings = audit_abi(arguments.path, arguments.target, arguments.arch)
+    else:
+        findings = audit_port_map(
+            arguments.path, arguments.repository, arguments.base, arguments.donor
+        )
 
     report = {
         "schema_version": 1,

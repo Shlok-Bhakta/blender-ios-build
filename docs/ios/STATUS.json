@@ -5,9 +5,9 @@
   "donor_base_sha": "ec6e62d40fa9e9d1bea33ad5d00148c99a4f0832",
   "port_branch": "port/ios-5.2-simulator",
   "phase": "G0",
-  "active_packet": "N020",
-  "last_green_packet": "N010",
-  "last_green_sha": "80d3ecca1fa58e61b30f7362a128bcf53caaf666",
+  "active_packet": "N030",
+  "last_green_packet": "N020",
+  "last_green_sha": "ad591dc23a6a34701e5ad30028364a356dc0b8ff",
   "last_green_run": null,
   "target": "ios-simulator-arm64",
   "feature_profile": "ios_sim_minimal",
@@ -18,8 +18,8 @@
   "external_volume_state": "qualified",
   "blockers": [],
   "next_safe_packets": [
-    "N030",
     "N040",
-    "N100"
+    "N100",
+    "N110"
   ]
 }

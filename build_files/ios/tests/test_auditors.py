@@ -169,5 +169,21 @@ class AbiAuditTests(AuditorTestCase):
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
+class PortMapAuditTests(AuditorTestCase):
+    def test_port_map_matches_exact_donor_delta(self) -> None:
+        port_map = IOS_DIR.parents[1] / "docs" / "ios" / "PORT_MAP.tsv"
+        result = self.run_audit(
+            "port-map",
+            port_map,
+            "--repository",
+            IOS_DIR.parents[1],
+            "--base",
+            "v5.1.2",
+            "--donor",
+            "origin/ios",
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
