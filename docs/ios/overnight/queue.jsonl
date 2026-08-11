@@ -8,4 +8,5 @@
 {"packet":"N111","status":"GREEN","summary":"eight audited bootstrap dependency families"}
 {"packet":"N112","status":"GREEN","summary":"FreeType plus eight audited prerequisite families"}
 {"packet":"N113","status":"GREEN","summary":"HarfBuzz and FriBidi Meson cross-build plumbing"}
-{"packet":"N114","status":"NEXT","summary":"image-codec dependency roots"}
+{"packet":"N114","status":"GREEN","summary":"six audited image-codec dependency families"}
+{"packet":"N115","status":"NEXT","summary":"next dependency roots selected from the audited DAG"}

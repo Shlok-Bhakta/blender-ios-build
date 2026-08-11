@@ -103,3 +103,20 @@ Python and its site packages. The generated graph falls from 301 to 286 edges.
 Packet N113 proves HarfBuzz 10.0.1 and FriBidi 1.0.12, including FreeType,
 Brotli, and zlib integration, under cache key
 `b0340de3aebc1a84777d6b423050aa638e7d9b428282f844f1b7e95e5ca60591`.
+
+## ADR-0007: Keep image-codec builds static and iOS harvesting explicit
+
+- Status: accepted
+- Date: 2026-08-11
+
+The iOS lane disables shared libraries, codec tools, and tests where each
+upstream project exposes those controls. Compatibility policy overrides for
+older codec CMake projects are confined to Apple cross-platform builds. Each
+recipe explicitly harvests its installed headers and static libraries because
+the desktop harvest helper does not cover this cross-platform configuration.
+
+Packet N114 proves libjpeg-turbo, libpng, libtiff, OpenJPEG, WebP, and zlib
+under cache key
+`ec24602d8e68ccfaae25ad54e8130ee036d50ea0169fcf7ad71b43b9a45bafcb`.
+Every object in every harvested archive is arm64 `IOSSIMULATOR`. Evidence:
+`/Volumes/BlenderBuild/blender-ios/artifacts/n114-ec24-image-codecs-summary.json`.

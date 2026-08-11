@@ -1,7 +1,7 @@
 # Overnight handoff — 2026-08-11
 
-The branch is at packet N113 green. The next bounded packet is N114 (image-codec
-dependencies). No Blender application frame or first pixel is claimed yet.
+The branch is at packet N114 green. The next bounded packet is N115. No Blender
+application frame or first pixel is claimed yet.
 
 ## Green outcomes
 
@@ -17,6 +17,9 @@ dependencies). No Blender application frame or first pixel is claimed yet.
 - HarfBuzz 10.0.1 and FriBidi 1.0.12 build through explicit Meson native/cross
   files. Their five-family stack passes the simulator archive audit, and their
   false target-Python dependency edges are gone.
+- libjpeg-turbo, libpng, libtiff, OpenJPEG, WebP, and zlib build as the N114
+  image-codec stack. All harvested static archive members are arm64
+  `IOSSIMULATOR` under one immutable cache key.
 - The environment doctor is green, including AC power, SDK, external volume
   UUID/writeability/free space, host tools, and pinned Git refs.
 - All 20 iOS control-plane unit tests and the 213/213 donor-map audit pass.
@@ -37,14 +40,19 @@ dependencies). No Blender application frame or first pixel is claimed yet.
   Apple-Silicon local-signing requirement. Failed setup logs remain under the
   `3944`, `b1fa`, and `1bff` N113 build prefixes; the successful correction is
   the `b034` generation.
+- The first N114 codec configure hit CMake 4's compatibility floor; the failed
+  build is retained in `n114-e9d0-image-codecs-build.log`. A later PNG configure
+  inherited a quoted `aarch64` processor value and is retained in
+  `n114-0b3f-image-codecs-build.log`. The iOS-only corrections are green in the
+  `ec24` generation.
 
 ## Resume
 
 1. Read `docs/ios/STATUS.json` and
-   `/Volumes/BlenderBuild/blender-ios/artifacts/n111-1ae9-bootstrap-summary.json`.
+   `/Volumes/BlenderBuild/blender-ios/artifacts/n114-ec24-image-codecs-summary.json`.
 2. Run `python3 build_files/ios/doctor.py --output /Volumes/BlenderBuild/blender-ios/artifacts/manual-doctor/env.json`.
-3. Start N114 with the image-codec roots from `DEPENDENCY_DAG.json`; keep prior
-   green prefixes immutable and builds at `--parallel 2`.
+3. Select the N115 roots from `DEPENDENCY_DAG.json`; keep prior green prefixes
+   immutable and builds at `--parallel 2`.
 
 Current cache key:
-`b0340de3aebc1a84777d6b423050aa638e7d9b428282f844f1b7e95e5ca60591`.
+`ec24602d8e68ccfaae25ad54e8130ee036d50ea0169fcf7ad71b43b9a45bafcb`.
