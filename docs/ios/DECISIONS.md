@@ -44,3 +44,21 @@ profile, or `_CodeSignature` directory. The arm64 device bundle is reported by
 `codesign` as not signed at all and contains neither an embedded profile nor a
 `_CodeSignature` directory. Both executables pass the target-platform ABI audit.
 Evidence: `/Volumes/BlenderBuild/blender-ios/artifacts/20260811T044431Z-8f74cae544cd-signing-probe/signing-report.json`.
+
+## ADR-0004: Content-address dependency builds by full cross-compile contract
+
+- Status: accepted
+- Date: 2026-08-11
+
+Each simulator or device dependency tree gets a distinct SHA-256 cache key over
+the frozen Blender release, dependency versions, iOS framework and patch content,
+Xcode/SDK/CMake versions, target triple, deployment target, and feature profile.
+Build and install prefixes are immutable per key. Downloads and source packages
+are shared on the bulk volume, while host executables remain in a separate native
+directory and are never taken from the target prefix.
+
+The generic iOS framework uses an explicit SDK path and target triple, arm64,
+`CMAKE_SYSTEM_NAME=iOS`, static-library try-compiles, and target-only library,
+include, and package discovery. Program discovery remains host-only. The first
+simulator configure is green at cache key
+`b4566ec98fb7113e621f79f71f83fb3f49f6c2607886c05c0bcf2c1f5b2bddfd`.

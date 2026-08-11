@@ -5,20 +5,20 @@
   "donor_base_sha": "ec6e62d40fa9e9d1bea33ad5d00148c99a4f0832",
   "port_branch": "port/ios-5.2-simulator",
   "phase": "G0",
-  "active_packet": "N040",
-  "last_green_packet": "N030",
-  "last_green_sha": "8f74cae544cd397f54815c6dc13f6fae981623a1",
-  "last_green_run": null,
+  "active_packet": "N100",
+  "last_green_packet": "N040",
+  "last_green_sha": "34f632e2137d7a41aabe69f04105da99e8245c5d",
+  "last_green_run": "/Volumes/BlenderBuild/blender-ios/artifacts/20260811T044431Z-8f74cae544cd-signing-probe/signing-report.json",
   "target": "ios-simulator-arm64",
   "feature_profile": "ios_sim_minimal",
   "signing_mode": "SIMULATOR_LOCAL",
-  "dependency_cache_key": null,
+  "dependency_cache_key": "b4566ec98fb7113e621f79f71f83fb3f49f6c2607886c05c0bcf2c1f5b2bddfd",
   "bulk_volume": "/Volumes/BlenderBuild",
   "bulk_volume_uuid": "EC4DA5DD-B2A4-4056-934E-5B703096BEF1",
   "external_volume_state": "qualified",
   "blockers": [],
   "next_safe_packets": [
-    "N100",
-    "N110"
+    "N110",
+    "N111"
   ]
 }

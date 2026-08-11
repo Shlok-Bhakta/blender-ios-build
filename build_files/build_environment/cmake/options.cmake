@@ -38,6 +38,7 @@ set(DOWNLOAD_DIR "${CMAKE_CURRENT_BINARY_DIR}/downloads" CACHE STRING "Path for 
 
 set(PACKAGE_DIR "${CMAKE_CURRENT_BINARY_DIR}/packages" CACHE PATH "default path for downloaded packages")
 option(PACKAGE_USE_UPSTREAM_SOURCES "Use sources upstream to download the package sources, when OFF the blender mirror will be used" ON)
+set(CMAKE_DEPS_HOST_TOOLS_DIR "" CACHE PATH "Native host tools used while cross-compiling")
 
 file(TO_CMAKE_PATH ${DOWNLOAD_DIR} DOWNLOAD_DIR)
 file(TO_CMAKE_PATH ${PACKAGE_DIR} PACKAGE_DIR)
@@ -214,26 +215,32 @@ else()
   if(APPLE)
     set(SHAREDLIBEXT ".dylib")
 
-    # Use same Xcode detection as Blender itself.
-    include(../cmake/platform/platform_apple_xcode.cmake)
+    if(WITH_APPLE_CROSSPLATFORM)
+      include(${CMAKE_CURRENT_LIST_DIR}/ios_platform.cmake)
+    else()
+      # Use same Xcode detection as Blender itself.
+      include(../cmake/platform/platform_apple_xcode.cmake)
+    endif()
 
     if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
       set(BLENDER_PLATFORM_ARM ON)
     endif()
 
-    set(PLATFORM_CFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} -arch ${CMAKE_OSX_ARCHITECTURES}")
-    set(PLATFORM_CXXFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} -std=c++20 -stdlib=libc++ -arch ${CMAKE_OSX_ARCHITECTURES}")
-    set(PLATFORM_LDFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} -arch ${CMAKE_OSX_ARCHITECTURES} -headerpad_max_install_names")
-    if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
-      set(PLATFORM_BUILD_TARGET --build=x86_64-apple-darwin19.0.0) # OS X 10.15
-    else()
-      set(PLATFORM_BUILD_TARGET --build=aarch64-apple-darwin20.0.0) # macOS 11.00
+    if(NOT WITH_APPLE_CROSSPLATFORM)
+      set(PLATFORM_CFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} -arch ${CMAKE_OSX_ARCHITECTURES}")
+      set(PLATFORM_CXXFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} -std=c++20 -stdlib=libc++ -arch ${CMAKE_OSX_ARCHITECTURES}")
+      set(PLATFORM_LDFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} -arch ${CMAKE_OSX_ARCHITECTURES} -headerpad_max_install_names")
+      if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
+        set(PLATFORM_BUILD_TARGET --build=x86_64-apple-darwin19.0.0) # OS X 10.15
+      else()
+        set(PLATFORM_BUILD_TARGET --build=aarch64-apple-darwin20.0.0) # macOS 11.00
+      endif()
+      set(PLATFORM_CMAKE_FLAGS
+        -DCMAKE_OSX_ARCHITECTURES:STRING=${CMAKE_OSX_ARCHITECTURES}
+        -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${CMAKE_OSX_DEPLOYMENT_TARGET}
+        -DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}
+      )
     endif()
-    set(PLATFORM_CMAKE_FLAGS
-      -DCMAKE_OSX_ARCHITECTURES:STRING=${CMAKE_OSX_ARCHITECTURES}
-      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${CMAKE_OSX_DEPLOYMENT_TARGET}
-      -DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}
-    )
   else()
     set(SHAREDLIBEXT ".so")
 
@@ -273,13 +280,23 @@ else()
   set(BLENDER_CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG ${PLATFORM_CXXFLAGS}")
   set(BLENDER_CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g -DNDEBUG ${PLATFORM_CXXFLAGS}")
 
-  set(CONFIGURE_ENV
-    export MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET} &&
-    export MACOSX_SDK_VERSION=${CMAKE_OSX_DEPLOYMENT_TARGET} &&
-    export CFLAGS=${PLATFORM_CFLAGS} &&
-    export CXXFLAGS=${PLATFORM_CXXFLAGS} &&
-    export LDFLAGS=${PLATFORM_LDFLAGS}
-  )
+  if(WITH_APPLE_CROSSPLATFORM)
+    set(CONFIGURE_ENV
+      export IPHONEOS_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET} &&
+      export CFLAGS=${PLATFORM_CFLAGS} &&
+      export CXXFLAGS=${PLATFORM_CXXFLAGS} &&
+      export LDFLAGS=${PLATFORM_LDFLAGS} &&
+      export PKG_CONFIG_LIBDIR=${LIBDIR}/pkgconfig
+    )
+  else()
+    set(CONFIGURE_ENV
+      export MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET} &&
+      export MACOSX_SDK_VERSION=${CMAKE_OSX_DEPLOYMENT_TARGET} &&
+      export CFLAGS=${PLATFORM_CFLAGS} &&
+      export CXXFLAGS=${PLATFORM_CXXFLAGS} &&
+      export LDFLAGS=${PLATFORM_LDFLAGS}
+    )
+  endif()
   set(CONFIGURE_ENV_NO_PERL ${CONFIGURE_ENV})
   set(CONFIGURE_COMMAND ./configure ${PLATFORM_BUILD_TARGET})
   set(CONFIGURE_COMMAND_NO_TARGET ./configure)

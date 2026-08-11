@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: 2026 Blender Authors
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+# Generic Apple cross-compilation contract shared by dependency packets.
+
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+  message(FATAL_ERROR "iOS dependencies require CMAKE_SYSTEM_NAME=iOS")
+endif()
+if(NOT CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
+  message(FATAL_ERROR "iOS dependencies currently require arm64")
+endif()
+if(NOT APPLE_TARGET_DEVICE STREQUAL "ios" AND
+   NOT APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
+  message(FATAL_ERROR "Invalid iOS APPLE_TARGET_DEVICE: ${APPLE_TARGET_DEVICE}")
+endif()
+if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+  message(FATAL_ERROR "CMAKE_OSX_DEPLOYMENT_TARGET must be explicit")
+endif()
+if(NOT IS_ABSOLUTE "${CMAKE_OSX_SYSROOT}" OR NOT EXISTS "${CMAKE_OSX_SYSROOT}")
+  message(FATAL_ERROR "CMAKE_OSX_SYSROOT must be an existing absolute SDK path")
+endif()
+
+set(BLENDER_PLATFORM_ARM ON)
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+
+if(APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
+  set(BLENDER_IOS_PLATFORM "IOSSIMULATOR")
+  set(BLENDER_IOS_TARGET_TRIPLE "arm64-apple-ios${CMAKE_OSX_DEPLOYMENT_TARGET}-simulator")
+else()
+  set(BLENDER_IOS_PLATFORM "IOS")
+  set(BLENDER_IOS_TARGET_TRIPLE "arm64-apple-ios${CMAKE_OSX_DEPLOYMENT_TARGET}")
+endif()
+
+set(_target_flags "-target ${BLENDER_IOS_TARGET_TRIPLE} -isysroot ${CMAKE_OSX_SYSROOT}")
+set(PLATFORM_CFLAGS "${_target_flags} -fvisibility=hidden")
+set(PLATFORM_CXXFLAGS "${_target_flags} -std=c++20 -stdlib=libc++ -fvisibility=hidden")
+set(PLATFORM_LDFLAGS "${_target_flags} -Wl,-dead_strip")
+set(PLATFORM_BUILD_TARGET --host=arm-apple-darwin)
+
+find_program(BLENDER_IOS_MESON meson REQUIRED NO_CMAKE_FIND_ROOT_PATH)
+set(MESON ${BLENDER_IOS_MESON})
+
+set(PLATFORM_CMAKE_FLAGS
+  -DCMAKE_SYSTEM_NAME:STRING=iOS
+  -DCMAKE_SYSTEM_PROCESSOR:STRING=arm64
+  -DCMAKE_OSX_ARCHITECTURES:STRING=arm64
+  -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${CMAKE_OSX_DEPLOYMENT_TARGET}
+  -DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}
+  -DCMAKE_TRY_COMPILE_TARGET_TYPE:STRING=STATIC_LIBRARY
+  -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM:STRING=NEVER
+  -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY:STRING=ONLY
+  -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE:STRING=ONLY
+  -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE:STRING=ONLY
+)
+
+message(STATUS "Apple dependency target = ${APPLE_TARGET_DEVICE}")
+message(STATUS "Apple dependency triple = ${BLENDER_IOS_TARGET_TRIPLE}")
+message(STATUS "Apple dependency SDK = ${CMAKE_OSX_SYSROOT}")
+
+unset(_target_flags)
