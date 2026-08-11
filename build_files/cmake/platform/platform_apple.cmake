@@ -88,7 +88,7 @@ if(WITH_APPLE_CROSSPLATFORM)
   endif()
   set(OpenJPEG_DIR "${LIBDIR}/openjpeg/lib/cmake/openjpeg-2.5")
   find_package(OpenJPEG REQUIRED CONFIG)
-  foreach(_webp_component webp webpdemux libwebpmux)
+  foreach(_webp_component webp webpdemux libwebpmux sharpyuv)
     if(NOT TARGET WebP::${_webp_component})
       add_library(WebP::${_webp_component} STATIC IMPORTED)
       if(_webp_component STREQUAL "libwebpmux")
@@ -102,6 +102,11 @@ if(WITH_APPLE_CROSSPLATFORM)
       )
     endif()
   endforeach()
+  # WebP's static archive calls into SharpYUV, but its generated package does
+  # not preserve that private dependency for static consumers.
+  set_property(TARGET WebP::webp APPEND PROPERTY
+    INTERFACE_LINK_LIBRARIES WebP::sharpyuv
+  )
   unset(_webp_archive)
   unset(_webp_component)
 
@@ -109,21 +114,24 @@ if(WITH_APPLE_CROSSPLATFORM)
   set(minizip-ng_INCLUDE_DIR "${LIBDIR}/minizipng/include/minizip-ng/minizip")
   set(minizip-ng_LIBRARY "${LIBDIR}/minizipng/lib/libminizip.a")
   set(minizip-ng_STATIC_LIBRARY ON)
+  # OpenImageIO's static export references this namespaced target even when
+  # Blender's own PugiXML feature is disabled.
+  set(pugixml_DIR "${LIBDIR}/pugixml/lib/cmake/pugixml")
+  find_package(pugixml REQUIRED CONFIG)
+  if(TARGET pugixml AND NOT TARGET pugixml::pugixml)
+    add_library(pugixml::pugixml ALIAS pugixml)
+  endif()
+
   find_package(OpenImageIO REQUIRED CONFIG)
   find_package(OpenColorIO 2.0.0 REQUIRED CONFIG)
   find_package(Eigen3 REQUIRED CONFIG)
   set(ZSTD_ROOT_DIR "${LIBDIR}/zstd")
   find_package(Zstd REQUIRED)
 
-  if(WITH_PUGIXML)
-    set(pugixml_DIR "${LIBDIR}/pugixml/lib/cmake/pugixml")
-    find_package(PugiXML REQUIRED)
-  endif()
-
   string(APPEND PLATFORM_CFLAGS " -pipe -funsigned-char -fno-strict-aliasing -ffp-contract=off")
   set(PLATFORM_LINKFLAGS "\
 -fexceptions -framework Foundation -framework UIKit -framework CoreGraphics \
--framework Metal -framework MetalKit -framework QuartzCore"
+-framework Metal -framework MetalKit -framework QuartzCore -framework GameController"
   )
   set(EXETYPE MACOSX_BUNDLE)
   set(CMAKE_C_FLAGS_DEBUG "-g")

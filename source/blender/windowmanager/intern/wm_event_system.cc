@@ -5574,6 +5574,10 @@ static wmEventType wm_event_type_from_ghost_key(GHOST_TKey key)
     case GHOST_kKeyUnknown:
       return EVT_UNKNOWNKEY;
 
+    case GHOST_kKeyTextEdit:
+      /* Live UIKit text replacement is currently disabled by the iOS backend. */
+      return EVENT_NONE;
+
 #if defined(__GNUC__) || defined(__clang__)
       /* Ensure all members of this enum are handled, otherwise generate a compiler warning.
        * Note that these members have been handled, these ranges are to satisfy the compiler. */
