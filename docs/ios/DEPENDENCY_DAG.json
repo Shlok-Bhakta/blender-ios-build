@@ -1,0 +1,541 @@
+{
+  "bootstrap_queue": [
+    {
+      "direct_dependencies": [],
+      "target": "external_zlib",
+      "transitive_dependencies": []
+    },
+    {
+      "direct_dependencies": [],
+      "target": "external_bzip2",
+      "transitive_dependencies": []
+    },
+    {
+      "direct_dependencies": [],
+      "target": "external_lzma",
+      "transitive_dependencies": []
+    },
+    {
+      "direct_dependencies": [],
+      "target": "external_ssl",
+      "transitive_dependencies": []
+    },
+    {
+      "direct_dependencies": [],
+      "target": "external_sqlite",
+      "transitive_dependencies": []
+    },
+    {
+      "direct_dependencies": [],
+      "target": "external_xml2",
+      "transitive_dependencies": []
+    },
+    {
+      "direct_dependencies": [],
+      "target": "external_brotli",
+      "transitive_dependencies": []
+    },
+    {
+      "direct_dependencies": [],
+      "target": "external_deflate",
+      "transitive_dependencies": []
+    }
+  ],
+  "cache_key": "b4566ec98fb7113e621f79f71f83fb3f49f6c2607886c05c0bcf2c1f5b2bddfd",
+  "edge_count": 301,
+  "generated_at": "2026-08-11T04:57:49.620140+00:00",
+  "root_targets": [
+    "external_abseil",
+    "external_aom",
+    "external_blosc",
+    "external_brotli",
+    "external_bzip2",
+    "external_deflate",
+    "external_draco",
+    "external_eigen",
+    "external_expat",
+    "external_ffi",
+    "external_fftw",
+    "external_fftw3_double",
+    "external_fftw3_float",
+    "external_flac",
+    "external_fmt",
+    "external_gmp",
+    "external_haru",
+    "external_imath",
+    "external_jpeg",
+    "external_lame",
+    "external_lzma",
+    "external_meshoptimizer",
+    "external_nasm",
+    "external_ogg",
+    "external_openal",
+    "external_openjpeg",
+    "external_openjph",
+    "external_opus",
+    "external_potrace",
+    "external_pugixml",
+    "external_pystring",
+    "external_robinmap",
+    "external_sdl",
+    "external_shaderc_glslang",
+    "external_spirv_headers",
+    "external_sqlite",
+    "external_sse2neon",
+    "external_ssl",
+    "external_tbb",
+    "external_tracy",
+    "external_vpx",
+    "external_vulkan_headers",
+    "external_vulkan_memory_allocator",
+    "external_webp",
+    "external_x265_10",
+    "external_x265_12",
+    "external_xml2",
+    "external_xr_openxr_sdk",
+    "external_yamlcpp",
+    "external_zlib",
+    "external_zstd"
+  ],
+  "schema_version": 1,
+  "target": "ios-simulator-arm64",
+  "target_count": 93,
+  "targets": {
+    "external_abseil": [],
+    "external_alembic": [
+      "external_imath"
+    ],
+    "external_aom": [],
+    "external_blosc": [],
+    "external_brotli": [],
+    "external_bzip2": [],
+    "external_ceres": [
+      "external_abseil",
+      "external_eigen"
+    ],
+    "external_cython": [
+      "external_bzip2",
+      "external_ffi",
+      "external_lzma",
+      "external_python",
+      "external_python_site_packages",
+      "external_sqlite",
+      "external_ssl",
+      "external_zlib"
+    ],
+    "external_deflate": [],
+    "external_draco": [],
+    "external_eigen": [],
+    "external_embree": [
+      "external_tbb"
+    ],
+    "external_expat": [],
+    "external_ffi": [],
+    "external_ffmpeg": [
+      "external_aom",
+      "external_flac",
+      "external_lame",
+      "external_nasm",
+      "external_ogg",
+      "external_openjpeg",
+      "external_opus",
+      "external_sndfile",
+      "external_theora",
+      "external_vorbis",
+      "external_vpx",
+      "external_x264",
+      "external_x265",
+      "external_x265_10",
+      "external_x265_12",
+      "external_zlib"
+    ],
+    "external_fftw": [],
+    "external_fftw3_double": [],
+    "external_fftw3_float": [],
+    "external_flac": [],
+    "external_fmt": [],
+    "external_freetype": [
+      "external_brotli",
+      "external_zlib"
+    ],
+    "external_fribidi": [
+      "external_bzip2",
+      "external_ffi",
+      "external_lzma",
+      "external_python",
+      "external_python_site_packages",
+      "external_sqlite",
+      "external_ssl",
+      "external_zlib"
+    ],
+    "external_gmp": [],
+    "external_harfbuzz": [
+      "external_brotli",
+      "external_bzip2",
+      "external_ffi",
+      "external_freetype",
+      "external_lzma",
+      "external_python",
+      "external_python_site_packages",
+      "external_sqlite",
+      "external_ssl",
+      "external_zlib"
+    ],
+    "external_haru": [],
+    "external_imath": [],
+    "external_ispc": [
+      "external_bzip2",
+      "external_ffi",
+      "external_llvm",
+      "external_lzma",
+      "external_python",
+      "external_sqlite",
+      "external_ssl",
+      "external_xml2",
+      "external_zlib"
+    ],
+    "external_jpeg": [],
+    "external_lame": [],
+    "external_libheif": [
+      "external_aom"
+    ],
+    "external_llvm": [
+      "external_bzip2",
+      "external_ffi",
+      "external_lzma",
+      "external_python",
+      "external_sqlite",
+      "external_ssl",
+      "external_xml2",
+      "external_zlib"
+    ],
+    "external_lzma": [],
+    "external_manifold": [
+      "external_tbb"
+    ],
+    "external_materialx": [
+      "external_bzip2",
+      "external_ffi",
+      "external_lzma",
+      "external_pybind11",
+      "external_python",
+      "external_sqlite",
+      "external_ssl",
+      "external_zlib"
+    ],
+    "external_meshoptimizer": [],
+    "external_minizipng": [
+      "external_zlib"
+    ],
+    "external_nanobind": [
+      "external_robinmap"
+    ],
+    "external_nasm": [],
+    "external_numpy": [
+      "external_bzip2",
+      "external_cython",
+      "external_ffi",
+      "external_lzma",
+      "external_python",
+      "external_python_site_packages",
+      "external_sqlite",
+      "external_ssl",
+      "external_zlib"
+    ],
+    "external_ogg": [],
+    "external_openal": [],
+    "external_opencolorio": [
+      "external_bzip2",
+      "external_expat",
+      "external_ffi",
+      "external_imath",
+      "external_lzma",
+      "external_minizipng",
+      "external_pybind11",
+      "external_pystring",
+      "external_python",
+      "external_sqlite",
+      "external_ssl",
+      "external_yamlcpp",
+      "external_zlib"
+    ],
+    "external_openexr": [
+      "external_deflate",
+      "external_imath",
+      "external_openjph"
+    ],
+    "external_openimagedenoise": [
+      "external_bzip2",
+      "external_ffi",
+      "external_ispc",
+      "external_llvm",
+      "external_lzma",
+      "external_python",
+      "external_sqlite",
+      "external_ssl",
+      "external_tbb",
+      "external_xml2",
+      "external_zlib"
+    ],
+    "external_openimageio": [
+      "external_aom",
+      "external_bzip2",
+      "external_deflate",
+      "external_expat",
+      "external_ffi",
+      "external_fmt",
+      "external_imath",
+      "external_jpeg",
+      "external_libheif",
+      "external_lzma",
+      "external_minizipng",
+      "external_opencolorio",
+      "external_openexr",
+      "external_openjpeg",
+      "external_openjph",
+      "external_png",
+      "external_pugixml",
+      "external_pybind11",
+      "external_pystring",
+      "external_python",
+      "external_robinmap",
+      "external_sqlite",
+      "external_ssl",
+      "external_tbb",
+      "external_tiff",
+      "external_webp",
+      "external_yamlcpp",
+      "external_zlib"
+    ],
+    "external_openjpeg": [],
+    "external_openjph": [],
+    "external_openpgl": [
+      "external_tbb"
+    ],
+    "external_opensubdiv": [
+      "external_tbb"
+    ],
+    "external_openvdb": [
+      "external_blosc",
+      "external_bzip2",
+      "external_cython",
+      "external_ffi",
+      "external_lzma",
+      "external_nanobind",
+      "external_numpy",
+      "external_python",
+      "external_python_site_packages",
+      "external_robinmap",
+      "external_sqlite",
+      "external_ssl",
+      "external_tbb",
+      "external_zlib"
+    ],
+    "external_opus": [],
+    "external_osl": [
+      "external_aom",
+      "external_bzip2",
+      "external_deflate",
+      "external_expat",
+      "external_ffi",
+      "external_fmt",
+      "external_imath",
+      "external_jpeg",
+      "external_libheif",
+      "external_llvm",
+      "external_lzma",
+      "external_minizipng",
+      "external_opencolorio",
+      "external_openexr",
+      "external_openimageio",
+      "external_openjpeg",
+      "external_openjph",
+      "external_png",
+      "external_pugixml",
+      "external_pybind11",
+      "external_pystring",
+      "external_python",
+      "external_robinmap",
+      "external_sqlite",
+      "external_ssl",
+      "external_tbb",
+      "external_tiff",
+      "external_webp",
+      "external_xml2",
+      "external_yamlcpp",
+      "external_zlib"
+    ],
+    "external_png": [
+      "external_zlib"
+    ],
+    "external_potrace": [],
+    "external_pugixml": [],
+    "external_pybind11": [
+      "external_bzip2",
+      "external_ffi",
+      "external_lzma",
+      "external_python",
+      "external_sqlite",
+      "external_ssl",
+      "external_zlib"
+    ],
+    "external_pystring": [],
+    "external_python": [
+      "external_bzip2",
+      "external_ffi",
+      "external_lzma",
+      "external_sqlite",
+      "external_ssl",
+      "external_zlib"
+    ],
+    "external_python_site_packages": [
+      "external_bzip2",
+      "external_ffi",
+      "external_lzma",
+      "external_python",
+      "external_sqlite",
+      "external_ssl",
+      "external_zlib"
+    ],
+    "external_robinmap": [],
+    "external_rubberband": [
+      "external_bzip2",
+      "external_ffi",
+      "external_fftw",
+      "external_fftw3_double",
+      "external_fftw3_float",
+      "external_lzma",
+      "external_python",
+      "external_python_site_packages",
+      "external_sqlite",
+      "external_ssl",
+      "external_zlib"
+    ],
+    "external_sdl": [],
+    "external_shaderc": [
+      "external_bzip2",
+      "external_ffi",
+      "external_lzma",
+      "external_python",
+      "external_shaderc_glslang",
+      "external_spirv_headers",
+      "external_spirv_tools",
+      "external_sqlite",
+      "external_ssl",
+      "external_zlib"
+    ],
+    "external_shaderc_glslang": [],
+    "external_sndfile": [
+      "external_flac",
+      "external_lame",
+      "external_ogg",
+      "external_opus",
+      "external_vorbis"
+    ],
+    "external_spirv_headers": [],
+    "external_spirv_reflect": [
+      "external_spirv_headers"
+    ],
+    "external_spirv_tools": [
+      "external_spirv_headers"
+    ],
+    "external_sqlite": [],
+    "external_sse2neon": [],
+    "external_ssl": [],
+    "external_tbb": [],
+    "external_theora": [
+      "external_ogg",
+      "external_vorbis"
+    ],
+    "external_thorvg": [
+      "external_bzip2",
+      "external_ffi",
+      "external_lzma",
+      "external_python",
+      "external_python_site_packages",
+      "external_sqlite",
+      "external_ssl",
+      "external_zlib"
+    ],
+    "external_tiff": [
+      "external_jpeg",
+      "external_zlib"
+    ],
+    "external_tracy": [],
+    "external_usd": [
+      "external_aom",
+      "external_blosc",
+      "external_bzip2",
+      "external_cython",
+      "external_deflate",
+      "external_expat",
+      "external_ffi",
+      "external_fmt",
+      "external_imath",
+      "external_jpeg",
+      "external_libheif",
+      "external_lzma",
+      "external_materialx",
+      "external_minizipng",
+      "external_nanobind",
+      "external_numpy",
+      "external_opencolorio",
+      "external_openexr",
+      "external_openimageio",
+      "external_openjpeg",
+      "external_openjph",
+      "external_opensubdiv",
+      "external_openvdb",
+      "external_png",
+      "external_pugixml",
+      "external_pybind11",
+      "external_pystring",
+      "external_python",
+      "external_python_site_packages",
+      "external_robinmap",
+      "external_shaderc",
+      "external_shaderc_glslang",
+      "external_spirv_headers",
+      "external_spirv_reflect",
+      "external_spirv_tools",
+      "external_sqlite",
+      "external_ssl",
+      "external_tbb",
+      "external_tiff",
+      "external_vulkan_headers",
+      "external_vulkan_loader",
+      "external_vulkan_memory_allocator",
+      "external_vulkan_utility_libraries",
+      "external_webp",
+      "external_yamlcpp",
+      "external_zlib"
+    ],
+    "external_vorbis": [
+      "external_ogg"
+    ],
+    "external_vpx": [],
+    "external_vulkan_headers": [],
+    "external_vulkan_loader": [
+      "external_vulkan_headers"
+    ],
+    "external_vulkan_memory_allocator": [],
+    "external_vulkan_utility_libraries": [
+      "external_vulkan_headers"
+    ],
+    "external_webp": [],
+    "external_x264": [
+      "external_nasm"
+    ],
+    "external_x265": [
+      "external_x265_10",
+      "external_x265_12"
+    ],
+    "external_x265_10": [],
+    "external_x265_12": [],
+    "external_xml2": [],
+    "external_xr_openxr_sdk": [],
+    "external_yamlcpp": [],
+    "external_zlib": [],
+    "external_zstd": []
+  }
+}

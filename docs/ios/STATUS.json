@@ -5,10 +5,10 @@
   "donor_base_sha": "ec6e62d40fa9e9d1bea33ad5d00148c99a4f0832",
   "port_branch": "port/ios-5.2-simulator",
   "phase": "G0",
-  "active_packet": "N100",
-  "last_green_packet": "N040",
-  "last_green_sha": "34f632e2137d7a41aabe69f04105da99e8245c5d",
-  "last_green_run": "/Volumes/BlenderBuild/blender-ios/artifacts/20260811T044431Z-8f74cae544cd-signing-probe/signing-report.json",
+  "active_packet": "N110",
+  "last_green_packet": "N100",
+  "last_green_sha": "0af2bc4a59ad2904205111562760971a1c55719d",
+  "last_green_run": "/Volumes/BlenderBuild/blender-ios/artifacts/20260811T045604Z-34f632e2137d-deps-configure/result.json",
   "target": "ios-simulator-arm64",
   "feature_profile": "ios_sim_minimal",
   "signing_mode": "SIMULATOR_LOCAL",
@@ -18,7 +18,7 @@
   "external_volume_state": "qualified",
   "blockers": [],
   "next_safe_packets": [
-    "N110",
-    "N111"
+    "N111",
+    "N112"
   ]
 }

@@ -27,6 +27,10 @@ owner signing are deliberately deferred.
 5. Claim only a packet in `next_safe_packets`. Update the ledger before code if
    recorded state and the checkout disagree.
 
+The generated dependency graph is `DEPENDENCY_DAG.json`. Its bootstrap queue is
+dependency-free and ordered for bounded `-j2` packets; do not replace it with the
+global `install` target.
+
 ## Immutable anchors
 
 - Production baseline: `v5.2.0` / `fbe6228777e7d9afefcd61a413844e790ae75db7`
@@ -51,4 +55,3 @@ No packet may use `sudo`, install global software, read signing identities or
 profiles, sign a device bundle, merge/rebase/push, rewrite history, or broaden
 its allowed files. Stop after two unsuccessful architectural approaches and
 preserve the evidence.
-
