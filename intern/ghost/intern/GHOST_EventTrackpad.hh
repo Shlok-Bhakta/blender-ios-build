@@ -31,7 +31,12 @@ class GHOST_EventTrackpad : public GHOST_Event {
                       int32_t y,
                       int32_t deltaX,
                       int32_t deltaY,
-                      bool isDirectionInverted)
+                      bool isDirectionInverted
+#if defined(WITH_APPLE_CROSSPLATFORM)
+                      ,
+                      uint numFingers = 1
+#endif
+                      )
       : GHOST_Event(msec, GHOST_kEventTrackpad, window)
   {
     trackpad_event_data_.subtype = subtype;
@@ -40,6 +45,9 @@ class GHOST_EventTrackpad : public GHOST_Event {
     trackpad_event_data_.deltaX = deltaX;
     trackpad_event_data_.deltaY = deltaY;
     trackpad_event_data_.isDirectionInverted = isDirectionInverted;
+#if defined(WITH_APPLE_CROSSPLATFORM)
+    trackpad_event_data_.numFingers = numFingers;
+#endif
     data_ = &trackpad_event_data_;
   }
 

@@ -327,6 +327,14 @@ enum GHOST_TEventType {
    */
   GHOST_kEventTrackpad,
 
+#if defined(WITH_APPLE_CROSSPLATFORM)
+  /** Touch event carrying #GHOST_TEventTouchData. */
+  GHOST_kEventTouch,
+  GHOST_kEventTwoFingerTap,
+  GHOST_kEventThreeFingerTap,
+  GHOST_kEventFourFingerTap,
+#endif
+
 #ifdef WITH_INPUT_NDOF
   /**
    * N degree of freedom device motion event.
@@ -583,6 +591,10 @@ enum GHOST_TKey {
   GHOST_kKeyF23,
   GHOST_kKeyF24,
 
+#if defined(WITH_APPLE_CROSSPLATFORM)
+  GHOST_kKeyTextEdit,
+#endif
+
   /* Multimedia keypad buttons. */
   GHOST_kKeyMediaPlay,
   GHOST_kKeyMediaStop,
@@ -671,7 +683,28 @@ struct GHOST_TEventTrackpadData {
   int32_t deltaY;
   /** The delta is inverted from the device due to system preferences. */
   char isDirectionInverted;
+#if defined(WITH_APPLE_CROSSPLATFORM)
+  /** Number of fingers triggering the trackpad or touch event. */
+  uint numFingers;
+#endif
 };
+
+#if defined(WITH_APPLE_CROSSPLATFORM)
+enum GHOST_TTouchEventSubTypes {
+  GHOST_kTouchEventUnknown = 0,
+  GHOST_kTouchEventEdgeSwipeInLeft,
+  GHOST_kTouchEventEdgeSwipeOutLeft,
+  GHOST_kTouchEventEdgeSwipeInRight,
+  GHOST_kTouchEventEdgeSwipeOutRight,
+};
+
+struct GHOST_TEventTouchData {
+  GHOST_TTouchEventSubTypes subtype;
+  int32_t x;
+  int32_t y;
+  uint numFingers;
+};
+#endif
 
 enum GHOST_TDragnDropTypes {
   GHOST_kDragnDropTypeUnknown = 0,
@@ -1401,3 +1434,30 @@ enum GHOST_NDOF_ButtonT {
 
   GHOST_NDOF_BUTTON_USER = 0x10000
 };
+
+#if defined(WITH_APPLE_CROSSPLATFORM)
+struct GHOST_KeyboardProperties {
+  enum text_field_state {
+    move_cursor_to_start,
+    move_cursor_to_end,
+    select_all_text,
+    select_text_range,
+  };
+  text_field_state inital_text_state;
+  int text_select_range[2];
+
+  enum keyboard_type_desc {
+    ascii_keyboard_type,
+    decimal_numpad_keyboard_type,
+    numpad_keyboard_type,
+  };
+  keyboard_type_desc keyboard_type;
+
+  float font_size;
+  float font_color[4];
+  float text_box_origin[2];
+  float text_box_size[2];
+  const char *tip_text;
+  const char *text_string;
+};
+#endif

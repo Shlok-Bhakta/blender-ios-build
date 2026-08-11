@@ -48,6 +48,7 @@ set(SRC
   intern/GHOST_EventKey.hh
   intern/GHOST_EventManager.hh
   intern/GHOST_EventString.hh
+  intern/GHOST_EventTouch.hh
   intern/GHOST_EventTrackpad.hh
   intern/GHOST_EventWheel.hh
   intern/GHOST_ModifierKeys.hh
@@ -70,6 +71,14 @@ set(LIB
   PRIVATE bf::imbuf
   PRIVATE bf::intern::clog
 )
+
+if(WITH_APPLE_CROSSPLATFORM)
+  add_definitions(-DWITH_APPLE_CROSSPLATFORM)
+endif()
+
+if(WITH_METAL_BACKEND)
+  add_definitions(-DWITH_METAL_BACKEND)
+endif()
 
 if(WITH_INPUT_IME)
   add_definitions(-DWITH_INPUT_IME)
@@ -151,21 +160,32 @@ elseif(WITH_GHOST_SDL)
     bf::dependencies::optional::sdl
   )
 elseif(APPLE AND NOT WITH_GHOST_X11)
-  list(APPEND SRC
-    intern/GHOST_SystemCocoa.mm
-    intern/GHOST_WindowCocoa.mm
-
-    intern/GHOST_SystemCocoa.hh
-    intern/GHOST_WindowCocoa.hh
-    intern/GHOST_WindowViewCocoa.hh
-  )
-
-  if(WITH_INPUT_NDOF)
+  if(WITH_APPLE_CROSSPLATFORM)
     list(APPEND SRC
-      intern/GHOST_NDOFManagerCocoa.mm
-
-      intern/GHOST_NDOFManagerCocoa.hh
+      intern/GHOST_ContextIOS.hh
+      intern/GHOST_ContextIOS.mm
+      intern/GHOST_SystemIOS.hh
+      intern/GHOST_SystemIOS.mm
+      intern/GHOST_WindowIOS.hh
+      intern/GHOST_WindowIOS.mm
     )
+  else()
+    list(APPEND SRC
+      intern/GHOST_SystemCocoa.mm
+      intern/GHOST_WindowCocoa.mm
+
+      intern/GHOST_SystemCocoa.hh
+      intern/GHOST_WindowCocoa.hh
+      intern/GHOST_WindowViewCocoa.hh
+    )
+
+    if(WITH_INPUT_NDOF)
+      list(APPEND SRC
+        intern/GHOST_NDOFManagerCocoa.mm
+
+        intern/GHOST_NDOFManagerCocoa.hh
+      )
+    endif()
   endif()
 
 elseif(WITH_GHOST_X11 OR WITH_GHOST_WAYLAND)
@@ -480,7 +500,7 @@ if(UNIX AND NOT APPLE)
   endif()
 endif()
 
-if(APPLE)
+if(APPLE AND NOT WITH_APPLE_CROSSPLATFORM)
   if(WITH_METAL_BACKEND)
     list(APPEND SRC
       intern/GHOST_ContextMTL.mm

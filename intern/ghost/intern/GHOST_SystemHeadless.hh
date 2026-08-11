@@ -91,6 +91,30 @@ class GHOST_SystemHeadless : public GHOST_System {
   void putClipboard(const char * /*buffer*/, bool /*selection*/) const override
   { /* nop */
   }
+#if defined(WITH_APPLE_CROSSPLATFORM)
+  GHOST_TSuccess popupOnScreenKeyboard(
+      GHOST_IWindow * /*window*/,
+      const GHOST_KeyboardProperties & /*keyboard_properties*/) override
+  {
+    return GHOST_kSuccess;
+  }
+  GHOST_TSuccess hideOnScreenKeyboard(GHOST_IWindow * /*window*/) override
+  {
+    return GHOST_kSuccess;
+  }
+  const char *getKeyboardInput(GHOST_IWindow * /*window*/) override
+  {
+    return nullptr;
+  }
+  GHOST_TSuccess startSecurityScopedFileAccess(const char * /*filepath*/) override
+  {
+    return GHOST_kSuccess;
+  }
+  GHOST_TSuccess stopSecurityScopedFileAccess(const char * /*filepath*/) override
+  {
+    return GHOST_kSuccess;
+  }
+#endif
   uint64_t getMilliSeconds() const override
   {
     return 0;
