@@ -19,6 +19,7 @@
 | Reduced Blender configure | T1/T2 | Ninja + iOS Simulator SDK 26.5 | green: generated 6,139-action graph from audited sysroot and native host tools | `/Volumes/BlenderBuild/blender-ios/artifacts/n150-e4b7-blender-configure.log` |
 | Reduced Blender compile probe | T2 | arm64 iOS Simulator 18.0 | expected boundary: core and generated sources compile through action 3,906; next failure is Cocoa GHOST include on iOS | `/Volumes/BlenderBuild/blender-ios/artifacts/n150-e4b7-blender-build.log` |
 | UIKit/Metal first pixel | T2/T3 | iPhone 17 simulator / iOS 26.5 | green: install, cold launch, Metal device, completed first frame, screenshot | `/Volumes/BlenderBuild/blender-ios/artifacts/p500-first-pixel-result.json` |
+| Blender 5.2 Metal viewport | T2/T3 | reduced Blender runtime / iPhone 17 simulator / iOS 26.5 | green: 105 MiB executable linked, 156 MiB bundle installed, runtime assets found, Blender splash and cube viewport rendered, process sustained | `/Volumes/BlenderBuild/blender-ios/artifacts/p510-real-blender-frame-result.json` |
 
 Only proven outcomes are recorded here. A download is not a built dependency, a
 compiled library is not accepted before ABI audit, and a linked app is not a
