@@ -46,6 +46,14 @@ else()
     -DENABLE_SHARED=OFF
     -DCMAKE_INSTALL_LIBDIR=${LIBDIR}/jpeg/lib)
 
+  if(WITH_APPLE_CROSSPLATFORM)
+    list(APPEND JPEG_EXTRA_ARGS
+      -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+      -DWITH_TOOLS=OFF
+      -DWITH_TESTS=OFF
+    )
+  endif()
+
   ExternalProject_Add(external_jpeg
     URL file://${PACKAGE_DIR}/${JPEG_FILE}
     DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -64,4 +72,16 @@ else()
 
   harvest(external_jpeg jpeg/include jpeg/include "*.h")
   harvest(external_jpeg jpeg/lib jpeg/lib "libjpeg.a")
+endif()
+
+if(WITH_APPLE_CROSSPLATFORM)
+  ExternalProject_Add_Step(external_jpeg harvest_ios
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/jpeg/include
+      ${HARVEST_TARGET}/jpeg/include
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/jpeg/lib
+      ${HARVEST_TARGET}/jpeg/lib
+    DEPENDEES install
+  )
 endif()

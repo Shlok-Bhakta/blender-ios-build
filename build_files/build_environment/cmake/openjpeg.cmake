@@ -13,6 +13,9 @@ if(NOT WIN32)
     -DBUILD_SHARED_LIBS=OFF
     -DBUILD_CODEC=OFF
   )
+  if(WITH_APPLE_CROSSPLATFORM)
+    list(APPEND OPENJPEG_EXTRA_ARGS -DCMAKE_POLICY_VERSION_MINIMUM=3.5)
+  endif()
 
   ExternalProject_Add(external_openjpeg
     URL file://${PACKAGE_DIR}/${OPENJPEG_FILE}
@@ -73,3 +76,15 @@ else()
 endif()
 
 set(OPENJPEG_LIBRARY libopenjp2${LIBEXT})
+
+if(WITH_APPLE_CROSSPLATFORM)
+  ExternalProject_Add_Step(external_openjpeg harvest_ios
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/openjpeg/include
+      ${HARVEST_TARGET}/openjpeg/include
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${LIBDIR}/openjpeg/lib
+      ${HARVEST_TARGET}/openjpeg/lib
+    DEPENDEES install
+  )
+endif()
