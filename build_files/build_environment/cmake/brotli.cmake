@@ -29,7 +29,22 @@ if(WITH_APPLE_CROSSPLATFORM)
       <BINARY_DIR>/libbrotlicommon-static.a
       <BINARY_DIR>/libbrotlidec-static.a
       <BINARY_DIR>/libbrotlienc-static.a
-      ${LIBDIR}/brotli/lib
+      ${LIBDIR}/brotli/lib &&
+    ${CMAKE_COMMAND} -E copy
+      <BINARY_DIR>/libbrotlicommon-static.a
+      ${LIBDIR}/brotli/lib/libbrotlicommon.a &&
+    ${CMAKE_COMMAND} -E copy
+      <BINARY_DIR>/libbrotlidec-static.a
+      ${LIBDIR}/brotli/lib/libbrotlidec.a &&
+    ${CMAKE_COMMAND} -E copy
+      <BINARY_DIR>/libbrotlienc-static.a
+      ${LIBDIR}/brotli/lib/libbrotlienc.a &&
+    ${CMAKE_COMMAND} -E make_directory ${LIBDIR}/brotli/lib/pkgconfig &&
+    ${CMAKE_COMMAND} -E copy
+      <BINARY_DIR>/libbrotlicommon.pc
+      <BINARY_DIR>/libbrotlidec.pc
+      <BINARY_DIR>/libbrotlienc.pc
+      ${LIBDIR}/brotli/lib/pkgconfig
   )
 endif()
 

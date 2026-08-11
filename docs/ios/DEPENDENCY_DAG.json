@@ -41,9 +41,9 @@
       "transitive_dependencies": []
     }
   ],
-  "cache_key": "b4566ec98fb7113e621f79f71f83fb3f49f6c2607886c05c0bcf2c1f5b2bddfd",
-  "edge_count": 301,
-  "generated_at": "2026-08-11T04:57:49.620140+00:00",
+  "cache_key": "b0340de3aebc1a84777d6b423050aa638e7d9b428282f844f1b7e95e5ca60591",
+  "edge_count": 286,
+  "generated_at": "2026-08-11T05:35:50.653070+00:00",
   "root_targets": [
     "external_abseil",
     "external_aom",
@@ -60,6 +60,7 @@
     "external_fftw3_float",
     "external_flac",
     "external_fmt",
+    "external_fribidi",
     "external_gmp",
     "external_haru",
     "external_imath",
@@ -158,27 +159,11 @@
       "external_brotli",
       "external_zlib"
     ],
-    "external_fribidi": [
-      "external_bzip2",
-      "external_ffi",
-      "external_lzma",
-      "external_python",
-      "external_python_site_packages",
-      "external_sqlite",
-      "external_ssl",
-      "external_zlib"
-    ],
+    "external_fribidi": [],
     "external_gmp": [],
     "external_harfbuzz": [
       "external_brotli",
-      "external_bzip2",
-      "external_ffi",
       "external_freetype",
-      "external_lzma",
-      "external_python",
-      "external_python_site_packages",
-      "external_sqlite",
-      "external_ssl",
       "external_zlib"
     ],
     "external_haru": [],

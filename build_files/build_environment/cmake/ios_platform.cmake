@@ -39,7 +39,40 @@ set(PLATFORM_LDFLAGS "${_target_flags} -Wl,-dead_strip")
 set(PLATFORM_BUILD_TARGET --host=arm-apple-darwin)
 
 find_program(BLENDER_IOS_MESON meson REQUIRED NO_CMAKE_FIND_ROOT_PATH)
+find_program(BLENDER_IOS_PKG_CONFIG pkg-config REQUIRED NO_CMAKE_FIND_ROOT_PATH)
 set(MESON ${BLENDER_IOS_MESON})
+
+# Meson otherwise treats exported CFLAGS as a native build. Keep host tools
+# native while making the compiler, linker, and executable-run policy explicit.
+set(BLENDER_IOS_MESON_CROSS_FILE "${CMAKE_CURRENT_BINARY_DIR}/ios-meson-cross.ini")
+set(BLENDER_IOS_MESON_NATIVE_FILE "${CMAKE_CURRENT_BINARY_DIR}/ios-meson-native.ini")
+file(WRITE "${BLENDER_IOS_MESON_NATIVE_FILE}" "[binaries]\n")
+file(APPEND "${BLENDER_IOS_MESON_NATIVE_FILE}" "c = '${CMAKE_C_COMPILER}'\n")
+file(APPEND "${BLENDER_IOS_MESON_NATIVE_FILE}" "cpp = '${CMAKE_CXX_COMPILER}'\n")
+file(APPEND "${BLENDER_IOS_MESON_NATIVE_FILE}" "ar = '${CMAKE_AR}'\n")
+file(APPEND "${BLENDER_IOS_MESON_NATIVE_FILE}" "strip = '/usr/bin/strip'\n")
+file(APPEND "${BLENDER_IOS_MESON_NATIVE_FILE}" "pkg-config = '${BLENDER_IOS_PKG_CONFIG}'\n")
+file(APPEND "${BLENDER_IOS_MESON_NATIVE_FILE}" "\n[built-in options]\n")
+file(APPEND "${BLENDER_IOS_MESON_NATIVE_FILE}" "c_link_args = ['-Wl,-adhoc_codesign']\n")
+file(APPEND "${BLENDER_IOS_MESON_NATIVE_FILE}" "cpp_link_args = ['-Wl,-adhoc_codesign']\n")
+file(WRITE "${BLENDER_IOS_MESON_CROSS_FILE}" "[binaries]\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "c = '${CMAKE_C_COMPILER}'\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "cpp = '${CMAKE_CXX_COMPILER}'\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "ar = '${CMAKE_AR}'\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "strip = '/usr/bin/strip'\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "pkg-config = '${BLENDER_IOS_PKG_CONFIG}'\n\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "[host_machine]\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "system = 'darwin'\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "cpu_family = 'aarch64'\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "cpu = 'arm64'\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "endian = 'little'\n\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "[properties]\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "needs_exe_wrapper = true\n\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "[built-in options]\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "c_args = ['-target', '${BLENDER_IOS_TARGET_TRIPLE}', '-isysroot', '${CMAKE_OSX_SYSROOT}', '-fvisibility=hidden']\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "cpp_args = ['-target', '${BLENDER_IOS_TARGET_TRIPLE}', '-isysroot', '${CMAKE_OSX_SYSROOT}', '-stdlib=libc++', '-fvisibility=hidden']\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "c_link_args = ['-target', '${BLENDER_IOS_TARGET_TRIPLE}', '-isysroot', '${CMAKE_OSX_SYSROOT}', '-Wl,-dead_strip']\n")
+file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "cpp_link_args = ['-target', '${BLENDER_IOS_TARGET_TRIPLE}', '-isysroot', '${CMAKE_OSX_SYSROOT}', '-stdlib=libc++', '-Wl,-dead_strip']\n")
 
 set(PLATFORM_CMAKE_FLAGS
   -DCMAKE_SYSTEM_NAME:STRING=iOS
@@ -57,5 +90,7 @@ set(PLATFORM_CMAKE_FLAGS
 message(STATUS "Apple dependency target = ${APPLE_TARGET_DEVICE}")
 message(STATUS "Apple dependency triple = ${BLENDER_IOS_TARGET_TRIPLE}")
 message(STATUS "Apple dependency SDK = ${CMAKE_OSX_SYSROOT}")
+message(STATUS "Apple Meson cross file = ${BLENDER_IOS_MESON_CROSS_FILE}")
+message(STATUS "Apple Meson native file = ${BLENDER_IOS_MESON_NATIVE_FILE}")
 
 unset(_target_flags)

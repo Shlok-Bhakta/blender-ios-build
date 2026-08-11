@@ -65,6 +65,12 @@ else()
 endif()
 
 if(WITH_APPLE_CROSSPLATFORM)
+  ExternalProject_Add_Step(external_freetype library_alias_ios
+    COMMAND ${CMAKE_COMMAND} -E copy
+      ${LIBDIR}/freetype/lib/libfreetype2ST.a
+      ${LIBDIR}/freetype/lib/libfreetype.a
+    DEPENDEES install
+  )
   ExternalProject_Add_Step(external_freetype harvest_ios
     COMMAND ${CMAKE_COMMAND} -E copy_directory
       ${LIBDIR}/freetype/include
