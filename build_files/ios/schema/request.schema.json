@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://blender.org/schemas/ios/request.schema.json",
+  "title": "Blender iOS packet request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "packet",
+    "baseline_sha",
+    "donor_sha",
+    "target",
+    "feature_profile",
+    "signing_mode",
+    "paths"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "run_id": {
+      "type": "string",
+      "pattern": "^[0-9]{8}T[0-9]{6}Z-[0-9a-f]{7,40}-[a-z0-9-]+$"
+    },
+    "packet": {"type": "string", "pattern": "^[NP][0-9]{3}$"},
+    "baseline_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "donor_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "target": {"enum": ["ios-simulator-arm64", "ios-device-arm64"]},
+    "feature_profile": {"type": "string", "minLength": 1},
+    "signing_mode": {"enum": ["SIMULATOR_LOCAL", "UNSIGNED"]},
+    "paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "bulk", "artifact"],
+      "properties": {
+        "source": {"type": "string", "pattern": "^/"},
+        "bulk": {
+          "type": "string",
+          "pattern": "^/Volumes/BlenderBuild/blender-ios(?:/|$)"
+        },
+        "artifact": {
+          "type": "string",
+          "pattern": "^/Volumes/BlenderBuild/blender-ios/artifacts/"
+        }
+      }
+    }
+  }
+}
