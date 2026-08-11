@@ -6,7 +6,11 @@
 
 #include "GPU_debug.hh"
 
-#include "intern/GHOST_ContextMTL.hh"
+#ifdef WITH_APPLE_CROSSPLATFORM
+#  include "intern/GHOST_ContextIOS.hh"
+#else
+#  include "intern/GHOST_ContextMTL.hh"
+#endif
 
 #include "mtl_backend.hh"
 #include "mtl_command_buffer.hh"
@@ -53,7 +57,7 @@ id<MTLCommandBuffer> MTLCommandBufferManager::ensure_begin()
      * NOTE: We currently stall until completion of GPU work upon ::submit if we have reached the
      * in-flight command buffer limit. */
     BLI_assert(MTLCommandBufferManager::num_active_cmd_bufs_in_system <
-               GHOST_ContextMTL::max_command_buffer_count);
+               GHOST_ContextMetal::max_command_buffer_count);
 
     if (G.debug & G_DEBUG_GPU) {
       /* Debug: Enable Advanced Errors for GPU work execution. */
@@ -144,12 +148,12 @@ bool MTLCommandBufferManager::submit(bool wait)
   /* If we have too many active command buffers in flight, wait until completed to avoid running
    * out. We can increase */
   if (MTLCommandBufferManager::num_active_cmd_bufs_in_system >=
-      (GHOST_ContextMTL::max_command_buffer_count - 1))
+      (GHOST_ContextMetal::max_command_buffer_count - 1))
   {
     wait = true;
     MTL_LOG_WARNING(
         "Maximum number of command buffers in flight. Host will wait until GPU work has "
-        "completed. Consider increasing GHOST_ContextMTL::max_command_buffer_count or reducing "
+        "completed. Consider increasing GHOST_Context*::max_command_buffer_count or reducing "
         "work fragmentation to better utilize system hardware. Command buffers are flushed upon "
         "GPUContext switches, this is the most common cause of excessive command buffer "
         "generation.");
@@ -637,8 +641,12 @@ bool MTLCommandBufferManager::insert_memory_barrier(GPUBarrier barrier_bits,
   /* Resolve scope. */
   MTLBarrierScope scope = 0;
   if (barrier_bits & GPU_BARRIER_SHADER_IMAGE_ACCESS || barrier_bits & GPU_BARRIER_TEXTURE_FETCH) {
+#if MTL_BACKEND_SUPPORTS_RENDER_TARGET_BARRIER
     bool is_compute = (active_command_encoder_type_ != MTL_RENDER_COMMAND_ENCODER);
     scope |= (is_compute ? 0 : MTLBarrierScopeRenderTargets) | MTLBarrierScopeTextures;
+#else
+    scope |= MTLBarrierScopeTextures;
+#endif
   }
   if (barrier_bits & GPU_BARRIER_SHADER_STORAGE ||
       barrier_bits & GPU_BARRIER_VERTEX_ATTRIB_ARRAY || barrier_bits & GPU_BARRIER_ELEMENT_ARRAY ||
@@ -677,19 +685,23 @@ bool MTLCommandBufferManager::insert_memory_barrier(GPUBarrier barrier_bits,
           after_stage_flags = MTLRenderStageFragment;
         }
 
+#if MTL_BACKEND_SUPPORTS_RENDER_TARGET_BARRIER
         id<MTLRenderCommandEncoder> rec = this->get_active_render_command_encoder();
         BLI_assert(rec != nil);
         [rec memoryBarrierWithScope:scope
                         afterStages:after_stage_flags
                        beforeStages:before_stage_flags];
+#endif
         return true;
       }
 
       /* Compute. */
       case MTL_COMPUTE_COMMAND_ENCODER: {
+#if MTL_BACKEND_SUPPORTS_RENDER_TARGET_BARRIER
         id<MTLComputeCommandEncoder> rec = this->get_active_compute_command_encoder();
         BLI_assert(rec != nil);
         [rec memoryBarrierWithScope:scope];
+#endif
         return true;
       }
     }

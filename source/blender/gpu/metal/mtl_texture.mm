@@ -171,9 +171,11 @@ void gpu::MTLTexture::bake_mip_swizzle_view()
     MTLPixelFormat texture_view_pixel_format = gpu_texture_format_to_metal(format_);
     if (texture_view_stencil_) {
       switch (texture_view_pixel_format) {
+#if MTL_BACKEND_SUPPORTS_D24_S8_SYMBOLS
         case MTLPixelFormatDepth24Unorm_Stencil8:
           texture_view_pixel_format = MTLPixelFormatX24_Stencil8;
           break;
+#endif
         case MTLPixelFormatDepth32Float_Stencil8:
           texture_view_pixel_format = MTLPixelFormatX32_Stencil8;
           break;
@@ -1128,6 +1130,7 @@ void gpu::MTLTexture::update_sub(int mip,
       [staging_texture release];
     }
 
+#if MTL_BACKEND_SUPPORTS_MANAGED_BUFFERS
     /* Finalize Blit Encoder. */
     if (can_use_direct_blit) {
       /* Textures which use MTLStorageModeManaged need to have updated contents
@@ -1147,6 +1150,7 @@ void gpu::MTLTexture::update_sub(int mip,
       }
       [blit_encoder optimizeContentsForGPUAccess:texture_];
     }
+#endif
 
     /* Decrement texture reference counts. This ensures temporary texture views are released. */
     [texture_handle release];
@@ -1206,10 +1210,12 @@ void MTLTexture::update_sub(int offset[3],
                 destinationLevel:0
                destinationOrigin:MTLOriginMake(offset[0], offset[1], 0)];
 
+#if MTL_BACKEND_SUPPORTS_MANAGED_BUFFERS
     if (texture_.storageMode == MTLStorageModeManaged) {
       [blit_encoder synchronizeResource:texture_];
     }
     [blit_encoder optimizeContentsForGPUAccess:texture_];
+#endif
   }
   else {
     BLI_assert(false);
@@ -1944,6 +1950,7 @@ void gpu::MTLTexture::read_internal(int mip,
 
     if (copy_successful) {
 
+#if MTL_BACKEND_SUPPORTS_MANAGED_BUFFERS
       /* Use Blit encoder to synchronize results back to CPU. */
       if (dest_buf->get_resource_options() == MTLResourceStorageModeManaged) {
         id<MTLBlitCommandEncoder> enc = ctx->main_command_buffer.ensure_begin_blit_encoder();
@@ -1952,6 +1959,7 @@ void gpu::MTLTexture::read_internal(int mip,
         }
         [enc synchronizeResource:destination_buffer];
       }
+#endif
 
       /* Ensure GPU copy commands have completed. */
       GPU_finish();
@@ -2557,9 +2565,13 @@ void *MTLPixelBuffer::map()
    * in-flight on the GPU. */
   MTLContext *ctx = MTLContext::get();
   BLI_assert(ctx);
+#if MTL_BACKEND_SUPPORTS_MANAGED_BUFFERS
   MTLResourceOptions resource_options = ([ctx->device hasUnifiedMemory]) ?
                                             MTLResourceStorageModeShared :
                                             MTLResourceStorageModeManaged;
+#else
+  MTLResourceOptions resource_options = MTLResourceStorageModeShared;
+#endif
 
   if (buffer_ != nil) {
     id<MTLBuffer> new_buffer = [ctx->device newBufferWithBytes:[buffer_ contents]
@@ -2582,9 +2594,11 @@ void MTLPixelBuffer::unmap()
   }
 
   /* Ensure changes are synchronized. */
+#if MTL_BACKEND_SUPPORTS_MANAGED_BUFFERS
   if (buffer_.resourceOptions & MTLResourceStorageModeManaged) {
     [buffer_ didModifyRange:NSMakeRange(0, size_)];
   }
+#endif
 }
 
 GPUPixelBufferNativeHandle MTLPixelBuffer::get_native_handle()

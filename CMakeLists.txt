@@ -166,6 +166,10 @@ endif()
 
 get_blender_version()
 
+if(WITH_APPLE_CROSSPLATFORM)
+  add_definitions(-DWITH_APPLE_CROSSPLATFORM)
+endif()
+
 if(WIN32)
   add_definitions(
     # This is the app ID used for file registration, given it's used from several modules

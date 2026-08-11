@@ -105,7 +105,9 @@ size_t get_mtl_format_bytesize(MTLPixelFormat tex_format)
       return 8;
     case MTLPixelFormatRGBA8Unorm_sRGB:
     case MTLPixelFormatDepth32Float:
+#if MTL_BACKEND_SUPPORTS_D24_S8_SYMBOLS
     case MTLPixelFormatDepth24Unorm_Stencil8:
+#endif
       return 4;
     case MTLPixelFormatDepth16Unorm:
       return 2;
@@ -182,7 +184,9 @@ int get_mtl_format_num_components(MTLPixelFormat tex_format)
     case MTLPixelFormatR16Snorm:
     case MTLPixelFormatDepth32Float:
     case MTLPixelFormatDepth16Unorm:
+#if MTL_BACKEND_SUPPORTS_D24_S8_SYMBOLS
     case MTLPixelFormatDepth24Unorm_Stencil8:
+#endif
       /* Treating this format as single-channel for direct data copies -- Stencil component is not
        * addressable. */
       return 1;
