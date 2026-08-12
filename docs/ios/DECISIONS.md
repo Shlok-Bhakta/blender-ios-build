@@ -170,3 +170,22 @@ It uses no signing identity or provisioning profile. Packet P500 launched on an
 iPhone 17 / iOS 26.5 simulator and emitted `boot`, `metal_ready`, and
 `first_frame`; evidence is
 `/Volumes/BlenderBuild/blender-ios/artifacts/p500-first-pixel-result.json`.
+
+## ADR-0011: One universal iOS bundle for iPhone and iPad
+
+- Status: accepted
+- Date: 2026-08-12
+
+The product is a single bundle id (`org.blenderfoundation.blender.ios`) with
+`UIDeviceFamily` 1 and 2. There is no second target, second bundle id, or
+iPhone-compatibility wrapper. iPhone keeps the proven landscape-left/right
+orientation contract. iPad declares landscape plus portrait and portrait
+upside down so it is a native iPad app. `UIRequiresFullScreen` stays true.
+
+Packet P530 proves the same simulator `.app` on iPhone 17 and iPad Pro
+13-inch (M5), both iOS 26.5. iPad is `UIUserInterfaceIdiomPad`, not an
+iPhone compatibility window. iPadOS 26 windowed-apps chrome may still
+surround the scene; that is not a second bundle. The unsigned device
+(`iphoneos`) lane remains deferred: no owner signing, no provisioning,
+no physical-device claim. Evidence:
+`/Volumes/BlenderBuild/blender-ios/artifacts/p530-universal-simulator-result.json`.

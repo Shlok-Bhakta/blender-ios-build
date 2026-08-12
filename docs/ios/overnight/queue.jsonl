@@ -13,4 +13,9 @@
 {"packet":"N116","status":"GREEN","summary":"audited first-pixel color, image, font, math, and compression closure; target Python deferred"}
 {"packet":"N150","status":"YELLOW","summary":"reduced Blender configure and host-tools bridge green; link reaches the Cocoa GHOST boundary"}
 {"packet":"P500","status":"GREEN","summary":"UIKit lifecycle and Metal first frame launched and captured on iPhone 17 simulator"}
-{"packet":"N210","status":"NEXT","summary":"replace Cocoa selection with iOS GHOST system, window, and Metal context"}
+{"packet":"N210","status":"GREEN","summary":"iOS GHOST system, window, and Metal context replaced Cocoa selection"}
+{"packet":"P510","status":"GREEN","summary":"reduced Blender Workbench splash and cube viewport on iPhone 17 simulator"}
+{"packet":"P520","status":"GREEN","summary":"injected touch dismissed splash; interactive cube viewport on iPhone 17"}
+{"packet":"N230","status":"GREEN","summary":"interactive Workbench viewport proven on iPhone simulator"}
+{"packet":"P530","status":"GREEN","summary":"universal iPhone+iPad simulator product; same .app on both device families"}
+{"packet":"P117","status":"NEXT","summary":"target Python runtime; unsigned device handoff remains deferred"}

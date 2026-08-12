@@ -1,50 +1,40 @@
-# Overnight handoff — 2026-08-11
+# Overnight handoff — 2026-08-12
 
-First pixel is green. The next bounded packet is N210: integrate the proven
-UIKit/Metal shell with Blender's GHOST system, window, and context.
+Universal iPhone+iPad simulator Workbench is green (P530). The same
+`Blender.app` launches on iPhone 17 and an iPad simulator. Next bounded work
+is target Python (P117) or an unsigned device handoff. Physical devices remain
+unsigned and deferred.
 
 ## Green outcomes
 
 - The frozen v5.2.0 baseline and read-only donor refs remain intact.
-- The N116 first-pixel dependency closure contains 1,181 harvested files under
-  cache key `e4b775f99fd0d6b27a0ec7bc6425dd9923357c59b1020567af077ec135b09957`.
-  Every binary is arm64 `IOSSIMULATOR`.
-- OpenColorIO and OpenImageIO build statically without target Python, desktop
-  monitor frameworks, tools, TBB, or libheif.
-- Blender's reduced iOS graph configures against the audited sysroot with Xcode
-  26.5 and the iOS 26.5 simulator SDK.
-- Revision-matched native `makesdna`, `makesrna`, `datatoc`, and `shader_tool`
-  executables generate target sources successfully.
-- The reduced Blender compile passes generated shaders, DNA, RNA, and core
-  libraries through action 3,906. Its next failure is the expected Cocoa GHOST
-  include, not a dependency or target-ABI error.
-- The repository-native UIKit/Metal shell installs and launches on the booted
-  iPhone 17 simulator. Runtime evidence records `boot`, the Apple iOS simulator
-  GPU, and `first_frame` after command-buffer completion.
-- The captured 1206×2622 screenshot visibly shows the Metal-cleared frame and
-  “BLENDER iOS” overlay.
-- All 20 iOS control-plane unit tests pass.
+- Reduced Blender Workbench splash and cube viewport are proven on iPhone 17 /
+  iOS 26.5 (P510, P520).
+- Packet P530 adds `UIDeviceFamily` 1,2 and iPad orientations to the product
+  Info.plist. One bundle id: `org.blenderfoundation.blender.ios`.
+- The same installed simulator `.app` runs on iPhone 17 and iPad as a native
+  iPad app, not an iPhone compatibility window.
+- Target Python, Cycles, USD, and physical-device signing are still out of
+  the critical path.
 
 ## Evidence
 
-- Dependency audit:
-  `/Volumes/BlenderBuild/blender-ios/artifacts/n116-e4b7-first-pixel-closure-manifest.json`
-- Reduced configure:
-  `/Volumes/BlenderBuild/blender-ios/artifacts/n150-e4b7-blender-configure.log`
-- Reduced compile boundary:
-  `/Volumes/BlenderBuild/blender-ios/artifacts/n150-e4b7-blender-build.log`
-- First-pixel result:
-  `/Volumes/BlenderBuild/blender-ios/artifacts/p500-first-pixel-result.json`
-- Screenshot:
-  `/Volumes/BlenderBuild/blender-ios/artifacts/p500-first-pixel.png`
+- Interactive iPhone viewport:
+  `/Volumes/BlenderBuild/blender-ios/artifacts/p520-first-interactive-viewport-result.json`
+- Universal simulator result:
+  `/Volumes/BlenderBuild/blender-ios/artifacts/p530-universal-simulator-result.json`
+- Screenshots:
+  `/Volumes/BlenderBuild/blender-ios/artifacts/p530-iphone-splash.png`
+  `/Volumes/BlenderBuild/blender-ios/artifacts/p530-iphone-viewport.png`
+  `/Volumes/BlenderBuild/blender-ios/artifacts/p530-ipad-splash.png`
+  `/Volumes/BlenderBuild/blender-ios/artifacts/p530-ipad-viewport.png`
 
 ## Resume
 
-1. Read `docs/ios/STATUS.json` and the P500 result above.
-2. Keep the first-pixel shell runnable while adapting only the donor's iOS GHOST
-   system/window/context surface to the v5.2.0 interfaces.
-3. Reconfigure and resume the existing `ios-simulator-minimal-e4b7` Ninja tree
-   at `--parallel 2`; the known boundary is `GHOST_SystemCocoa.mm` including
-   unavailable `Cocoa/Cocoa.h`.
+1. Read `docs/ios/STATUS.json` and the P530 result above.
+2. Do not merge `origin/ios`. Do not sign an `iphoneos` bundle.
+3. Next safe packets: P117 (target Python) or unsigned device handoff staging.
+   Reuse the existing `ios-simulator-minimal-e4b7` Ninja tree; do not rebuild
+   dependencies.
 
-Current source milestone: `36f78477019578c8d608229671bb43654caef31c`.
+Current source milestone: P530 universal iPhone+iPad simulator bundle.

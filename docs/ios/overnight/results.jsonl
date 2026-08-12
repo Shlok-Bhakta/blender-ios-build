@@ -10,3 +10,4 @@
 {"packet":"N150","status":"YELLOW","artifact":"/Volumes/BlenderBuild/blender-ios/artifacts/n150-e4b7-blender-build.log","boundary":"Cocoa GHOST selected for iOS"}
 {"packet":"P500","status":"GREEN","artifact":"/Volumes/BlenderBuild/blender-ios/artifacts/p500-first-pixel-result.json","source_sha":"36f78477019578c8d608229671bb43654caef31c"}
 {"packet":"N900","status":"GREEN","artifact":"/Volumes/BlenderBuild/blender-ios/artifacts/n900-doctor/env.json"}
+{"packet":"P530","status":"GREEN","artifact":"/Volumes/BlenderBuild/blender-ios/artifacts/p530-universal-simulator-result.json","source_sha":"0b53af1bf54b9f706449657d84ed70f9e071ab92"}

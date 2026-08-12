@@ -21,6 +21,7 @@
 | UIKit/Metal first pixel | T2/T3 | iPhone 17 simulator / iOS 26.5 | green: install, cold launch, Metal device, completed first frame, screenshot | `/Volumes/BlenderBuild/blender-ios/artifacts/p500-first-pixel-result.json` |
 | Blender 5.2 Metal viewport | T2/T3 | reduced Blender runtime / iPhone 17 simulator / iOS 26.5 | green: 105 MiB executable linked, 156 MiB bundle installed, runtime assets found, Blender splash and cube viewport rendered, process sustained | `/Volumes/BlenderBuild/blender-ios/artifacts/p510-real-blender-frame-result.json` |
 | Interactive viewport touch | T3 | Maestro 2.8.0 / iPhone 17 simulator / iOS 26.5 | green: app launched, Blender splash rendered, injected touch dismissed it, and the post-touch cube viewport rendered | `/Volumes/BlenderBuild/blender-ios/artifacts/p520-first-interactive-viewport-result.json` |
+| Universal iPhone+iPad simulator launch | T3 | same `Blender.app` / iPhone 17 + iPad Pro 13-inch (M5) / iOS 26.5 | green: one bundle id, `UIDeviceFamily` 1,2, splash and cube viewport on both; iPad is `UIUserInterfaceIdiomPad` (not iPhone compatibility) | `/Volumes/BlenderBuild/blender-ios/artifacts/p530-universal-simulator-result.json`; screenshots `p530-iphone-splash.png`, `p530-iphone-viewport.png`, `p530-ipad-splash.png`, `p530-ipad-viewport.png` |
 
 Only proven outcomes are recorded here. A download is not a built dependency, a
 compiled library is not accepted before ABI audit, and a linked app is not a

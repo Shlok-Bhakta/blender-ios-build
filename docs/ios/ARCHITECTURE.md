@@ -6,10 +6,11 @@ The simulator and device products share source and immutable dependency
 manifests, but never share build directories.
 
 - **Simulator lane:** arm64 iOS Simulator, locally runnable, toolchain-required
-  local/ad-hoc signing permitted.
+  local/ad-hoc signing permitted. iPhone and iPad share this one product
+  (`UIDeviceFamily` 1,2; bundle id `org.blenderfoundation.blender.ios`).
 - **Device handoff lane:** arm64 iOS, staged without team, identity, profile,
   signer entitlements, or `_CodeSignature`. It is not runnable until the owner
-  signs it later.
+  signs it later. Simulator and device build directories remain split.
 
 ## Layer boundaries
 

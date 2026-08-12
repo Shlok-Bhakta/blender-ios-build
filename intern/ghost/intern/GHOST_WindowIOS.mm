@@ -1357,7 +1357,9 @@ GHOST_WindowIOS::GHOST_WindowIOS(GHOST_SystemIOS *system_ios,
                                  GHOST_WindowIOS *parent_window)
     : GHOST_Window(width, height, state, context_params, false), metal_view_(nil)
 {
-  full_screen_ = false;
+  /* Fill the device screen. Page-sheet + alert-level windows otherwise float as a
+   * card over SpringBoard on iPad (native idiom, but not a full-screen iPad app). */
+  full_screen_ = true;
   system_ios_ = system_ios;
   /* Parent window will be the window that focus is returned to upon close. */
   parent_window_ = parent_window;
@@ -1378,11 +1380,9 @@ GHOST_WindowIOS::GHOST_WindowIOS(GHOST_SystemIOS *system_ios,
 
   if (full_screen_) {
     /* Init window at native res. */
-    ghost_rootWindow = [[GHOSTUIWindow alloc] init];
-    [ghost_rootWindow retain];
-    /* Ensure fullscreen. */
     CGRect rect = [UIScreen mainScreen].bounds;
-    rootWindow.frame = rect;
+    ghost_rootWindow = [[GHOSTUIWindow alloc] initWithFrame:rect];
+    [ghost_rootWindow retain];
   }
   else {
     /* Init window at specified size. */
@@ -1395,7 +1395,7 @@ GHOST_WindowIOS::GHOST_WindowIOS(GHOST_SystemIOS *system_ios,
   rootWindow = (UIWindow *)ghost_rootWindow;
 
   [ghost_rootWindow setSystemAndWindowIOS:system_ios_ windowIOS:this];
-  rootWindow.windowLevel = UIWindowLevelAlert;
+  rootWindow.windowLevel = UIWindowLevelNormal;
 
   GHOST_ASSERT(rootWindow, "UIWindow not valid");
   uiview_controller_ = [[[GHOST_IOSViewController alloc] initWithMetalKitView:metal_view_] retain];
