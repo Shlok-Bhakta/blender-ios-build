@@ -189,3 +189,20 @@ surround the scene; that is not a second bundle. The unsigned device
 (`iphoneos`) lane remains deferred: no owner signing, no provisioning,
 no physical-device claim. Evidence:
 `/Volumes/BlenderBuild/blender-ios/artifacts/p530-universal-simulator-result.json`.
+
+## ADR-0012: Ship one audited unsigned IPA for both device families
+
+- Status: accepted
+- Date: 2026-08-13
+
+The physical-device handoff uses a distinct arm64 `iphoneos` dependency prefix,
+build tree, and minimal feature profile. Its deterministic IPA contains one
+`Payload/Blender.app` with bundle id `org.blenderfoundation.blender.ios` and
+`UIDeviceFamily` 1 and 2. The packager audits the device ABI and refuses
+provisioning artifacts, signing metadata, bundle signatures, and embedded
+Mach-O signatures.
+
+The IPA is deliberately unsigned. Repository evidence proves compilation,
+linking, bundle resources, archive integrity, and the unsigned contract. Only
+the owner can prove physical launch after applying their signing identity and
+provisioning profile.

@@ -4,21 +4,21 @@
   "donor_sha": "a1de44dd54af75a4c8c4a29a5fed2a1334a87446",
   "donor_base_sha": "ec6e62d40fa9e9d1bea33ad5d00148c99a4f0832",
   "port_branch": "port/ios-5.2-simulator",
-  "phase": "G2",
-  "active_packet": "P530",
-  "last_green_packet": "P530",
-  "last_green_sha": "0b53af1bf54b9f706449657d84ed70f9e071ab92",
-  "last_green_run": "/Volumes/BlenderBuild/blender-ios/artifacts/p530-universal-simulator-result.json",
-  "target": "ios-simulator-arm64",
-  "feature_profile": "ios_sim_minimal",
-  "signing_mode": "SIMULATOR_LOCAL",
-  "dependency_cache_key": "e4b775f99fd0d6b27a0ec7bc6425dd9923357c59b1020567af077ec135b09957",
+  "phase": "G3",
+  "active_packet": "device-unsigned-handoff",
+  "last_green_packet": "device-unsigned-handoff",
+  "last_green_sha": "8c25a5854bc10e5540cbc161df573681ac766f3c",
+  "last_green_run": "/Volumes/BlenderBuild/blender-ios/artifacts/device-unsigned-handoff-result.json",
+  "target": "ios-device-arm64",
+  "feature_profile": "ios_device_minimal",
+  "signing_mode": "UNSIGNED",
+  "dependency_cache_key": "f2dfae37f8815a48d32365df68ca06b21cbd194e707ace3ec6d727fe451a4f1e",
   "bulk_volume": "/Volumes/BlenderBuild",
   "bulk_volume_uuid": "EC4DA5DD-B2A4-4056-934E-5B703096BEF1",
   "external_volume_state": "qualified",
   "blockers": [],
   "next_safe_packets": [
     "P117",
-    "device-unsigned-handoff"
+    "owner-signed-physical-device-smoke"
   ]
 }
