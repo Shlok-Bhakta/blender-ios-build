@@ -49,3 +49,7 @@ class UniversalBundlePlistTests(unittest.TestCase):
                 "UIInterfaceOrientationLandscapeRight",
             },
         )
+
+    def test_declares_modern_launch_screen_for_full_device_viewport(self) -> None:
+        self.assertIn("UILaunchScreen", self.plist)
+        self.assertIsInstance(self.plist["UILaunchScreen"], dict)
