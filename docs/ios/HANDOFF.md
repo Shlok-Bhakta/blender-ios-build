@@ -77,3 +77,17 @@ python3 build_files/ios/package_unsigned_ipa.py \
 The packager rejects simulator binaries, the wrong bundle id or device-family
 metadata, provisioning/signing files, signing plist keys, and embedded Mach-O
 signatures. The owner must sign and provision the IPA before installing it.
+
+## Recommended next order
+
+1. Sign the current IPA and run a physical iPhone/iPad smoke test for launch,
+   touch, rotation, background/foreground, save/open, and memory pressure.
+2. Finish GHOST/UIKit hardening: adopt the scene lifecycle, use scene rather
+   than main-screen geometry, respond to dynamic resizing and scale changes,
+   and close pointer, keyboard, Pencil, lifecycle, and file-workflow gaps.
+3. Complete P117 target Python and prove `bpy.app.version` from the bundled
+   interpreter. Python is the next major Blender feature dependency.
+4. Add optional dependency families individually under device smoke tests.
+5. Treat Cycles Metal as P540 feasibility work after the interactive core is
+   stable. Do not put OSL, USD, OpenVDB, or every desktop service on the first
+   usable-device critical path.

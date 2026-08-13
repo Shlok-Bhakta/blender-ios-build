@@ -5,10 +5,10 @@
   "donor_base_sha": "ec6e62d40fa9e9d1bea33ad5d00148c99a4f0832",
   "port_branch": "port/ios-5.2-simulator",
   "phase": "G3",
-  "active_packet": "device-unsigned-handoff",
-  "last_green_packet": "device-unsigned-handoff",
-  "last_green_sha": "8c25a5854bc10e5540cbc161df573681ac766f3c",
-  "last_green_run": "/Volumes/BlenderBuild/blender-ios/artifacts/device-unsigned-handoff-result.json",
+  "active_packet": "full-device-viewport",
+  "last_green_packet": "full-device-viewport",
+  "last_green_sha": "b3aa1f53923fcaa9c1b457907afbadae10a24892",
+  "last_green_run": "/Volumes/BlenderBuild/blender-ios/artifacts/full-device-viewport-result.json",
   "target": "ios-device-arm64",
   "feature_profile": "ios_device_minimal",
   "signing_mode": "UNSIGNED",
@@ -18,7 +18,8 @@
   "external_volume_state": "qualified",
   "blockers": [],
   "next_safe_packets": [
-    "P117",
-    "owner-signed-physical-device-smoke"
+    "owner-signed-physical-device-smoke",
+    "GHOST-UIKit-scene-hardening",
+    "P117"
   ]
 }
