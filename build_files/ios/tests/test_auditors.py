@@ -14,6 +14,7 @@ import unittest
 
 IOS_DIR = Path(__file__).resolve().parents[1]
 AUDITOR = IOS_DIR / "audit.py"
+PINNED_DONOR_SHA = "a1de44dd54af75a4c8c4a29a5fed2a1334a87446"
 
 
 class AuditorTestCase(unittest.TestCase):
@@ -197,7 +198,7 @@ class PortMapAuditTests(AuditorTestCase):
             "--base",
             "v5.1.2",
             "--donor",
-            "origin/ios",
+            PINNED_DONOR_SHA,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 

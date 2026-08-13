@@ -4,7 +4,7 @@
 | --- | --- | --- | --- | --- |
 | Environment doctor | T0 | macOS host + external volume | green | `/Volumes/BlenderBuild/blender-ios/artifacts/n900-doctor/env.json` |
 | Ledger/schema validation | T0 | macOS host | green | `python3 -m json.tool docs/ios/STATUS.json` |
-| Donor-map completeness | T0 | `v5.1.2..origin/ios` | green: 213/213 exact paths | `python3 build_files/ios/audit.py port-map docs/ios/PORT_MAP.tsv --repository . --base v5.1.2 --donor origin/ios` |
+| Donor-map completeness | T0 | immutable donor `a1de44dd54af75a4c8c4a29a5fed2a1334a87446` | green: 213/213 exact paths | `python3 build_files/ios/audit.py port-map docs/ios/PORT_MAP.tsv --repository . --base v5.1.2 --donor a1de44dd54af75a4c8c4a29a5fed2a1334a87446` |
 | Dependency ABI auditor fixtures | T0/T3 | arm64 macOS + iOS Simulator objects | green | `python3 -m unittest discover -s build_files/ios/tests -v` |
 | Bundle/signing auditor fixtures | T0/T3 | simulator + unsigned device policies | green | `python3 -m unittest discover -s build_files/ios/tests -v` |
 | Xcode signing experiment | T2/T3 | Xcode 26.5 arm64 sim + unsigned device | green | `/Volumes/BlenderBuild/blender-ios/artifacts/20260811T044431Z-8f74cae544cd-signing-probe/signing-report.json` |
@@ -22,6 +22,8 @@
 | Blender 5.2 Metal viewport | T2/T3 | reduced Blender runtime / iPhone 17 simulator / iOS 26.5 | green: 105 MiB executable linked, 156 MiB bundle installed, runtime assets found, Blender splash and cube viewport rendered, process sustained | `/Volumes/BlenderBuild/blender-ios/artifacts/p510-real-blender-frame-result.json` |
 | Interactive viewport touch | T3 | Maestro 2.8.0 / iPhone 17 simulator / iOS 26.5 | green: app launched, Blender splash rendered, injected touch dismissed it, and the post-touch cube viewport rendered | `/Volumes/BlenderBuild/blender-ios/artifacts/p520-first-interactive-viewport-result.json` |
 | Universal iPhone+iPad simulator launch | T3 | same `Blender.app` / iPhone 17 + iPad Pro 13-inch (M5) / iOS 26.5 | green: one bundle id, `UIDeviceFamily` 1,2, splash and cube viewport on both; iPad is `UIUserInterfaceIdiomPad` (not iPhone compatibility) | `/Volumes/BlenderBuild/blender-ios/artifacts/p530-universal-simulator-result.json`; screenshots `p530-iphone-splash.png`, `p530-iphone-viewport.png`, `p530-ipad-splash.png`, `p530-ipad-viewport.png` |
+| Universal unsigned device IPA | T2/T3 | arm64 iPhoneOS 26.5 / iOS 18.0+ / one iPhone+iPad IPA | green: 6,145-action Blender link, runtime install, dependency and executable ABI audits, unsigned bundle audit, archive extraction and integrity | `/Volumes/BlenderBuild/blender-ios/artifacts/device-unsigned-handoff-result.json`; `Blender-5.2.0-iPhone-iPad-unsigned.ipa` |
+| Modern full-device viewport | T0/T3 | clean install / iPhone 17 + iPad Pro 13-inch (M5) / iOS 26.5 | green: launch-screen bundle contract; iPhone renders edge-to-edge instead of legacy compatibility sizing; iPad remains a native OS-managed window | `/Volumes/BlenderBuild/blender-ios/artifacts/full-device-viewport-result.json`; screenshots `full-device-viewport-iphone.png`, `full-device-viewport-ipad.png` |
 
 Only proven outcomes are recorded here. A download is not a built dependency, a
 compiled library is not accepted before ABI audit, and a linked app is not a

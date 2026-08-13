@@ -1,9 +1,10 @@
 # Blender 5.2 iOS port handoff
 
 This branch ports the official Blender iOS work onto the immutable Blender
-`v5.2.0` release. The first product milestone is an arm64 iOS Simulator build
-that reaches a responsive Workbench frame. Physical-device installation and
-owner signing are deliberately deferred.
+`v5.2.0` release. The simulator product reaches a responsive Workbench frame on
+iPhone and iPad. The device product builds as arm64 iPhoneOS and is handed off
+as one universal unsigned IPA; owner signing, provisioning, and physical-device
+launch remain outside this repository.
 
 ## Ten-minute resume
 
@@ -13,7 +14,7 @@ owner signing are deliberately deferred.
 
    ```sh
    git status --short --branch
-   git rev-parse HEAD v5.2.0 origin/ios
+   git rev-parse HEAD v5.2.0 a1de44dd54af75a4c8c4a29a5fed2a1334a87446
    ```
 
 3. Run the environment doctor before any build:
@@ -34,8 +35,8 @@ global `install` target.
 ## Immutable anchors
 
 - Production baseline: `v5.2.0` / `fbe6228777e7d9afefcd61a413844e790ae75db7`
-- Read-only donor: `origin/ios` / `a1de44dd54af75a4c8c4a29a5fed2a1334a87446`
-- Donor comparison: `v5.1.2..origin/ios`
+- Read-only donor: `a1de44dd54af75a4c8c4a29a5fed2a1334a87446`
+- Donor comparison: `v5.1.2..a1de44dd54af75a4c8c4a29a5fed2a1334a87446`
 - Integration branch: `port/ios-5.2-simulator`
 
 Do not merge the donor branch. Adapt one subsystem at a time and record donor
@@ -57,6 +58,36 @@ bootstrap installed `autoconf`, `automake`, `bison`, `dos2unix`, `flex`,
 `libtool`, `meson`, `pkgconf`, and `yasm` with Homebrew, without `sudo`.
 Credentials must never be written to source, logs, or artifacts.
 
-No packet may inspect signing identities or profiles, sign a device bundle,
-merge/rebase/push, rewrite history, or broaden its allowed files. Stop after two
+No build packet may inspect signing identities or profiles, sign a device
+bundle, rewrite history, or broaden its allowed files. Stop after two
 unsuccessful architectural approaches and preserve the evidence.
+
+## Unsigned device IPA
+
+The device lane uses `blender_ios_device_minimal.cmake`, an `iphoneos` sysroot,
+an arm64-only dependency prefix, and a build directory separate from the
+simulator. After `ninja install`, create the handoff artifact with:
+
+```sh
+python3 build_files/ios/package_unsigned_ipa.py \
+  /path/to/bin/Blender.app \
+  /path/to/Blender-5.2.0-iPhone-iPad-unsigned.ipa
+```
+
+The packager rejects simulator binaries, the wrong bundle id or device-family
+metadata, provisioning/signing files, signing plist keys, and embedded Mach-O
+signatures. The owner must sign and provision the IPA before installing it.
+
+## Recommended next order
+
+1. Sign the current IPA and run a physical iPhone/iPad smoke test for launch,
+   touch, rotation, background/foreground, save/open, and memory pressure.
+2. Finish GHOST/UIKit hardening: adopt the scene lifecycle, use scene rather
+   than main-screen geometry, respond to dynamic resizing and scale changes,
+   and close pointer, keyboard, Pencil, lifecycle, and file-workflow gaps.
+3. Complete P117 target Python and prove `bpy.app.version` from the bundled
+   interpreter. Python is the next major Blender feature dependency.
+4. Add optional dependency families individually under device smoke tests.
+5. Treat Cycles Metal as P540 feasibility work after the interactive core is
+   stable. Do not put OSL, USD, OpenVDB, or every desktop service on the first
+   usable-device critical path.

@@ -8,9 +8,10 @@ manifests, but never share build directories.
 - **Simulator lane:** arm64 iOS Simulator, locally runnable, toolchain-required
   local/ad-hoc signing permitted. iPhone and iPad share this one product
   (`UIDeviceFamily` 1,2; bundle id `org.blenderfoundation.blender.ios`).
-- **Device handoff lane:** arm64 iOS, staged without team, identity, profile,
-  signer entitlements, or `_CodeSignature`. It is not runnable until the owner
-  signs it later. Simulator and device build directories remain split.
+- **Device handoff lane:** arm64 iOS, packaged as one universal iPhone+iPad IPA
+  without team, identity, profile, signer entitlements, `_CodeSignature`, or
+  embedded Mach-O signature. It is not runnable until the owner signs it later.
+  Simulator and device build directories remain split.
 
 ## Layer boundaries
 
@@ -44,4 +45,3 @@ bounded console tail. Configure, build, bundle, and launch logs remain separate.
 parent. Dependency-builder changes are transplanted mechanically after the
 generic framework exists. GHOST, UIKit lifecycle, Metal, Python, and signing
 seams are reimplemented against v5.2 APIs under targeted tests.
-
