@@ -1807,7 +1807,10 @@ GHOST_TSuccess GHOST_WindowIOS::setWindowCustomCursorShape(const uint8_t * /*bit
 
 uint16_t GHOST_WindowIOS::getDPIHint()
 {
-  return 288;
+  /* Client bounds are already native pixels (points * screen scale), and
+   * native_pixel_size stays 1. Returning 96 matches GHOST/macOS so Blender
+   * does not apply a second 3x widget scale on a retina framebuffer. */
+  return 96;
 }
 
 GHOST_TSuccess GHOST_WindowIOS::popupOnscreenKeyboard(
