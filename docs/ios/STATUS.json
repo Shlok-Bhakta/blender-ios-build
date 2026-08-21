@@ -3,12 +3,12 @@
   "baseline_sha": "fbe6228777e7d9afefcd61a413844e790ae75db7",
   "donor_sha": "a1de44dd54af75a4c8c4a29a5fed2a1334a87446",
   "donor_base_sha": "ec6e62d40fa9e9d1bea33ad5d00148c99a4f0832",
-  "port_branch": "story/ios-cycles-foundation",
+  "port_branch": "story/ios-cycles-metal",
   "phase": "G3",
-  "active_packet": "portable-cycles-cpu",
-  "last_green_packet": "portable-cycles-cpu",
-  "last_green_sha": "2e032f2621f8838a82343fc1fd8ab50b372310a2",
-  "last_green_run": "/Volumes/BlenderBuild/blender-ios/artifacts/20260821-cycles-cpu/result.json",
+  "active_packet": "cycles-metal-build-foundation",
+  "last_green_packet": "cycles-metal-build-foundation",
+  "last_green_sha": "5759ea8d0b9307462149da0f5cfaafbe7d1985a7",
+  "last_green_run": "/Volumes/BlenderBuild/blender-ios/artifacts/20260821-cycles-metal-foundation/result.json",
   "target": "ios-device-arm64",
   "feature_profile": "ios_device",
   "signing_mode": "UNSIGNED",
@@ -18,8 +18,7 @@
   "external_volume_state": "qualified",
   "blockers": [],
   "next_safe_packets": [
-    "owner-signed-physical-device-smoke",
-    "cycles-metal-feasibility",
+    "owner-signed-cycles-metal-device-smoke",
     "GHOST-UIKit-scene-hardening",
     "optional-dependency-closure"
   ]
