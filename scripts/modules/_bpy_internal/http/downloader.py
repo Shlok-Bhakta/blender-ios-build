@@ -31,9 +31,6 @@ import dataclasses
 import enum
 import hashlib
 import logging
-import multiprocessing
-import multiprocessing.connection
-import multiprocessing.process
 import os
 import sys
 import time
@@ -46,7 +43,14 @@ from typing import Protocol, TypeAlias, Any, override
 # mypy   : Variable "multiprocessing.Event" is not valid as a type
 #          note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
 # Pylance: Variable not allowed in type expression
-from multiprocessing.synchronize import Event as EventClass
+if sys.platform == 'ios':
+    from threading import Event as EventClass
+    from .thread_context import ThreadContext
+else:
+    import multiprocessing
+    import multiprocessing.connection
+    import multiprocessing.process
+    from multiprocessing.synchronize import Event as EventClass
 
 import cattrs
 import cattrs.preconf.json
@@ -414,7 +418,27 @@ class ConditionalDownloader:
 #
 # So I (Sybren) figure it's better to test with the 'spawn' method,
 # which is also the current default on Windows and macOS.
-_mp_context = multiprocessing.get_context(method='spawn')
+if sys.platform == 'ios':
+    # CPython intentionally disables multiprocessing on iOS because application
+    # processes cannot fork or spawn children. A worker thread preserves the
+    # downloader queue, cancellation, and reporting contract without blocking
+    # Blender's main thread.
+    _mp_context = ThreadContext()
+    _background_worker_kind = 'thread'
+else:
+    _mp_context = multiprocessing.get_context(method='spawn')
+    _background_worker_kind = 'process'
+
+
+class _Connection(Protocol):
+    def send(self, value: Any) -> None: ...
+    def poll(self, timeout: float = 0.0) -> bool: ...
+    def recv(self) -> Any: ...
+
+
+class _Worker(Protocol):
+    def start(self) -> None: ...
+    def is_alive(self) -> bool: ...
 
 
 @dataclasses.dataclass
@@ -467,8 +491,8 @@ class DownloaderOptions:
 class BackgroundDownloader:
     """Wrapper for a ConditionalDownloader + reporters.
 
-    The downloader will run in a separate process, and the reporters will receive
-    updates on the main process (or whatever process runs
+    The downloader runs in a separate process, or a worker thread on iOS. The
+    reporters receive updates on the main process (or whatever process runs
     BackgroundDownloader.update()).
     """
 
@@ -478,8 +502,8 @@ class BackgroundDownloader:
 
     _logger: logging.Logger = logger.getChild("BackgroundDownloader")
 
-    # Pipe connection between this class and the Downloader running in a subprocess.
-    _connection: multiprocessing.connection.Connection
+    # Message connection between this class and the background worker.
+    _connection: _Connection
 
     # Here and below, 'RequestDescription' is quoted because Pylance (used by
     # VSCode) doesn't fully grasp the `from __future__ import annotations` yet.
@@ -499,7 +523,7 @@ class BackgroundDownloader:
 
     _reporters: list[DownloadReporter]
     _options: DownloaderOptions
-    _downloader_process: multiprocessing.process.BaseProcess | None
+    _downloader_process: _Worker | None
 
     _shutdown_event: EventClass
     _shutdown_complete_event: EventClass
@@ -612,7 +636,7 @@ class BackgroundDownloader:
         self.num_downloads_error = 0
 
     def start(self) -> None:
-        """Start the downloaded process.
+        """Start the downloader worker.
 
         This MUST be called before calling .update().
         """
@@ -631,9 +655,12 @@ class BackgroundDownloader:
             ),
             daemon=True,
         )
-        self._logger.info("starting downloader process")
-        with _cleanup_main_file_attribute():
+        self._logger.info("starting downloader worker (%s)", _background_worker_kind)
+        if _background_worker_kind == 'thread':
             self._downloader_process.start()
+        else:
+            with _cleanup_main_file_attribute():
+                self._downloader_process.start()
 
     @property
     def is_shutdown_requested(self) -> bool:
@@ -878,10 +905,10 @@ class PipeMessage:
 
 
 def _download_queued_items(
-        connection: multiprocessing.connection.Connection,
+        connection: _Connection,
         options: DownloaderOptions,
 ) -> None:
-    """Runs in a daemon process to download stuff.
+    """Runs in a daemon process or iOS worker thread to download stuff.
 
     Managed by the BackgroundDownloader class above.
     """
@@ -892,8 +919,8 @@ def _download_queued_items(
     #     format="%(asctime)-15s %(processName)22s %(levelname)8s %(name)s %(message)s",
     #     level=logging.DEBUG,
     # )
-    log = logger.getChild('background_process')
-    log.info('Downloader background process starting')
+    log = logger.getChild('background_worker')
+    log.info('Downloader background worker starting')
 
     # Local queue for incoming messages.
     rx_queue: queue.Queue[PipeMessage] = queue.Queue()
@@ -912,7 +939,7 @@ def _download_queued_items(
             # Always keep receiving messages while they're coming in,
             # to prevent the remote end hanging on their send() call.
             # Only once that's done should we check the do_shutdown event.
-            while connection.poll():
+            while connection.poll(0.1):
                 try:
                     received_msg: PipeMessage = connection.recv()
                 except (EOFError, OSError):

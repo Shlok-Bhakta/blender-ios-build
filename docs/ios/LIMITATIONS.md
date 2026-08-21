@@ -20,9 +20,11 @@ because the artifact intentionally has no owner signing or provisioning.
 CPython 3.13.13 and NumPy 2.3.4 are enabled in both application lanes. Their
 native extensions are packaged as signable frameworks, and the simulator smoke
 test exercises Blender's Python API, common standard-library modules, arrays,
-and linear algebra on iPhone and iPad. The standard-library `_multiprocessing`
-extension is not yet present, so the Extensions/remote asset-library add-on
-reports an import error during registration. Cycles, OSL, USD, OpenVDB, Python
+linear algebra, and the Extensions background worker on iPhone and iPad. iOS
+does not permit Blender to create child processes, so the standard Python
+`multiprocessing.Process` API is unavailable. The Extensions/remote
+asset-library downloader preserves its asynchronous queue, cancellation, and
+reporting behavior with a worker thread. Cycles, OSL, USD, OpenVDB, Python
 zstandard, and optional media services remain outside the reduced profile and
 are being enabled one at a time under named smoke tests.
 
