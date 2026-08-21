@@ -353,7 +353,7 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repository", type=Path, default=Path.cwd())
     parser.add_argument("--base", default="v5.1.2")
-    parser.add_argument("--donor", default="origin/ios")
+    parser.add_argument("--donor", default="a1de44dd54af75a4c8c4a29a5fed2a1334a87446")
     parser.add_argument("--output", type=Path)
     return parser.parse_args(argv)
 
