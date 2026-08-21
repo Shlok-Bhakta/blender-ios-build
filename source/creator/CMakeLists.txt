@@ -1769,6 +1769,24 @@ elseif(APPLE)
       FILES ${OSX_APP_SOURCEDIR}/PkgInfo
       DESTINATION "Blender.app"
     )
+    if(APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
+      set(_ios_asset_platform "iphonesimulator")
+    else()
+      set(_ios_asset_platform "iphoneos")
+    endif()
+    install(CODE "
+      execute_process(
+        COMMAND \"${PYTHON_EXECUTABLE}\"
+          \"${CMAKE_SOURCE_DIR}/build_files/ios/compile_asset_catalog.py\"
+          --app-bundle \"\${CMAKE_INSTALL_PREFIX}/Blender.app\"
+          --icon-package
+            \"${CMAKE_SOURCE_DIR}/release/darwin/blender_liquid_glass.icon\"
+          --platform \"${_ios_asset_platform}\"
+          --minimum-os \"${CMAKE_OSX_DEPLOYMENT_TARGET}\"
+        COMMAND_ERROR_IS_FATAL ANY
+      )
+    ")
+    unset(_ios_asset_platform)
   else()
     install(
       FILES ${OSX_APP_SOURCEDIR}/Contents/PkgInfo
