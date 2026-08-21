@@ -30,6 +30,17 @@ class GhostSceneTests(unittest.TestCase):
         source = SYSTEM_SOURCE.read_text()
         self.assertIn("handleWindowEvent(GHOST_kEventWindowSize", source)
 
+    def test_screen_and_client_coordinates_use_the_scene_coordinate_space(self) -> None:
+        source = WINDOW_SOURCE.read_text()
+        self.assertIn("fromCoordinateSpace:window_scene.coordinateSpace", source)
+        self.assertIn("toCoordinateSpace:window_scene.coordinateSpace", source)
+
+    def test_cursor_state_converts_between_scene_screen_and_client_coordinates(self) -> None:
+        source = SYSTEM_SOURCE.read_text()
+        self.assertIn("window->clientToScreen(cursor_x_, cursor_y_, x, y);", source)
+        self.assertIn("window->screenToClient(x, y, client_x, client_y);", source)
+        self.assertIn("updateCursorPositionState(client_x, client_y);", source)
+
 
 if __name__ == "__main__":
     unittest.main()

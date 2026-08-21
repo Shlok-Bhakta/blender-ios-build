@@ -41,11 +41,15 @@ Pencil, mouse/trackpad buttons and motion, hardware-keyboard HID translation,
 modifier polling, activation events, sandbox paths, and security-scoped Blender
 documents. It now uses a single `UIWindowScene`, scene-routed activation and
 file-open callbacks, scene-relative geometry and scale, and MetalKit drawable
-resize events. The iPadOS 26 simulator renders the desktop UI inside the native
-OS-managed scene, and both simulator form factors keep the full runtime and CPU
-Cycles gates green. Multi-scene Blender sessions, physical rotation and resize
-acceptance, safe-area transitions, external-display moves, memory-pressure
-handling, and broader document workflows still require device hardening.
+resize events. Screen/client coordinate conversion now routes through the
+attached scene coordinate space, including its native-pixel scale, so pointer
+state does not assume that an iPad window starts at the display origin. The
+iPadOS 26 simulator renders the desktop UI inside the native OS-managed scene,
+and both simulator form factors keep the full runtime and CPU Cycles gates
+green. Physical trackpad acceptance of nonzero window origins remains pending.
+Multi-scene Blender sessions, physical rotation and resize acceptance,
+safe-area transitions, external-display moves, memory-pressure handling, and
+broader document workflows still require device hardening.
 
 The unsigned device IPA cannot install or run on physical hardware before
 owner-controlled signing and provisioning. This lane does not inspect

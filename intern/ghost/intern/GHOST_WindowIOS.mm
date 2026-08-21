@@ -26,6 +26,7 @@
 #import <UIKit/UIPencilInteraction.h>
 
 #include <algorithm>
+#include <cmath>
 #include <unordered_map>
 
 // #define IOS_INPUT_LOGGING
@@ -1855,18 +1856,14 @@ GHOST_TWindowState GHOST_WindowIOS::getState() const
 
 void GHOST_WindowIOS::screenToClient(int32_t inX, int32_t inY, int32_t &outX, int32_t &outY) const
 {
-  /* Pass through for fullscreen windows.
-   * TODO: Support coordinate mapping for sized windows. */
-  outX = inX;
-  outY = inY;
+  GHOST_ASSERT(getValid(), "GHOST_WindowIOS::screenToClient(): window invalid");
+  screenToClientIntern(inX, inY, outX, outY);
 }
 
 void GHOST_WindowIOS::clientToScreen(int32_t inX, int32_t inY, int32_t &outX, int32_t &outY) const
 {
-  /* Pass through for fullscreen windows.
-   * TODO: Support coordinate mapping for sized windows. */
-  outX = inX;
-  outY = inY;
+  GHOST_ASSERT(getValid(), "GHOST_WindowIOS::clientToScreen(): window invalid");
+  clientToScreenIntern(inX, inY, outX, outY);
 }
 
 void GHOST_WindowIOS::screenToClientIntern(int32_t inX,
@@ -1874,10 +1871,14 @@ void GHOST_WindowIOS::screenToClientIntern(int32_t inX,
                                            int32_t &outX,
                                            int32_t &outY) const
 {
-  /* Pass through for fullscreen windows.
-   * TODO: Support coordinate mapping for sized windows. */
-  outX = inX;
-  outY = inY;
+  UIWindowScene *window_scene = rootWindow.windowScene;
+  GHOST_ASSERT(window_scene != nil, "A UIWindowScene is required for coordinate conversion");
+  const CGFloat scale = getWindowScaleFactor();
+  const CGPoint screen_point = CGPointMake(CGFloat(inX) / scale, CGFloat(inY) / scale);
+  const CGPoint client_point = [uiview_ convertPoint:screen_point
+                                fromCoordinateSpace:window_scene.coordinateSpace];
+  outX = int32_t(std::lround(client_point.x * scale));
+  outY = int32_t(std::lround(client_point.y * scale));
 }
 
 void GHOST_WindowIOS::clientToScreenIntern(int32_t inX,
@@ -1885,10 +1886,14 @@ void GHOST_WindowIOS::clientToScreenIntern(int32_t inX,
                                            int32_t &outX,
                                            int32_t &outY) const
 {
-  /* Pass through for fullscreen windows.
-   * TODO: Support coordinate mapping for sized windows. */
-  outX = inX;
-  outY = inY;
+  UIWindowScene *window_scene = rootWindow.windowScene;
+  GHOST_ASSERT(window_scene != nil, "A UIWindowScene is required for coordinate conversion");
+  const CGFloat scale = getWindowScaleFactor();
+  const CGPoint client_point = CGPointMake(CGFloat(inX) / scale, CGFloat(inY) / scale);
+  const CGPoint screen_point = [uiview_ convertPoint:client_point
+                                toCoordinateSpace:window_scene.coordinateSpace];
+  outX = int32_t(std::lround(screen_point.x * scale));
+  outY = int32_t(std::lround(screen_point.y * scale));
 }
 
 /* called for event, when window leaves monitor to another */
@@ -2056,7 +2061,7 @@ CGSize GHOST_WindowIOS::getNativeWindowSize()
   return metal_view_.drawableSize;
 }
 
-float GHOST_WindowIOS::getWindowScaleFactor()
+float GHOST_WindowIOS::getWindowScaleFactor() const
 {
   UIWindowScene *window_scene = rootWindow.windowScene;
   return window_scene != nil ? window_scene.screen.scale : metal_view_.contentScaleFactor;
