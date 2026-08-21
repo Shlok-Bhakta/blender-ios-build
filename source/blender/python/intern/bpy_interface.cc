@@ -664,9 +664,14 @@ void BPY_python_start(bContext *C, int argc, const char **argv)
   if (BLI_getenv("BLENDER_IOS_PYTHON_SMOKE") != nullptr) {
     const int smoke_result = PyRun_SimpleString(
         "import bpy, bz2, ctypes, lzma, sqlite3, ssl\n"
-        "assert bpy.app.version[:2] == (5, 2)\n");
+        "import numpy as np\n"
+        "assert bpy.app.version[:2] == (5, 2)\n"
+        "assert np.__version__ == '2.3.4'\n"
+        "assert np.array([1, 2, 3]).sum() == 6\n"
+        "assert np.linalg.det(np.eye(2)) == 1.0\n");
     if (smoke_result == 0) {
       fprintf(stderr, "BLENDER_IOS_PYTHON_READY=5.2\n");
+      fprintf(stderr, "BLENDER_IOS_NUMPY_READY=2.3.4\n");
     }
     else {
       PyErr_Print();

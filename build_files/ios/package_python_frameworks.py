@@ -139,6 +139,14 @@ def package_tree(
     for marker in import_root.rglob("*.fwork"):
         marker.unlink()
 
+    # Wheels may contain static development libraries (NumPy installs
+    # libnpymath.a and libnpyrandom.a). They cannot be imported at runtime,
+    # cannot be linked on-device under iOS code-signing policy, and would put
+    # Mach-O code outside the application Frameworks directory.
+    for archive in import_root.rglob("*.a"):
+        if archive.is_file():
+            archive.unlink()
+
     return [
         package_extension(
             extension,

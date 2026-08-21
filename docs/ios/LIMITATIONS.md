@@ -17,15 +17,22 @@ families, and passes bundle, dependency ABI, executable ABI, archive integrity,
 and embedded-signature audits. Physical iPhone and iPad launch remain unproven
 because the artifact intentionally has no owner signing or provisioning.
 
-The reduced profile still keeps target Python, Cycles, OSL, USD, OpenVDB, and
-optional media services out of the critical path. Those features are enabled
-one at a time under a named smoke test.
+CPython 3.13.13 and NumPy 2.3.4 are enabled in both application lanes. Their
+native extensions are packaged as signable frameworks, and the simulator smoke
+test exercises Blender's Python API, common standard-library modules, arrays,
+and linear algebra on iPhone and iPad. The standard-library `_multiprocessing`
+extension is not yet present, so the Extensions/remote asset-library add-on
+reports an import error during registration. Cycles, OSL, USD, OpenVDB, Python
+zstandard, and optional media services remain outside the reduced profile and
+are being enabled one at a time under named smoke tests.
 
-The current GHOST backend is functional but incomplete. UIKit/Metal startup,
-rendering, touch, basic text input, sandbox paths, and document open hooks are
-present. The next hardening work is scene-based lifecycle, dynamic window
-resizing, safe-area/scale changes, pointer and keyboard parity, lifecycle and
-memory-pressure handling, and device file workflows.
+The current GHOST backend supports UIKit/Metal startup, rendering, touch,
+Pencil, mouse/trackpad buttons and motion, hardware-keyboard HID translation,
+modifier polling, activation events, sandbox paths, and security-scoped Blender
+documents. UIKit still reports that scene-based lifecycle will become mandatory
+in a future SDK. Dynamic window resizing, safe-area/scale changes,
+memory-pressure handling, and broader document workflows still require device
+hardening.
 
 The unsigned device IPA cannot install or run on physical hardware before
 owner-controlled signing and provisioning. This lane does not inspect

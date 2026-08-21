@@ -206,3 +206,32 @@ The IPA is deliberately unsigned. Repository evidence proves compilation,
 linking, bundle resources, archive integrity, and the unsigned contract. Only
 the owner can prove physical launch after applying their signing identity and
 provisioning profile.
+
+## ADR-0013: Package every Python extension as an iOS framework
+
+- Status: accepted
+- Date: 2026-08-21
+
+iOS permits bundled native Python modules only when each executable image is in
+a code-signable bundle location. The application therefore embeds CPython as
+`Python.framework` and converts every `.so` extension into a module-named
+framework under `Blender.app/Frameworks`. Bidirectional marker files preserve
+the import path and make repeated CMake installs deterministic. The packager
+also removes wheel-provided static development archives because they are not
+runtime imports and would leave Mach-O code outside `Frameworks`.
+
+## ADR-0014: Cross-build NumPy from target CPython sysconfig data
+
+- Status: accepted
+- Date: 2026-08-21
+
+The dependency build must not execute the target interpreter. A disposable
+native virtual environment supplies Meson, Cython, and pip, while a generated
+startup module exposes the selected iOS CPython platform, ABI suffix, include
+paths, and sysconfig variables. SDK-pinned wrappers and a Meson cross file keep
+compiler and linker discovery on the chosen iPhoneOS or Simulator target.
+
+NumPy is initially configured without an external BLAS, with the minimum arm64
+CPU baseline and runtime dispatch disabled. This establishes functional ABI and
+runtime parity first; Apple Accelerate integration is a separate performance
+slice so it cannot obscure Python/import correctness.
