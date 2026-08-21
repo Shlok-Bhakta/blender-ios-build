@@ -160,6 +160,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise SystemExit("dependency configure permits 1 or 2 threads on this host")
 
     build_python, build_python_version = find_build_python()
+    build_pip_version = checked_output(
+        [os.fspath(build_python), "-m", "pip", "--version"]
+    ).split()[1]
     inputs = build_inputs(
         repository,
         arguments.target,
@@ -168,6 +171,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         build_python,
         build_python_version,
     )
+    inputs["build_pip_version"] = build_pip_version
     cache_key = cache_key_for_inputs(inputs)
     target_directory = arguments.target
     build_directory = bulk_root / "deps" / "build" / target_directory / cache_key

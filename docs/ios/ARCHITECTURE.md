@@ -24,8 +24,24 @@ manifests, but never share build directories.
 | GHOST | System, window, context, events and coordinates | Compile tests, then event loop |
 | GPU/Metal | Drawable, submission, framebuffer and memory behavior | Clear frame, then Workbench cube |
 | Input/UI | Pure translation plus WM/keymap integration | Host unit tests, then injected input |
-| Resources/Python | Bundle paths, startup data, interpreter/modules | `bpy.app.version` marker |
+| Resources/Python | Bundle paths, startup data, interpreter/modules | `bpy.app.version` and NumPy runtime markers |
 | Files | Sandbox paths and document access | Simulator-container round trip |
+
+## Python native-code packaging
+
+The iOS product embeds `Python.framework` and stores pure Python under
+`Assets/5.2/python`. CPython and third-party extension modules cannot remain as
+loose `.so` files in that resource tree. The install pass moves each extension
+to a uniquely named framework under `Blender.app/Frameworks`, leaves a `.fwork`
+import marker at the original module path, and records the reverse mapping in
+the framework. This makes every executable image independently signable while
+preserving normal Python import names.
+
+Physical-device and simulator extensions are always built separately. NumPy's
+build uses a native host interpreter with target CPython sysconfig data, an
+SDK-pinned compiler wrapper, and a Meson cross file. Its output wheel tag,
+Mach-O platform, deployment target, and Python framework dependency are audited
+before the package is copied into Blender.
 
 ## Boot observability
 

@@ -173,6 +173,24 @@ class PackagePythonFrameworksTests(unittest.TestCase):
             self.assertFalse(stale.exists())
             self.assertTrue(unrelated.is_dir())
 
+    def test_static_development_libraries_are_removed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            app = Path(directory) / "Blender.app"
+            import_root = app / "python"
+            archive = import_root / "numpy/_core/lib/libnpymath.a"
+            archive.parent.mkdir(parents=True)
+            archive.write_bytes(b"development-only archive")
+
+            package_tree(
+                app_bundle=app,
+                import_root=import_root,
+                bundle_identifier="org.blenderfoundation.blender.ios",
+                platform="iPhoneOS",
+                minimum_os="18.0",
+            )
+
+            self.assertFalse(archive.exists())
+
 
 if __name__ == "__main__":
     unittest.main()
