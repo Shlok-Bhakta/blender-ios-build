@@ -39,10 +39,13 @@ remain separate hardening slices.
 The current GHOST backend supports UIKit/Metal startup, rendering, touch,
 Pencil, mouse/trackpad buttons and motion, hardware-keyboard HID translation,
 modifier polling, activation events, sandbox paths, and security-scoped Blender
-documents. UIKit still reports that scene-based lifecycle will become mandatory
-in a future SDK. Dynamic window resizing, safe-area/scale changes,
-memory-pressure handling, and broader document workflows still require device
-hardening.
+documents. It now uses a single `UIWindowScene`, scene-routed activation and
+file-open callbacks, scene-relative geometry and scale, and MetalKit drawable
+resize events. The iPadOS 26 simulator renders the desktop UI inside the native
+OS-managed scene, and both simulator form factors keep the full runtime and CPU
+Cycles gates green. Multi-scene Blender sessions, physical rotation and resize
+acceptance, safe-area transitions, external-display moves, memory-pressure
+handling, and broader document workflows still require device hardening.
 
 The unsigned device IPA cannot install or run on physical hardware before
 owner-controlled signing and provisioning. This lane does not inspect

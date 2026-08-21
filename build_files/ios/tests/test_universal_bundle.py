@@ -65,3 +65,12 @@ class UniversalBundlePlistTests(unittest.TestCase):
             ["public.filename-extension"],
             ["blend"],
         )
+
+    def test_declares_single_window_scene_lifecycle(self) -> None:
+        manifest = self.plist["UIApplicationSceneManifest"]
+        self.assertFalse(manifest["UIApplicationSupportsMultipleScenes"])
+        configurations = manifest["UISceneConfigurations"]
+        application = configurations["UIWindowSceneSessionRoleApplication"]
+        self.assertEqual(len(application), 1)
+        self.assertEqual(application[0]["UISceneClassName"], "UIWindowScene")
+        self.assertEqual(application[0]["UISceneDelegateClassName"], "IOSSceneDelegate")

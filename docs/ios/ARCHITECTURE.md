@@ -51,6 +51,21 @@ transport behind the same queue/report interface. The Extensions and remote
 asset-library downloader uses a bidirectional in-process channel and daemon
 thread on iOS; desktop platforms retain the spawn-based process context.
 
+## UIKit scene and window ownership
+
+The bundle declares one `UIWindowScene` because Blender currently has one
+process-wide GHOST system and one desktop session. `IOSSceneDelegate` starts
+Blender from `scene:willConnectToSession:options:`, owns foreground activation
+events, and receives scene-routed document URLs. The app delegate retains
+process-wide security-scoped document handles and releases them at termination.
+
+Every GHOST window uses `initWithWindowScene:` against that active scene.
+Initial geometry comes from the scene coordinate space, and display dimensions,
+pixel bounds, input scale, drawable scale, and refresh rate come from the
+scene's screen. No production GHOST path reads `UIScreen.mainScreen`. MetalKit
+drawable-size callbacks call the normal GHOST window-size handler, which
+updates Blender's drawing context before queuing the resize event.
+
 ## Cycles render boundary
 
 The accepted Cycles fallback is the portable CPU renderer backed by a static

@@ -1509,7 +1509,8 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 
 @interface GHOST_IOSViewController : UIViewController
 
-- (nonnull instancetype)initWithMetalKitView:(nonnull MTKView *)mtkView;
+- (nonnull instancetype)initWithMetalKitView:(nonnull MTKView *)mtkView
+                                windowScene:(nonnull UIWindowScene *)windowScene;
 
 @end
 
@@ -1517,14 +1518,19 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 {
   MTKView *_view;
   GHOST_IOSMetalRenderer *_renderer;
+  UIScreen *_screen;
 }
 
 - (nonnull instancetype)initWithMetalKitView:(nonnull MTKView *)mtkView
+                                windowScene:(nonnull UIWindowScene *)windowScene
 {
-  _view = mtkView;
-  _view.multipleTouchEnabled = YES;
   self = [super init];
-  self.view = (UIView *)mtkView;
+  if (self) {
+    _view = mtkView;
+    _screen = windowScene.screen;
+    _view.multipleTouchEnabled = YES;
+    self.view = (UIView *)mtkView;
+  }
 
   return self;
 }
@@ -1540,10 +1546,10 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   _view.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
   _view.autoResizeDrawable = YES;
   _view.contentMode = UIViewContentModeScaleToFill;
-  _view.contentScaleFactor = [[UIScreen mainScreen] scale];
+  _view.contentScaleFactor = _screen.scale;
   /* Set the refresh rate to the screen's maximum. There may be some value in capping
    * this value to preserve battery life (60fps seems to work well). */
-  _view.preferredFramesPerSecond = [UIScreen mainScreen].maximumFramesPerSecond;
+  _view.preferredFramesPerSecond = _screen.maximumFramesPerSecond;
   _renderer = [[GHOST_IOSMetalRenderer alloc] initWithMetalKitView:_view];
   if (!_renderer) {
     NSLog(@"Renderer initialization failed");
@@ -1590,28 +1596,15 @@ GHOST_WindowIOS::GHOST_WindowIOS(GHOST_SystemIOS *system_ios,
 
   /* Create MTKView. */
   metal_view_ = [[MTKView alloc] initWithFrame:CGRectMake(left, bottom, width, height)];
-  [metal_view_ retain];
   GHOST_ASSERT(metal_view_, "metalview not valid");
 
-  /* Create view controller. */
-  UIApplication *app = [UIApplication sharedApplication];
-  GHOST_ASSERT(app, "App not valid");
-  id<UIApplicationDelegate> app_delegate = [app delegate];
-  GHOST_ASSERT(app_delegate, "App not valid");
+  UIWindowScene *window_scene = GHOST_IOS_activeWindowScene();
+  GHOST_ASSERT(window_scene != nil, "An active UIWindowScene is required");
 
   GHOSTUIWindow *ghost_rootWindow = nullptr;
-
-  if (full_screen_) {
-    /* Init window at native res. */
-    CGRect rect = [UIScreen mainScreen].bounds;
-    ghost_rootWindow = [[GHOSTUIWindow alloc] initWithFrame:rect];
-    [ghost_rootWindow retain];
-  }
-  else {
-    /* Init window at specified size. */
-    ghost_rootWindow = [[GHOSTUIWindow alloc]
-        initWithFrame:CGRectMake(left, bottom, width, height)];
-    [ghost_rootWindow retain];
+  ghost_rootWindow = [[GHOSTUIWindow alloc] initWithWindowScene:window_scene];
+  if (!full_screen_) {
+    ghost_rootWindow.frame = CGRectMake(left, bottom, width, height);
     [ghost_rootWindow setClipsToBounds:YES];
   }
 
@@ -1621,7 +1614,8 @@ GHOST_WindowIOS::GHOST_WindowIOS(GHOST_SystemIOS *system_ios,
   rootWindow.windowLevel = UIWindowLevelNormal;
 
   GHOST_ASSERT(rootWindow, "UIWindow not valid");
-  uiview_controller_ = [[[GHOST_IOSViewController alloc] initWithMetalKitView:metal_view_] retain];
+  uiview_controller_ = [[GHOST_IOSViewController alloc] initWithMetalKitView:metal_view_
+                                                                 windowScene:window_scene];
   [uiview_controller_ viewDidLoad];
   GHOST_ASSERT(uiview_controller_, "UIViewController not valid");
 
@@ -1704,7 +1698,6 @@ GHOST_WindowIOS::~GHOST_WindowIOS()
     metal_view_ = nil;
   }
   if (uiview_) {
-    [uiview_ release];
     uiview_ = nil;
   }
 
@@ -1814,29 +1807,25 @@ void GHOST_WindowIOS::getWindowBounds(GHOST_Rect &bounds) const
 {
   GHOST_ASSERT(getValid(), "GHOST_WindowIOS::getWindowBounds(): window invalid");
 
-  CGRect screenRect = rootWindow.frame;
-  CGFloat scale = [UIScreen mainScreen].scale;
-  CGFloat screenWidth = screenRect.size.width * scale;
-  CGFloat screenHeight = screenRect.size.height * scale;
+  CGRect window_rect = rootWindow.frame;
+  CGFloat scale = rootWindow.windowScene.screen.scale;
 
-  bounds.b_ = screenHeight;
-  bounds.l_ = rootWindow.frame.origin.x;
-  bounds.r_ = screenWidth;
-  bounds.t_ = rootWindow.frame.origin.y;
+  bounds.b_ = CGRectGetMaxY(window_rect) * scale;
+  bounds.l_ = CGRectGetMinX(window_rect) * scale;
+  bounds.r_ = CGRectGetMaxX(window_rect) * scale;
+  bounds.t_ = CGRectGetMinY(window_rect) * scale;
 }
 
 void GHOST_WindowIOS::getClientBounds(GHOST_Rect &bounds) const
 {
   GHOST_ASSERT(getValid(), "GHOST_WindowIOS::getWindowBounds(): window invalid");
 
-  CGRect screenRect = rootWindow.frame;
-  CGFloat scale = [UIScreen mainScreen].scale;
-  CGFloat screenWidth = screenRect.size.width * scale;
-  CGFloat screenHeight = screenRect.size.height * scale;
+  CGRect client_rect = rootWindow.bounds;
+  CGFloat scale = rootWindow.windowScene.screen.scale;
 
-  bounds.b_ = screenHeight;
+  bounds.b_ = CGRectGetHeight(client_rect) * scale;
   bounds.l_ = 0;
-  bounds.r_ = screenWidth;
+  bounds.r_ = CGRectGetWidth(client_rect) * scale;
   bounds.t_ = 0;
 }
 
@@ -2069,7 +2058,8 @@ CGSize GHOST_WindowIOS::getNativeWindowSize()
 
 float GHOST_WindowIOS::getWindowScaleFactor()
 {
-  return [[UIScreen mainScreen] scale];
+  UIWindowScene *window_scene = rootWindow.windowScene;
+  return window_scene != nil ? window_scene.screen.scale : metal_view_.contentScaleFactor;
 }
 
 /* Indicate that we want this window to be the next active one. */

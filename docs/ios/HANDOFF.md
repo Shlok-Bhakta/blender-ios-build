@@ -84,9 +84,9 @@ signatures. The owner must sign and provision the IPA before installing it.
 
 1. Sign the current IPA and run a physical iPhone/iPad smoke test for launch,
    touch, rotation, background/foreground, save/open, and memory pressure.
-2. Finish GHOST/UIKit hardening: adopt the scene lifecycle, use scene rather
-   than main-screen geometry, respond to dynamic resizing and scale changes,
-   and close pointer, keyboard, Pencil, lifecycle, and file-workflow gaps.
+2. Finish GHOST/UIKit hardening: run physical rotation, resize, safe-area, and
+   external-display acceptance against the scene-owned window, then close
+   pointer, keyboard, Pencil, memory-pressure, and file-workflow gaps.
 3. Owner-sign the P540-capable device IPA and run
    `BLENDER_IOS_CYCLES_SMOKE=METAL` on tier-2 iPhone and iPad hardware. Keep
    portable CPU Cycles as the accepted fallback until both renders pass.
