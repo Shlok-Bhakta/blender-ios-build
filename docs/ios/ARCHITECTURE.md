@@ -43,6 +43,12 @@ SDK-pinned compiler wrapper, and a Meson cross file. Its output wheel tag,
 Mach-O platform, deployment target, and Python framework dependency are audited
 before the package is copied into Blender.
 
+CPython does not expose child-process multiprocessing on iOS. Blender services
+that use a subprocess only to stay off the UI thread must provide an iOS worker
+transport behind the same queue/report interface. The Extensions and remote
+asset-library downloader uses a bidirectional in-process channel and daemon
+thread on iOS; desktop platforms retain the spawn-based process context.
+
 ## Boot observability
 
 Runtime progress is an ordered stream:

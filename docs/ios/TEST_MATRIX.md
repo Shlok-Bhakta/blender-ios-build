@@ -28,6 +28,7 @@
 | Native NumPy cross-build | T2/T3 | NumPy 2.3.4 / arm64 iPhoneOS + iOS Simulator 18.0 | green: 19 extensions per SDK; exact `cp313` iOS wheel tags; platform, minimum OS, and Python framework load commands pass ABI audit | dependency prefixes `53530b9c...` and `e7dece0d...` |
 | NumPy application runtime | T3 | same `Blender.app` / iPhone 17 Pro + iPad Pro 13-inch (M5) | green: imports NumPy 2.3.4, sums an array, executes `numpy.linalg`, emits `BLENDER_IOS_NUMPY_READY=2.3.4`, and renders the desktop UI on both form factors | `/Volumes/BlenderBuild/blender-ios/artifacts/20260821-numpy/screenshots/` |
 | Python + NumPy unsigned IPA | T2/T3 | arm64 iPhoneOS 26.5 / iOS 18.0+ | green: 73 frameworks, zero loose `.so` or static development archives, recursive ABI/signature audit, deterministic archive and ZIP integrity | `/Volumes/BlenderBuild/blender-ios/artifacts/20260821-numpy/Blender-5.2.0-Python-NumPy-iPhone-iPad-unsigned.ipa` |
+| Extensions background worker | T0/T3 | thread transport tests + same app on iPhone 17 Pro and iPad Pro 13-inch (M5) | green: bidirectional queue, event, timeout, worker start/shutdown; Extensions downloader imports without `_multiprocessing`; both devices emit `BLENDER_IOS_HTTP_READY=thread` | `python3 -m unittest discover -s build_files/ios/tests`; simulator console acceptance |
 
 Only proven outcomes are recorded here. A download is not a built dependency, a
 compiled library is not accepted before ABI audit, and a linked app is not a

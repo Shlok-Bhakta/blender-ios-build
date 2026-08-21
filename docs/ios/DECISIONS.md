@@ -235,3 +235,21 @@ NumPy is initially configured without an external BLAS, with the minimum arm64
 CPU baseline and runtime dispatch disabled. This establishes functional ABI and
 runtime parity first; Apple Accelerate integration is a separate performance
 slice so it cannot obscure Python/import correctness.
+
+## ADR-0015: Replace process-only background services at the transport seam
+
+- Status: accepted
+- Date: 2026-08-21
+
+CPython deliberately omits `_multiprocessing` on iOS because applications
+cannot fork or spawn child executables. The port does not force-build an API
+that the operating system cannot honor. Instead, Blender's Extensions and
+remote asset-library downloader selects a thread context on `sys.platform ==
+"ios"`. Its connection, event, and worker objects implement the subset of the
+existing multiprocessing context used by `BackgroundDownloader`, so queueing,
+cancellation, progress reporting, callbacks, and shutdown retain one code path.
+
+Desktop platforms continue to use the existing spawn-based subprocess without
+behavioral changes. The iOS runtime smoke starts and stops the worker and the
+thread transport has host tests for duplex messages, blocking poll, event, and
+worker lifecycle.
