@@ -2,9 +2,10 @@
 
 This branch ports the official Blender iOS work onto the immutable Blender
 `v5.2.0` release. The simulator product reaches a responsive Workbench frame on
-iPhone and iPad. The device product builds as arm64 iPhoneOS and is handed off
-as one universal unsigned IPA; owner signing, provisioning, and physical-device
-launch remain outside this repository.
+iPhone and iPad, embeds CPython and its accepted native packages, and renders
+with portable CPU Cycles. The device product builds as arm64 iPhoneOS and is
+handed off as one universal unsigned IPA; owner signing, provisioning, and
+physical-device launch remain outside this repository.
 
 ## Ten-minute resume
 
@@ -64,9 +65,10 @@ unsuccessful architectural approaches and preserve the evidence.
 
 ## Unsigned device IPA
 
-The device lane uses `blender_ios_device_minimal.cmake`, an `iphoneos` sysroot,
-an arm64-only dependency prefix, and a build directory separate from the
-simulator. After `ninja install`, create the handoff artifact with:
+The production device lane uses `blender_ios_device.cmake`, an `iphoneos`
+sysroot, an arm64-only dependency prefix, and a build directory separate from
+the simulator. The `_minimal` profile remains a narrow diagnostic lane and is
+not the release handoff. After `ninja install`, create the artifact with:
 
 ```sh
 python3 build_files/ios/package_unsigned_ipa.py \
@@ -85,9 +87,11 @@ signatures. The owner must sign and provision the IPA before installing it.
 2. Finish GHOST/UIKit hardening: adopt the scene lifecycle, use scene rather
    than main-screen geometry, respond to dynamic resizing and scale changes,
    and close pointer, keyboard, Pencil, lifecycle, and file-workflow gaps.
-3. Complete P117 target Python and prove `bpy.app.version` from the bundled
-   interpreter. Python is the next major Blender feature dependency.
-4. Add optional dependency families individually under device smoke tests.
-5. Treat Cycles Metal as P540 feasibility work after the interactive core is
-   stable. Do not put OSL, USD, OpenVDB, or every desktop service on the first
-   usable-device critical path.
+3. Add the Cycles Metal render device as its own P540 build and render proof;
+   do not couple its failures to the accepted portable CPU lane.
+4. Add optional dependency families individually under simulator, device ABI,
+   and physical-device smoke tests. Prioritize Apple Accelerate for NumPy,
+   then Embree, OSL, USD, OpenVDB, and media integrations.
+5. Keep `makesrna.features` synchronized with each target profile when a
+   feature changes generated RNA. Rebuild host tools before diagnosing target
+   code when the manifest rejects a configure.

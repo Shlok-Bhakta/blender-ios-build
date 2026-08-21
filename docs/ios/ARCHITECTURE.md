@@ -51,6 +51,23 @@ transport behind the same queue/report interface. The Extensions and remote
 asset-library downloader uses a bidirectional in-process channel and daemon
 thread on iOS; desktop platforms retain the spawn-based process context.
 
+## Cycles render boundary
+
+The first production Cycles lane is the portable CPU renderer backed by a
+static arm64 iOS oneTBB archive. Simulator and device profiles enable the same
+feature set. They deliberately keep the Cycles Metal device, Embree, OSL, path
+guiding, and the TBB malloc proxy off until each has an independent build and
+runtime proof. Blender's Metal viewport remains enabled; it is a separate
+backend from the Cycles Metal render device.
+
+iOS arm64 builds do not run host-default x86 feature probes or inject SSE/AVX
+flags. Native half conversion includes the arm64 NEON declarations directly,
+while the initial CPU kernel remains the portable correctness baseline. An
+opt-in post-startup acceptance path waits until the desktop Cycles add-on is
+registered, discovers a CPU device, renders the startup scene at one sample,
+writes and validates an 8 by 8 PNG in the application sandbox, removes it, and
+restores the scene settings.
+
 ## Boot observability
 
 Runtime progress is an ordered stream:

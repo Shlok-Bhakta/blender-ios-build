@@ -13,6 +13,10 @@
 #include "util/types_int4.h"
 #include "util/types_uint4.h"
 
+#if !defined(__KERNEL_GPU__) && defined(__ARM_NEON)
+#  include <arm_neon.h>
+#endif
+
 #if !defined(__KERNEL_GPU__) && defined(__KERNEL_SSE2__)
 #  include "util/optimization.h"  // IWYU pragma: keep
 #  include "util/simd.h"          // IWYU pragma: keep
