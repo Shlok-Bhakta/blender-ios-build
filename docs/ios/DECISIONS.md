@@ -338,3 +338,31 @@ Metal sources and pass ABI/bundle audits. Simulator CPU render acceptance stays
 green. Runtime acceptance for Metal requires an owner-signed launch on real
 tier-2 iPhone and iPad hardware using the same real-PNG gate; until then, docs
 and artifact names call the build Metal-capable rather than Metal-proven.
+
+## ADR-0019: Give UIKit scene ownership to one Blender session
+
+- Status: accepted
+- Date: 2026-08-21
+
+The iOS bundle declares one `UIWindowScene` and starts the Blender callback from
+the scene connection instead of the application launch callback. Blender's
+GHOST system and window manager remain process-wide, so advertising multiple
+UIKit scenes would create two owners for global state. The manifest therefore
+sets `UIApplicationSupportsMultipleScenes` to false until Blender has an
+explicit multi-session design.
+
+`IOSSceneDelegate` handles foreground activation and scene-routed file URLs.
+The app delegate keeps security-scoped document URLs because those handles live
+for the process, not one callback. GHOST creates native windows with
+`initWithWindowScene:` and reads bounds and scale from the attached scene and
+screen. `UIScreen.mainScreen` is forbidden in the iOS GHOST implementation
+because it gives the wrong geometry for an iPad windowed scene or an external
+display.
+
+MetalKit drawable-size changes enter `GHOST_SystemIOS::handleWindowEvent` so
+Blender updates its drawing context before consuming the resize event. The
+same source compiles for iPhoneOS and the simulator. iPhone and iPad simulator
+launches retain the Python, NumPy, zstandard, threaded HTTP, and real CPU
+Cycles-render acceptance markers. A physical owner-signed pass must still
+cover rotation, background and foreground, external displays, and safe-area or
+scale changes.

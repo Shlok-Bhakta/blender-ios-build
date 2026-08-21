@@ -45,9 +45,18 @@ void WM_main_loop_body(bContext *C);
 
 int main_ios_callback(int argc, const char **argv);
 
+static UIWindowScene *g_active_window_scene = nil;
+static bool g_blender_started = false;
+
+UIWindowScene *GHOST_IOS_activeWindowScene()
+{
+  return g_active_window_scene;
+}
+
+static BOOL IOS_open_document_url(NSURL *url);
+
 @interface IOSAppDelegate : UIResponder <UIApplicationDelegate>
 
-@property(strong, nonatomic) UIWindow *window;
 @property(strong, nonatomic) NSMutableSet<NSURL *> *securityScopedURLs;
 
 @end
@@ -57,14 +66,9 @@ int main_ios_callback(int argc, const char **argv);
 - (BOOL)application:(UIApplication *)application
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+  (void)application;
+  (void)launchOptions;
   self.securityScopedURLs = [NSMutableSet set];
-  main_ios_callback(argc, argv);
-
-  NSURL *launchURL = launchOptions[UIApplicationLaunchOptionsURLKey];
-  if (launchURL != nil) {
-    [self application:application openURL:launchURL options:@{}];
-  }
-
   return YES;
 }
 
@@ -74,6 +78,22 @@ int main_ios_callback(int argc, const char **argv);
 {
   (void)application;
   (void)options;
+  return IOS_open_document_url(url);
+}
+
+- (void)applicationWillTerminate:(UIApplication *)application
+{
+  (void)application;
+  for (NSURL *url in self.securityScopedURLs) {
+    [url stopAccessingSecurityScopedResource];
+  }
+  [self.securityScopedURLs removeAllObjects];
+}
+
+@end
+
+static BOOL IOS_open_document_url(NSURL *url)
+{
   GHOST_SystemIOS *system = static_cast<GHOST_SystemIOS *>(GHOST_ISystem::getSystem());
   if (system == nullptr || !url.isFileURL) {
     return NO;
@@ -81,33 +101,67 @@ int main_ios_callback(int argc, const char **argv);
 
   /* Files provided by document providers can live outside the app sandbox.
    * Keep their security scope alive because Blender opens and may save them
-   * asynchronously after this delegate callback returns. */
+   * asynchronously after this callback returns. */
+  IOSAppDelegate *app_delegate = (IOSAppDelegate *)[UIApplication sharedApplication].delegate;
   const BOOL hasSecurityScope = [url startAccessingSecurityScopedResource];
   if (hasSecurityScope) {
-    [self.securityScopedURLs addObject:url];
+    [app_delegate.securityScopedURLs addObject:url];
   }
 
   const bool handled = system->handleOpenDocumentRequest(url.path);
   if (!handled && hasSecurityScope) {
     [url stopAccessingSecurityScopedResource];
-    [self.securityScopedURLs removeObject:url];
+    [app_delegate.securityScopedURLs removeObject:url];
   }
 
   return handled ? YES : NO;
 }
 
-- (void)applicationWillResignActive:(UIApplication *)application
+@interface IOSSceneDelegate : UIResponder <UIWindowSceneDelegate>
+@end
+
+@implementation IOSSceneDelegate
+
+- (void)scene:(UIScene *)scene
+    willConnectToSession:(UISceneSession *)session
+                options:(UISceneConnectionOptions *)connectionOptions
 {
-  (void)application;
+  (void)session;
+  if (![scene isKindOfClass:[UIWindowScene class]]) {
+    return;
+  }
+
+  g_active_window_scene = (UIWindowScene *)scene;
+  if (!g_blender_started) {
+    g_blender_started = true;
+    main_ios_callback(argc, argv);
+  }
+
+  for (UIOpenURLContext *context in connectionOptions.URLContexts) {
+    IOS_open_document_url(context.URL);
+  }
+}
+
+- (void)scene:(UIScene *)scene openURLContexts:(NSSet<UIOpenURLContext *> *)URLContexts
+{
+  (void)scene;
+  for (UIOpenURLContext *context in URLContexts) {
+    IOS_open_document_url(context.URL);
+  }
+}
+
+- (void)sceneWillResignActive:(UIScene *)scene
+{
+  (void)scene;
   GHOST_SystemIOS *system = static_cast<GHOST_SystemIOS *>(GHOST_ISystem::getSystem());
   if (system != nullptr && system->current_active_window_ != nullptr) {
     system->handleWindowEvent(GHOST_kEventWindowDeactivate, system->current_active_window_);
   }
 }
 
-- (void)applicationDidBecomeActive:(UIApplication *)application
+- (void)sceneDidBecomeActive:(UIScene *)scene
 {
-  (void)application;
+  (void)scene;
   GHOST_SystemIOS *system = static_cast<GHOST_SystemIOS *>(GHOST_ISystem::getSystem());
   if (system == nullptr) {
     return;
@@ -119,13 +173,11 @@ int main_ios_callback(int argc, const char **argv);
   }
 }
 
-- (void)applicationWillTerminate:(UIApplication *)application
+- (void)sceneDidDisconnect:(UIScene *)scene
 {
-  (void)application;
-  for (NSURL *url in self.securityScopedURLs) {
-    [url stopAccessingSecurityScopedResource];
+  if (scene == g_active_window_scene) {
+    g_active_window_scene = nil;
   }
-  [self.securityScopedURLs removeAllObjects];
 }
 
 @end
@@ -192,13 +244,14 @@ int main_ios_callback(int argc, const char **argv);
 
 - (void)mtkView:(nonnull MTKView *)view drawableSizeWillChange:(CGSize)size
 {
+  (void)view;
+  (void)size;
   GHOST_SystemIOS *system = static_cast<GHOST_SystemIOS *>(GHOST_ISystem::getSystem());
   if (!system->current_active_window_) {
     return;
   }
 
-  system->pushEvent(std::make_unique<GHOST_Event>(
-      system->getMilliSeconds(), GHOST_kEventWindowSize, system->current_active_window_));
+  system->handleWindowEvent(GHOST_kEventWindowSize, system->current_active_window_);
 }
 
 @end
@@ -467,8 +520,11 @@ uint8_t GHOST_SystemIOS::getNumDisplays() const
 
 void GHOST_SystemIOS::getMainDisplayDimensions(uint32_t &width, uint32_t &height) const
 {
-  CGRect screenRect = [[UIScreen mainScreen] bounds];
-  CGFloat scaling_fac = [UIScreen mainScreen].scale;
+  UIWindowScene *window_scene = GHOST_IOS_activeWindowScene();
+  GHOST_ASSERT(window_scene != nil, "An active UIWindowScene is required");
+  UIScreen *screen = window_scene.screen;
+  CGRect screenRect = screen.bounds;
+  CGFloat scaling_fac = screen.scale;
   CGFloat screenWidth = screenRect.size.width * scaling_fac;
   CGFloat screenHeight = screenRect.size.height * scaling_fac;
 
@@ -504,7 +560,9 @@ GHOST_IWindow *GHOST_SystemIOS::createWindow(const char *title,
   @autoreleasepool {
 
     /* Create window at native size. */
-    CGRect bounds = [[UIScreen mainScreen] bounds];
+    UIWindowScene *window_scene = GHOST_IOS_activeWindowScene();
+    GHOST_ASSERT(window_scene != nil, "An active UIWindowScene is required");
+    CGRect bounds = window_scene.coordinateSpace.bounds;
 
     window = (GHOST_IWindow *)new GHOST_WindowIOS(this,
                                                   title,

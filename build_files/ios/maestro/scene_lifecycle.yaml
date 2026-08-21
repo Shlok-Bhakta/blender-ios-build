@@ -1,0 +1,15 @@
+appId: org.blenderfoundation.blender.ios
+name: Blender iPad scene lifecycle
+---
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 15000
+- takeScreenshot: blender-scene-connected
+- startRecording: blender-ios-scene-lifecycle
+- tapOn:
+    point: 50%,61%
+- waitForAnimationToEnd:
+    timeout: 10000
+- takeScreenshot: blender-scene-viewport
+- stopRecording

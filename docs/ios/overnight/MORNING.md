@@ -1,7 +1,9 @@
 # Morning handoff — 2026-08-21
 
 Portable CPU Cycles remains green, and the production simulator and device
-profiles now compile the native Cycles Metal device. The same simulator
+profiles compile the native Cycles Metal device. UIKit now owns the app through
+a single window scene with scene-relative geometry and drawable resize events.
+The same simulator
 `Blender.app` runs the desktop UI on iPhone and iPad, imports CPython 3.13.13,
 NumPy 2.3.4, and zstandard 0.25.0, starts the thread-backed Extensions worker,
 and completes a real one-sample CPU Cycles render. The iPhoneOS product builds
@@ -25,7 +27,13 @@ and packages as one universal unsigned IPA for device families 1 and 2.
   Bundle policy, private-path, archive-integrity, and packaging checks pass.
 - The device and simulator products pass recursive ABI, bundle, and private-path
   audits after compiling the Metal sources.
-- All 56 tests under `build_files/ios/tests` pass.
+- `IOSSceneDelegate` owns startup, activation, and document-open delivery.
+  GHOST attaches windows to that scene and no longer reads the process main
+  screen for window geometry or scale.
+- The clean-state iPad Maestro flow connects the scene, enters Quick Setup, and
+  reaches the desktop cube viewport. Final iPhone and iPad launches retain all
+  Python and CPU Cycles markers after the lifecycle change.
+- All 61 tests under `build_files/ios/tests` pass.
 
 ## Evidence
 
@@ -34,9 +42,11 @@ and packages as one universal unsigned IPA for device families 1 and 2.
 - Unsigned-device build:
   `/Volumes/BlenderBuild/blender-ios/build/ios-device-python-5353b/bin/Blender.app`
 - Unsigned IPA:
-  `/Volumes/BlenderBuild/blender-ios/artifacts/20260821-cycles-metal-foundation/Blender-5.2.0-Python-NumPy-Zstandard-Cycles-CPU-Metal-capable-iPhone-iPad-unsigned.ipa`
+  `/Volumes/BlenderBuild/blender-ios/artifacts/20260821-scene-lifecycle/Blender-5.2.0-Python-NumPy-Zstandard-Cycles-CPU-Metal-capable-Scene-lifecycle-iPhone-iPad-unsigned.ipa`
 - IPA SHA-256:
-  `acb3bf5bdbf04fa6d399756a69c2e06ef5f8b4c243b53138bdd9efc9a0782851`
+  `0e7d4057ed1ac69127d57ce40f9187f4e13454a47024119b2f657a84f0e77c2e`
+- iPad acceptance recording:
+  `/Volumes/BlenderBuild/blender-ios/artifacts/20260821-scene-lifecycle/Blender-iPad-scene-lifecycle.mp4`
 
 ## Resume
 
@@ -48,10 +58,12 @@ and packages as one universal unsigned IPA for device families 1 and 2.
 3. Owner-sign the Metal-capable IPA and run
    `BLENDER_IOS_CYCLES_SMOKE=METAL` on tier-2 iPhone and iPad hardware. Preserve
    portable CPU Cycles as the fallback until both physical renders pass.
-4. Do not merge the historical `origin/ios` donor branch. Do not ad-hoc sign an
+4. On the same signed devices, rotate, background and foreground, resize the
+   iPad scene, and test external-display and safe-area or scale transitions.
+5. Do not merge the historical `origin/ios` donor branch. Do not ad-hoc sign an
    iPhoneOS handoff; the owner supplies distribution signing and provisioning.
-5. Physical-device installation and launch are the next owner-signed release
+6. Physical-device installation and launch are the next owner-signed release
    gate. Simulator success and an unsigned IPA do not prove that gate.
 
-Current source milestone: portable CPU Cycles runtime plus a tier-2-gated
-Cycles Metal build for iPhone and iPad profiles.
+Current source milestone: scene-owned UIKit startup and resize handling plus
+portable CPU Cycles runtime and a tier-2-gated Cycles Metal build.
