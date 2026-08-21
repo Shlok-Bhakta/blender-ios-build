@@ -66,6 +66,15 @@ scene's screen. No production GHOST path reads `UIScreen.mainScreen`. MetalKit
 drawable-size callbacks call the normal GHOST window-size handler, which
 updates Blender's drawing context before queuing the resize event.
 
+GHOST keeps its public coordinate contract in native pixels. UIKit conversion
+APIs use points, so the iOS window divides by the attached scene screen's scale,
+converts through `UIWindowScene.coordinateSpace`, and rounds the result back to
+native pixels. UIKit and GHOST both use a top-left origin on iOS, so this path
+does not inherit AppKit's Y-axis inversion. Cached pointer locations remain in
+client coordinates; cursor polling converts them back to scene screen
+coordinates. Programmatic cursor updates perform the inverse conversion before
+emitting a client-space event. UIKit cannot warp the physical system pointer.
+
 ## Cycles render boundary
 
 The accepted Cycles fallback is the portable CPU renderer backed by a static

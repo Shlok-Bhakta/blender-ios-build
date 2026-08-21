@@ -625,34 +625,38 @@ GHOST_TSuccess GHOST_SystemIOS::disposeContext(GHOST_IContext *context)
   return GHOST_kSuccess;
 }
 
-/**
- * \note : returns 0,0 on ios as no cursor is present.
- * TODO: If external mouse or trackpad is connected, we can query cursor position.
- */
+/** Return the last UIKit pointer location in scene screen coordinates. */
 GHOST_TSuccess GHOST_SystemIOS::getCursorPosition(int32_t &x, int32_t &y) const
 {
-  GHOST_IWindow *window = this->window_manager_->getActiveWindow();
+  GHOST_WindowIOS *window = static_cast<GHOST_WindowIOS *>(
+      this->window_manager_->getActiveWindow());
   if (!window) {
     return GHOST_kFailure;
   }
-  x = cursor_x_;
-  y = cursor_y_;
+  window->clientToScreen(cursor_x_, cursor_y_, x, y);
   return GHOST_kSuccess;
 }
 
-/**
- * \note : expect Cocoa screen coordinates
- * TODO: If external mouse or trackpad is connected, we can set cursor position.
- */
+/** Update software cursor state from scene screen coordinates.
+ * UIKit does not allow applications to warp the system pointer. */
 GHOST_TSuccess GHOST_SystemIOS::setCursorPosition(int32_t x, int32_t y)
 {
-  GHOST_WindowIOS *window = (GHOST_WindowIOS *)window_manager_->getActiveWindow();
-  if (!window)
+  GHOST_WindowIOS *window = static_cast<GHOST_WindowIOS *>(window_manager_->getActiveWindow());
+  if (!window) {
     return GHOST_kFailure;
+  }
 
-  updateCursorPositionState(x, y);
+  int32_t client_x;
+  int32_t client_y;
+  window->screenToClient(x, y, client_x, client_y);
+  updateCursorPositionState(client_x, client_y);
   pushEvent(std::make_unique<GHOST_EventCursor>(
-      getMilliSeconds(), GHOST_kEventCursorMove, window, x, y, window->getTabletData()));
+      getMilliSeconds(),
+      GHOST_kEventCursorMove,
+      window,
+      client_x,
+      client_y,
+      window->getTabletData()));
   outside_loop_event_processed_ = true;
 
   return GHOST_kSuccess;

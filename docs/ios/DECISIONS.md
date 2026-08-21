@@ -366,3 +366,28 @@ launches retain the Python, NumPy, zstandard, threaded HTTP, and real CPU
 Cycles-render acceptance markers. A physical owner-signed pass must still
 cover rotation, background and foreground, external displays, and safe-area or
 scale changes.
+
+## ADR-0020: Preserve native pixels across UIKit scene conversion
+
+- Status: accepted
+- Date: 2026-08-21
+
+GHOST's screen/client APIs and event payloads use native pixels, while UIKit
+coordinate-space conversion operates in logical points. Passing coordinates
+through unchanged only works when a window fills a display and begins at its
+origin; it misplaces pointer state in an iPadOS windowed scene or on an external
+display.
+
+The iOS window now converts native pixels to points using the attached
+`UIWindowScene` screen scale, maps through `UIWindowScene.coordinateSpace`, and
+rounds the result back to native pixels. The reverse path is symmetrical.
+There is no Y-axis flip because both UIKit and GHOST use top-left coordinates on
+iOS. Cached cursor state is client-relative, and polling converts it to scene
+screen coordinates. A requested cursor position is converted back to client
+space before its software event is queued; UIKit still does not permit an app
+to warp the physical pointer.
+
+The contract is protected by source tests and by successful arm64 device and
+simulator compilation. Final interaction acceptance still requires an
+owner-signed iPad with a trackpad, a nonzero-origin window, and an external
+display pass.

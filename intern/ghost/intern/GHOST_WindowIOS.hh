@@ -350,7 +350,7 @@ class GHOST_WindowIOS : public GHOST_Window {
   CGSize getLogicalWindowSize();
   /* This is the size of the window post-scaled */
   CGSize getNativeWindowSize();
-  float getWindowScaleFactor();
+  float getWindowScaleFactor() const;
 };
 
 #ifdef WITH_INPUT_IME
