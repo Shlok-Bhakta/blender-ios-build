@@ -53,3 +53,15 @@ class UniversalBundlePlistTests(unittest.TestCase):
     def test_declares_modern_launch_screen_for_full_device_viewport(self) -> None:
         self.assertIn("UILaunchScreen", self.plist)
         self.assertIsInstance(self.plist["UILaunchScreen"], dict)
+
+    def test_registers_blend_documents_for_in_place_editing(self) -> None:
+        self.assertTrue(self.plist["LSSupportsOpeningDocumentsInPlace"])
+        self.assertIn(
+            "org.blenderfoundation.blender.file",
+            self.plist["CFBundleDocumentTypes"][0]["LSItemContentTypes"],
+        )
+        self.assertEqual(
+            self.plist["UTExportedTypeDeclarations"][0]["UTTypeTagSpecification"]
+            ["public.filename-extension"],
+            ["blend"],
+        )

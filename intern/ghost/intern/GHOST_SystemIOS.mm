@@ -2,6 +2,10 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later */
 
+/* GHOST's cross-platform C++ interfaces intentionally do not carry Objective-C
+ * nullability qualifiers. UIKit makes Clang request them for every pointer. */
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+
 #include "GHOST_SystemIOS.hh"
 
 #include "GHOST_ContextIOS.hh"
@@ -20,9 +24,6 @@
 
 #import <MetalKit/MTKView.h>
 #import <UIKit/UIKit.h>
-
-#include <sys/sysctl.h>
-#include <sys/time.h>
 
 // #define IOS_SYSTEM_LOGGING
 #if defined(IOS_SYSTEM_LOGGING)
@@ -47,6 +48,7 @@ int main_ios_callback(int argc, const char **argv);
 @interface IOSAppDelegate : UIResponder <UIApplicationDelegate>
 
 @property(strong, nonatomic) UIWindow *window;
+@property(strong, nonatomic) NSMutableSet<NSURL *> *securityScopedURLs;
 
 @end
 
@@ -55,20 +57,75 @@ int main_ios_callback(int argc, const char **argv);
 - (BOOL)application:(UIApplication *)application
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+  self.securityScopedURLs = [NSMutableSet set];
   main_ios_callback(argc, argv);
+
+  NSURL *launchURL = launchOptions[UIApplicationLaunchOptionsURLKey];
+  if (launchURL != nil) {
+    [self application:application openURL:launchURL options:@{}];
+  }
 
   return YES;
 }
 
 - (BOOL)application:(UIApplication *)application
-            openURL:(NSURL *)url
-            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id> *)options
+             openURL:(NSURL *)url
+             options:(NSDictionary<UIApplicationOpenURLOptionsKey, id> *)options
 {
+  (void)application;
+  (void)options;
   GHOST_SystemIOS *system = static_cast<GHOST_SystemIOS *>(GHOST_ISystem::getSystem());
+  if (system == nullptr || !url.isFileURL) {
+    return NO;
+  }
 
-  system->handleOpenDocumentRequest(url.path);
+  /* Files provided by document providers can live outside the app sandbox.
+   * Keep their security scope alive because Blender opens and may save them
+   * asynchronously after this delegate callback returns. */
+  const BOOL hasSecurityScope = [url startAccessingSecurityScopedResource];
+  if (hasSecurityScope) {
+    [self.securityScopedURLs addObject:url];
+  }
 
-  return YES;
+  const bool handled = system->handleOpenDocumentRequest(url.path);
+  if (!handled && hasSecurityScope) {
+    [url stopAccessingSecurityScopedResource];
+    [self.securityScopedURLs removeObject:url];
+  }
+
+  return handled ? YES : NO;
+}
+
+- (void)applicationWillResignActive:(UIApplication *)application
+{
+  (void)application;
+  GHOST_SystemIOS *system = static_cast<GHOST_SystemIOS *>(GHOST_ISystem::getSystem());
+  if (system != nullptr && system->current_active_window_ != nullptr) {
+    system->handleWindowEvent(GHOST_kEventWindowDeactivate, system->current_active_window_);
+  }
+}
+
+- (void)applicationDidBecomeActive:(UIApplication *)application
+{
+  (void)application;
+  GHOST_SystemIOS *system = static_cast<GHOST_SystemIOS *>(GHOST_ISystem::getSystem());
+  if (system == nullptr) {
+    return;
+  }
+
+  system->handleApplicationBecomeActiveEvent();
+  if (system->current_active_window_ != nullptr) {
+    system->handleWindowEvent(GHOST_kEventWindowActivate, system->current_active_window_);
+  }
+}
+
+- (void)applicationWillTerminate:(UIApplication *)application
+{
+  (void)application;
+  for (NSURL *url in self.securityScopedURLs) {
+    [url stopAccessingSecurityScopedResource];
+  }
+  [self.securityScopedURLs removeAllObjects];
 }
 
 @end
@@ -163,29 +220,7 @@ void GHOST_iosfinalize(bContext *CTX)
 }
 }  // namespace blender
 
-#pragma mark KeyMap, mouse converters
-
-static GHOST_TButton convertButton(int button)
-{
-  switch (button) {
-    case 0:
-      return GHOST_kButtonMaskLeft;
-    case 1:
-      return GHOST_kButtonMaskRight;
-    case 2:
-      return GHOST_kButtonMaskMiddle;
-    case 3:
-      return GHOST_kButtonMaskButton4;
-    case 4:
-      return GHOST_kButtonMaskButton5;
-    case 5:
-      return GHOST_kButtonMaskButton6;
-    case 6:
-      return GHOST_kButtonMaskButton7;
-    default:
-      return GHOST_kButtonMaskLeft;
-  }
-}
+#pragma mark Key map
 
 /**
  * Converts Mac raw-key codes (same for Cocoa & Carbon)
@@ -398,37 +433,8 @@ extern "C" int GHOST_HACK_getFirstFile(char buf[FIRSTFILEBUFLG])
 
 GHOST_SystemIOS::GHOST_SystemIOS()
 {
-  int mib[2];
-  struct timeval boottime;
-  size_t len;
-  char *rstring = NULL;
-
-  modifier_mask_ = 0;
   outside_loop_event_processed_ = false;
-  need_delayed_application_become_active_event_processing_ = false;
-
-  /* TODO: sysctl likely should be replaced with another approach. */
-  mib[0] = CTL_KERN;
-  mib[1] = KERN_BOOTTIME;
-  len = sizeof(struct timeval);
-
-  sysctl(mib, 2, &boottime, &len, NULL, 0);
-  m_start_time = ((boottime.tv_sec * 1000) + (boottime.tv_usec / 1000));
-
-  /* Detect multi-touch track-pad. */
-  mib[0] = CTL_HW;
-  mib[1] = HW_MODEL;
-  sysctl(mib, 2, NULL, &len, NULL, 0);
-  rstring = (char *)malloc(len);
-  sysctl(mib, 2, rstring, &len, NULL, 0);
-
-  free(rstring);
-  rstring = NULL;
-
   ignore_window_sized_message_ = false;
-  ignore_momentum_scroll_ = false;
-  multi_touch_scroll_ = false;
-  last_warp_timestamp_ = 0;
 }
 
 GHOST_SystemIOS::~GHOST_SystemIOS() {}
@@ -449,10 +455,9 @@ GHOST_TSuccess GHOST_SystemIOS::init()
 
 uint64_t GHOST_SystemIOS::getMilliSeconds() const
 {
-  struct timeval currentTime;
-
-  gettimeofday(&currentTime, NULL);
-  return ((currentTime.tv_sec * 1000) + (currentTime.tv_usec / 1000) - m_start_time);
+  /* Match UIKit event timestamps with a monotonic clock. Wall-clock changes
+   * must never make Blender event time jump backwards. */
+  return uint64_t([NSProcessInfo processInfo].systemUptime * 1000.0);
 }
 
 uint8_t GHOST_SystemIOS::getNumDisplays() const
@@ -566,14 +571,14 @@ GHOST_TSuccess GHOST_SystemIOS::disposeContext(GHOST_IContext *context)
  * \note : returns 0,0 on ios as no cursor is present.
  * TODO: If external mouse or trackpad is connected, we can query cursor position.
  */
-GHOST_TSuccess GHOST_SystemIOS::getCursorPosition(int32_t & /*x*/, int32_t & /*y*/) const
+GHOST_TSuccess GHOST_SystemIOS::getCursorPosition(int32_t &x, int32_t &y) const
 {
-  /* iOS Passthrough. */
   GHOST_IWindow *window = this->window_manager_->getActiveWindow();
   if (!window) {
     return GHOST_kFailure;
   }
-  // GHOST_ASSERT(FALSE,"GHOST_SystemIOS::getCursorPosition unsupported on iOS");
+  x = cursor_x_;
+  y = cursor_y_;
   return GHOST_kSuccess;
 }
 
@@ -587,6 +592,7 @@ GHOST_TSuccess GHOST_SystemIOS::setCursorPosition(int32_t x, int32_t y)
   if (!window)
     return GHOST_kFailure;
 
+  updateCursorPositionState(x, y);
   pushEvent(std::make_unique<GHOST_EventCursor>(
       getMilliSeconds(), GHOST_kEventCursorMove, window, x, y, window->getTabletData()));
   outside_loop_event_processed_ = true;
@@ -594,25 +600,20 @@ GHOST_TSuccess GHOST_SystemIOS::setCursorPosition(int32_t x, int32_t y)
   return GHOST_kSuccess;
 }
 
-GHOST_TSuccess GHOST_SystemIOS::setMouseCursorPosition(int32_t /*x*/, int32_t /*y*/)
+GHOST_TSuccess GHOST_SystemIOS::setMouseCursorPosition(int32_t x, int32_t y)
 {
-  /* iOS Passthrough. */
-  GHOST_WindowIOS *window = (GHOST_WindowIOS *)window_manager_->getActiveWindow();
-  if (!window)
-    return GHOST_kFailure;
-  GHOST_ASSERT(FALSE, "GHOST_SystemIOS::setMouseCursorPosition unsupported on iOS");
+  return setCursorPosition(x, y);
+}
+
+GHOST_TSuccess GHOST_SystemIOS::getModifierKeys(GHOST_ModifierKeys &keys) const
+{
+  keys = modifier_keys_;
   return GHOST_kSuccess;
 }
 
-GHOST_TSuccess GHOST_SystemIOS::getModifierKeys(GHOST_ModifierKeys & /*keys*/) const
+GHOST_TSuccess GHOST_SystemIOS::getButtons(GHOST_Buttons &buttons) const
 {
-  /* iOS Passthrough. */
-  return GHOST_kSuccess;
-}
-
-GHOST_TSuccess GHOST_SystemIOS::getButtons(GHOST_Buttons & /*buttons*/) const
-{
-  /* iOS Passthrough. */
+  buttons = buttons_;
   return GHOST_kSuccess;
 }
 GHOST_TCapabilityFlag GHOST_SystemIOS::getCapabilities() const
@@ -627,17 +628,18 @@ GHOST_TCapabilityFlag GHOST_SystemIOS::getCapabilities() const
  */
 bool GHOST_SystemIOS::processEvents(bool /*waitForEvent*/)
 {
-  /*
-   Touch screen events are being processed through the UIView interactions
-   We may need some additional code here to handle key presses if an external keybaord
-   is attached
-   */
-  return true;
+  /* UIKit dispatches input on the application thread before Blender polls the
+   * GHOST queue. Consume the edge-triggered flag instead of reporting a fake
+   * event every frame, which otherwise keeps idle devices needlessly busy. */
+  const bool processed = outside_loop_event_processed_;
+  outside_loop_event_processed_ = false;
+  return processed;
 }
 
 GHOST_TSuccess GHOST_SystemIOS::handleApplicationBecomeActiveEvent()
 {
-  modifier_mask_ = 0;
+  modifier_keys_.clear();
+  buttons_.clear();
 
   outside_loop_event_processed_ = true;
   return GHOST_kSuccess;
@@ -657,6 +659,31 @@ bool GHOST_SystemIOS::hasDialogWindow()
 void GHOST_SystemIOS::notifyExternalEventProcessed()
 {
   outside_loop_event_processed_ = true;
+}
+
+GHOST_TSuccess GHOST_SystemIOS::pushEvent(std::unique_ptr<const GHOST_IEvent> event)
+{
+  outside_loop_event_processed_ = true;
+  return GHOST_System::pushEvent(std::move(event));
+}
+
+void GHOST_SystemIOS::updateCursorPositionState(const int32_t x, const int32_t y)
+{
+  cursor_x_ = x;
+  cursor_y_ = y;
+  notifyExternalEventProcessed();
+}
+
+void GHOST_SystemIOS::updateButtonState(const GHOST_TButton button, const bool down)
+{
+  buttons_.set(button, down);
+  notifyExternalEventProcessed();
+}
+
+void GHOST_SystemIOS::updateModifierState(const GHOST_TModifierKey modifier, const bool down)
+{
+  modifier_keys_.set(modifier, down);
+  notifyExternalEventProcessed();
 }
 
 GHOST_TSuccess GHOST_SystemIOS::handleWindowEvent(GHOST_TEventType eventType,
@@ -714,6 +741,7 @@ GHOST_TSuccess GHOST_SystemIOS::handleWindowEvent(GHOST_TEventType eventType,
         pushEvent(std::make_unique<GHOST_Event>(
             getMilliSeconds(), GHOST_kEventNativeResolutionChange, window));
       }
+      break;
 
     default:
       return GHOST_kFailure;
@@ -930,43 +958,6 @@ bool GHOST_SystemIOS::handleOpenDocumentRequest(void *filepathStr)
   return YES;
 }
 
-/* None of this currently required for iOS */
-#if 0
-GHOST_TSuccess GHOST_SystemIOS::handleTabletEvent(void * /*eventPtr*/, short /*eventType*/)
-{
-  GHOST_WindowIOS *window = (GHOST_WindowIOS *)window_manager_->getActiveWindow();
-  if (!window)
-    return GHOST_kFailure;
-
-  return GHOST_kSuccess;
-}
-
-bool GHOST_SystemIOS::handleTabletEvent(void * /*eventPtr*/)
-{
-  /* TODO: Handle events. */
-  GHOST_ASSERT(FALSE,"GHOST_SystemIOS::handleTabletEvent unsupported on iOS");
-  return true;
-}
-
-GHOST_TSuccess GHOST_SystemIOS::handleMouseEvent(void * /*eventPtr*/)
-{
-  /* TODO: Handle events (here or elsewhere).
-   * NOTE: "Touch" events already handled in other code paths above. */
-  GHOST_ASSERT(FALSE,"GHOST_SystemIOS::handleMouseEvent unsupported on iOS");
-  return GHOST_kSuccess;
-}
-
-#  include <Metal/Metal.h>
-bool frame_capture = false;
-extern id<MTLDevice> extern_device;
-GHOST_TSuccess GHOST_SystemIOS::handleKeyEvent(void * /*eventPtr*/)
-{
-  /* TODO: Handle events (here or elsewhere). */
-  GHOST_ASSERT(FALSE,"GHOST_SystemIOS::handleKeyEvent unsupported on iOS");
-  return GHOST_kSuccess;
-}
-#endif
-
 #pragma mark Clipboard get/set
 
 char *GHOST_SystemIOS::getClipboard(bool /*selection*/) const
@@ -1009,6 +1000,5 @@ void GHOST_SystemIOS::putClipboard(const char *buffer, bool selection) const
 
 GHOST_IWindow *GHOST_SystemIOS::getWindowUnderCursor(int32_t /*x*/, int32_t /*y*/)
 {
-  GHOST_ASSERT(FALSE, "GHOST_SystemIOS::getWindowUnderCursor unsupported on iOS");
-  return nullptr;
+  return window_manager_->getActiveWindow();
 }
