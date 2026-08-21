@@ -19,7 +19,7 @@ import sys
 from typing import Sequence
 import zipfile
 
-from audit import Finding, audit_abi, audit_bundle
+from audit import Finding, audit_abi, audit_bundle, macho_candidates
 
 
 EXPECTED_BUNDLE_ID = "org.blenderfoundation.blender.ios"
@@ -77,6 +77,23 @@ def signature_findings(executable: Path) -> list[Finding]:
     return []
 
 
+def embedded_binary_findings(bundle: Path, main_executable: Path) -> list[Finding]:
+    """Audit every executable image, not only the app's primary executable."""
+    findings = audit_abi(bundle, "ios-device", "arm64")
+    frameworks = bundle / "Frameworks"
+    for binary in macho_candidates(bundle):
+        if binary != main_executable and frameworks not in binary.parents:
+            findings.append(
+                Finding(
+                    "IPA-MACHO-LOCATION",
+                    "embedded Mach-O binaries must be contained in Blender.app/Frameworks",
+                    str(binary),
+                )
+            )
+        findings.extend(signature_findings(binary))
+    return findings
+
+
 def archive_bundle(bundle: Path, output: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary_output = output.with_name(f".{output.name}.tmp")
@@ -123,8 +140,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         executable_name = ""
     if executable_name:
         executable = bundle / str(executable_name)
-        findings.extend(audit_abi(executable, "ios-device", "arm64"))
-        findings.extend(signature_findings(executable))
+        findings.extend(embedded_binary_findings(bundle, executable))
 
     if findings:
         print(

@@ -59,9 +59,34 @@ if(WITH_APPLE_CROSSPLATFORM)
   set(CMAKE_PREFIX_PATH ${LIB_SUBDIRS})
   set(CMAKE_FIND_FRAMEWORK NEVER)
 
-  # Python remains excluded from the application, but source generators are
-  # native scripts and still require a host-side interpreter at build time.
-  find_program(PYTHON_EXECUTABLE NAMES python3 REQUIRED)
+  # Source generators execute on the build host even when the target embeds
+  # Python. The target library and standard library always come from LIBDIR.
+  find_program(PYTHON_EXECUTABLE NAMES python3.13 REQUIRED)
+
+  include("${CMAKE_SOURCE_DIR}/build_files/cmake/host_tool_features.cmake")
+  blender_validate_host_tool_features("${IOS_HOST_TOOLS_DIR}/makesrna.features")
+
+  if(WITH_PYTHON)
+    set(PYTHON_VERSION "3.13")
+    set(PYTHON_INCLUDE_DIR "${LIBDIR}/python/Python.framework/Headers")
+    set(PYTHON_INCLUDE_CONFIG_DIR "${PYTHON_INCLUDE_DIR}")
+    set(PYTHON_INCLUDE_DIRS "${PYTHON_INCLUDE_DIR}")
+    set(PYTHON_LIBRARY "${LIBDIR}/python/Python.framework/Python")
+    set(PYTHON_LIBRARIES "${PYTHON_LIBRARY}")
+    set(PYTHON_LIBPATH "${LIBDIR}/python/lib")
+    set(PYTHON_SITE_PACKAGES "${PYTHON_LIBPATH}/python${PYTHON_VERSION}/site-packages")
+    set(PYTHON_LINKFLAGS "")
+    foreach(_python_required_path
+        "${PYTHON_INCLUDE_DIR}/Python.h"
+        "${PYTHON_LIBRARY}"
+        "${PYTHON_LIBPATH}/python${PYTHON_VERSION}/os.py"
+      )
+      if(NOT EXISTS "${_python_required_path}")
+        message(FATAL_ERROR "Incomplete iOS Python dependency: ${_python_required_path}")
+      endif()
+    endforeach()
+    unset(_python_required_path)
+  endif()
 
   set(ZLIB_ROOT "${LIBDIR}/zlib")
   find_package(ZLIB REQUIRED)
@@ -133,6 +158,9 @@ if(WITH_APPLE_CROSSPLATFORM)
 -fexceptions -framework Foundation -framework UIKit -framework CoreGraphics \
 -framework Metal -framework MetalKit -framework QuartzCore -framework GameController"
   )
+  if(WITH_PYTHON)
+    string(APPEND PLATFORM_LINKFLAGS " -Wl,-rpath,@executable_path/Frameworks")
+  endif()
   set(EXETYPE MACOSX_BUNDLE)
   set(CMAKE_C_FLAGS_DEBUG "-g")
   set(CMAKE_CXX_FLAGS_DEBUG "-g")

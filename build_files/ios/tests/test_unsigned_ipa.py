@@ -119,6 +119,37 @@ class UnsignedIpaTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("SIGN-BINARY", result.stdout + result.stderr)
 
+    def test_rejects_simulator_binary_nested_in_framework(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bundle = self.make_bundle(root)
+            framework = bundle / "Frameworks/Python.framework"
+            framework.mkdir(parents=True)
+            simulator_root = root / "simulator"
+            simulator_root.mkdir()
+            simulator_bundle = self.make_bundle(simulator_root, sdk="iphonesimulator")
+            (framework / "Python").write_bytes((simulator_bundle / "Blender").read_bytes())
+            (framework / "Python").chmod(0o755)
+
+            result = self.run_packager(bundle, root / "Blender-unsigned.ipa")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("ABI-PLATFORM", result.stdout + result.stderr)
+            self.assertIn("Python.framework/Python", result.stdout + result.stderr)
+
+    def test_rejects_loose_macho_in_assets(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bundle = self.make_bundle(root)
+            loose_binary = bundle / "Assets/extension.so"
+            loose_binary.write_bytes((bundle / "Blender").read_bytes())
+            loose_binary.chmod(0o755)
+
+            result = self.run_packager(bundle, root / "Blender-unsigned.ipa")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("IPA-MACHO-LOCATION", result.stdout + result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

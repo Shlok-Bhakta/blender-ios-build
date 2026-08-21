@@ -95,7 +95,74 @@ if(WIN32)
     external_zlib
   )
 else()
-  if(APPLE)
+  if(WITH_APPLE_CROSSPLATFORM)
+    if(NOT BLENDER_IOS_BUILD_PYTHON OR NOT EXISTS "${BLENDER_IOS_BUILD_PYTHON}")
+      message(FATAL_ERROR
+        "iOS Python requires BLENDER_IOS_BUILD_PYTHON to name a host Python ${PYTHON_SHORT_VERSION} executable"
+      )
+    endif()
+    execute_process(
+      COMMAND "${BLENDER_IOS_BUILD_PYTHON}" -c
+        "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
+      RESULT_VARIABLE _python_build_version_result
+      OUTPUT_VARIABLE _python_build_version
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(NOT _python_build_version_result EQUAL 0 OR
+       NOT _python_build_version STREQUAL PYTHON_SHORT_VERSION)
+      message(FATAL_ERROR
+        "BLENDER_IOS_BUILD_PYTHON must be Python ${PYTHON_SHORT_VERSION}; found '${_python_build_version}'"
+      )
+    endif()
+    unset(_python_build_version)
+    unset(_python_build_version_result)
+
+    # CPython 3.13 has upstream iOS support. Keep its compiler wrappers in
+    # front of PATH instead of maintaining Blender-specific source patches.
+    set(_python_source_dir "${BUILD_DIR}/python/src/external_python")
+    set(_python_framework_root "${LIBDIR}/python")
+    if(APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
+      set(_python_host "arm64-apple-ios${CMAKE_OSX_DEPLOYMENT_TARGET}-simulator")
+      set(_python_framework_platform "iPhoneSimulator")
+    else()
+      set(_python_host "arm64-apple-ios${CMAKE_OSX_DEPLOYMENT_TARGET}")
+      set(_python_framework_platform "iPhoneOS")
+    endif()
+
+    set(PYTHON_BINARY "${BLENDER_IOS_BUILD_PYTHON}")
+    set(PYTHON_CONFIGURE_ENV
+      export PATH=${_python_source_dir}/iOS/Resources/bin:$ENV{PATH} &&
+      export IPHONEOS_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET} &&
+      # The simulator linker exposes these macOS symbols even though the iOS
+      # SDK intentionally omits their declarations. Cache the target result so
+      # configure does not produce a pyconfig.h that cannot compile for iOS.
+      export ac_cv_func_dup3=no &&
+      export ac_cv_func_pipe2=no
+    )
+    set(PYTHON_CONFIGURE_EXTRA_ENV
+      export BZIP2_CFLAGS=-I${LIBDIR}/bzip2/include &&
+      export BZIP2_LIBS=${LIBDIR}/bzip2/lib/${LIBPREFIX}bz2${LIBEXT} &&
+      export LIBLZMA_CFLAGS=-I${LIBDIR}/lzma/include &&
+      export LIBLZMA_LIBS=${LIBDIR}/lzma/lib/${LIBPREFIX}lzma${LIBEXT} &&
+      export LIBFFI_CFLAGS=-I${LIBDIR}/ffi/include &&
+      export LIBFFI_LIBS=${LIBDIR}/ffi/lib/${LIBPREFIX}ffi${LIBEXT} &&
+      export LIBSQLITE3_CFLAGS=-I${LIBDIR}/sqlite/include &&
+      export LIBSQLITE3_LIBS=${LIBDIR}/sqlite/lib/${LIBPREFIX}sqlite3${LIBEXT} &&
+      export ZLIB_CFLAGS=-I${LIBDIR}/zlib/include &&
+      export ZLIB_LIBS=${LIBDIR}/zlib/lib/${ZLIB_LIBRARY}
+    )
+    set(PYTHON_CONFIGURE_EXTRA_ARGS
+      --enable-framework=${_python_framework_root}
+      --host=${_python_host}
+      --build=arm64-apple-darwin
+      --with-build-python=${BLENDER_IOS_BUILD_PYTHON}
+      --with-openssl=${LIBDIR}/ssl
+      --with-pkg-config=no
+      --without-ensurepip
+      --without-system-libmpdec
+      --disable-test-modules
+    )
+  elseif(APPLE)
     # Disable functions that can be in 10.13 sdk but aren't available on 10.9 target.
     #
     # Disable libintl (gettext library) as it might come from Homebrew, which makes
@@ -124,47 +191,49 @@ else()
   else()
     set(PYTHON_CONFIGURE_ENV ${CONFIGURE_ENV})
   endif()
-  set(PYTHON_BINARY ${LIBDIR}/python/bin/python${PYTHON_SHORT_VERSION})
+  if(NOT WITH_APPLE_CROSSPLATFORM)
+    set(PYTHON_BINARY ${LIBDIR}/python/bin/python${PYTHON_SHORT_VERSION})
 
-  set(PYTHON_CFLAGS "${PLATFORM_CFLAGS} ")
-  # We need to add the zlib static lib path here as even if python itself links the static zlib correctly,
-  # the "_sqlite" cpython library needs to know where to get it from.
-  set(PYTHON_LDFLAGS "-L${LIBDIR}/zlib/lib ${PLATFORM_LDFLAGS} ")
+    set(PYTHON_CFLAGS "${PLATFORM_CFLAGS} ")
+    # We need to add the zlib static lib path here as even if python itself links the static zlib correctly,
+    # the "_sqlite" cpython library needs to know where to get it from.
+    set(PYTHON_LDFLAGS "-L${LIBDIR}/zlib/lib ${PLATFORM_LDFLAGS} ")
 
-  set(PYTHON_CONFIGURE_EXTRA_ARGS
-    # Using pkg-config is supported for most libs besides bzip2, so make sure it is on.
-    --with-pkg-config=yes
-    --enable-loadable-sqlite-extensions
-    # Don't build or ship the python test suite
-    --disable-test-modules
-  )
+    set(PYTHON_CONFIGURE_EXTRA_ARGS
+      # Using pkg-config is supported for most libs besides bzip2, so make sure it is on.
+      --with-pkg-config=yes
+      --enable-loadable-sqlite-extensions
+      # Don't build or ship the python test suite
+      --disable-test-modules
+    )
 
-  set(PYTHON_CONFIGURE_PKG_CONFIG_PATH "\
+    set(PYTHON_CONFIGURE_PKG_CONFIG_PATH "\
 ${LIBDIR}/ffi/lib/pkgconfig:${LIBDIR}/sqlite/lib/pkgconfig:${LIBDIR}/ssl/lib/pkgconfig:\
 ${LIBDIR}/ssl/lib64/pkgconfig:${LIBDIR}/lzma/lib/pkgconfig:${LIBDIR}/zlib/share/pkgconfig")
 
-  set(PYTHON_CONFIGURE_EXTRA_ENV
-    export CFLAGS=${PYTHON_CFLAGS} &&
-    export CPPFLAGS=${PYTHON_CFLAGS} &&
-    export LDFLAGS=${PYTHON_LDFLAGS} &&
+    set(PYTHON_CONFIGURE_EXTRA_ENV
+      export CFLAGS=${PYTHON_CFLAGS} &&
+      export CPPFLAGS=${PYTHON_CFLAGS} &&
+      export LDFLAGS=${PYTHON_LDFLAGS} &&
 
-    # Use pkg-config for libraries that support it, and ensure that it used static libraries.
-    export PKG_CONFIG=pkg-config\ --static
-    export PKG_CONFIG_PATH=${PYTHON_CONFIGURE_PKG_CONFIG_PATH}
+      # Use pkg-config for libraries that support it, and ensure that it used static libraries.
+      export PKG_CONFIG=pkg-config\ --static
+      export PKG_CONFIG_PATH=${PYTHON_CONFIGURE_PKG_CONFIG_PATH}
 
-    # Use flags documented by ./configure for other libs.
-    export BZIP2_CFLAGS=-I${LIBDIR}/bzip2/include
-    export BZIP2_LIBS=${LIBDIR}/bzip2/lib/${LIBPREFIX}bz2${LIBEXT}
+      # Use flags documented by ./configure for other libs.
+      export BZIP2_CFLAGS=-I${LIBDIR}/bzip2/include
+      export BZIP2_LIBS=${LIBDIR}/bzip2/lib/${LIBPREFIX}bz2${LIBEXT}
 
-    # Prevent Python configuration script from enabling modules that might be enabled due to the
-    # presence of system-wide libraries.
-    # There is no official way of explicitly disabling modules via command line arguments to the
-    # configuration script, so instead use CFLAGS that are passed to the try-compile utilities that
-    # probe libraries to ensure the test program does not compile.
-    export TCLTK_CFLAGS="--non-existing-flag"
-  )
+      # Prevent Python configuration script from enabling modules that might be enabled due to the
+      # presence of system-wide libraries.
+      # There is no official way of explicitly disabling modules via command line arguments to the
+      # configuration script, so instead use CFLAGS that are passed to the try-compile utilities that
+      # probe libraries to ensure the test program does not compile.
+      export TCLTK_CFLAGS="--non-existing-flag"
+    )
+  endif()
 
-  if(APPLE)
+  if(APPLE AND NOT WITH_APPLE_CROSSPLATFORM)
     # Prevent linking against Homebrew's libmpdec if it exists.
     set(PYTHON_CONFIGURE_EXTRA_ARGS
       ${PYTHON_CONFIGURE_EXTRA_ARGS}
@@ -248,7 +317,29 @@ if(WIN32)
     )
   endif()
 else()
-  harvest(external_python python/bin python/bin "python${PYTHON_SHORT_VERSION}")
-  harvest(external_python python/include python/include "*h")
-  harvest(external_python python/lib python/lib "*")
+  if(WITH_APPLE_CROSSPLATFORM)
+    ExternalProject_Add_Step(external_python harvest_ios
+      # CPython's generated plist takes its long version from the host build
+      # interpreter and hard-codes iPhoneOS. Normalize both for this target.
+      COMMAND /usr/bin/plutil -replace CFBundleShortVersionString
+        -string ${PYTHON_SHORT_VERSION}
+        ${LIBDIR}/python/Python.framework/Info.plist
+      COMMAND /usr/bin/plutil -replace CFBundleLongVersionString
+        -string "${PYTHON_VERSION}, (c) 2001-2024 Python Software Foundation."
+        ${LIBDIR}/python/Python.framework/Info.plist
+      COMMAND /usr/bin/plutil -remove CFBundleSupportedPlatforms
+        ${LIBDIR}/python/Python.framework/Info.plist
+      COMMAND /usr/bin/plutil -insert CFBundleSupportedPlatforms
+        -json "[\"${_python_framework_platform}\"]"
+        ${LIBDIR}/python/Python.framework/Info.plist
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${LIBDIR}/python
+        ${HARVEST_TARGET}/python
+      DEPENDEES install
+    )
+  else()
+    harvest(external_python python/bin python/bin "python${PYTHON_SHORT_VERSION}")
+    harvest(external_python python/include python/include "*h")
+    harvest(external_python python/lib python/lib "*")
+  endif()
 endif()
