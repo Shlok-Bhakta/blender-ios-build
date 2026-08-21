@@ -279,3 +279,35 @@ third-party prose and may contain upstream documentation examples, so those
 description files are excluded from build-path findings under a regression
 test. Executable, configuration, manifest, and other package content remains
 in scope.
+
+## ADR-0017: Establish Cycles with the portable CPU renderer first
+
+- Status: accepted
+- Date: 2026-08-21
+
+Cycles enters the iOS product through one shared simulator/device profile: the
+portable CPU renderer and static oneTBB, without the TBB malloc proxy. The
+Cycles Metal device, Embree, OSL, and path guiding stay off until separate
+slices can prove their target dependencies and runtime behavior. This keeps
+the first failure boundary at CPU correctness and does not change Blender's
+already-enabled Metal viewport backend.
+
+Apple cross-platform configuration discovers oneTBB through its exported CMake
+target because the static iOS package exposes a configuration-specific archive
+rather than the legacy library variable used by desktop builds. The workaround
+is scoped to iOS; desktop link behavior remains unchanged. iOS arm64 also skips
+host-default x86 ISA probes and directly includes NEON declarations needed by
+the scalar CPU kernel's native half conversion.
+
+oneTBB upstream discourages static distribution, but this lane links exactly
+one audited archive into the main executable and does not load another TBB
+copy. That is safer for the current unsigned iOS handoff than leaving a raw
+dylib in the bundle. A future dynamic TBB experiment must package it as a
+signed framework and repeat both ABI and render acceptance before replacing
+this boundary.
+
+Acceptance is not an import-only probe. After startup scripts register the
+desktop Cycles add-on, the iOS test path requires a CPU device, performs a
+one-sample 8 by 8 render, validates a written PNG in the sandbox, removes the
+probe output, and restores the scene settings. The same signed simulator app
+passes this render on iPhone and iPad.

@@ -128,6 +128,9 @@ CLG_LOGREF_DECLARE_GLOBAL(WM_LOG_MSGBUS_SUB, "msgbus.sub");
 static CLG_LogRef LOG_BLEND = {"blend"};
 
 static void wm_init_scripts_extensions_once(bContext *C);
+#if defined(WITH_PYTHON) && defined(WITH_APPLE_CROSSPLATFORM)
+static void wm_init_ios_cycles_smoke(bContext *C);
+#endif
 
 static bool wm_start_with_console = false;
 
@@ -370,6 +373,10 @@ void WM_init(bContext *C, int argc, const char **argv)
   WM_keyconfig_update_on_startup(static_cast<wmWindowManager *>(G_MAIN->wm.first));
 
   wm_homefile_read_post(C, params_file_read_post);
+
+#if defined(WITH_PYTHON) && defined(WITH_APPLE_CROSSPLATFORM)
+  wm_init_ios_cycles_smoke(C);
+#endif
 }
 
 static bool wm_init_splash_show_on_startup_check()
@@ -427,6 +434,68 @@ static void wm_init_scripts_extensions_once(bContext *C)
   UNUSED_VARS(C);
 #endif
 }
+
+#if defined(WITH_PYTHON) && defined(WITH_APPLE_CROSSPLATFORM)
+static void wm_init_ios_cycles_smoke(bContext *C)
+{
+  if (BLI_getenv("BLENDER_IOS_CYCLES_SMOKE") == nullptr) {
+    return;
+  }
+
+  /* Run only after startup scripts have registered the Cycles render engine. This exercises the
+   * embedded module, CPU-device discovery, scene synchronization, TBB task runtime, CPU kernels,
+   * and image output rather than treating a successful import as render acceptance. */
+  const bool ok = BPY_run_string_exec(
+      C,
+      nullptr,
+      "import bpy, _cycles, os, tempfile\n"
+      "_ios_cycles_devices = _cycles.available_devices('NONE')\n"
+      "assert any(device[1] == 'CPU' for device in _ios_cycles_devices), _ios_cycles_devices\n"
+      "_ios_cycles_scene = bpy.context.scene\n"
+      "_ios_cycles_previous = (\n"
+      "    _ios_cycles_scene.render.engine,\n"
+      "    _ios_cycles_scene.render.resolution_x,\n"
+      "    _ios_cycles_scene.render.resolution_y,\n"
+      "    _ios_cycles_scene.render.resolution_percentage,\n"
+      "    _ios_cycles_scene.render.filepath,\n"
+      "    _ios_cycles_scene.render.image_settings.file_format,\n"
+      "    _ios_cycles_scene.cycles.device,\n"
+      "    _ios_cycles_scene.cycles.samples,\n"
+      "    _ios_cycles_scene.cycles.use_adaptive_sampling,\n"
+      "    _ios_cycles_scene.cycles.use_denoising,\n"
+      ")\n"
+      "_ios_cycles_path = os.path.join(tempfile.gettempdir(), 'blender-ios-cycles-smoke.png')\n"
+      "try:\n"
+      "    _ios_cycles_scene.render.engine = 'CYCLES'\n"
+      "    _ios_cycles_scene.cycles.device = 'CPU'\n"
+      "    _ios_cycles_scene.cycles.samples = 1\n"
+      "    _ios_cycles_scene.cycles.use_adaptive_sampling = False\n"
+      "    _ios_cycles_scene.cycles.use_denoising = False\n"
+      "    _ios_cycles_scene.render.resolution_x = 8\n"
+      "    _ios_cycles_scene.render.resolution_y = 8\n"
+      "    _ios_cycles_scene.render.resolution_percentage = 100\n"
+      "    _ios_cycles_scene.render.filepath = _ios_cycles_path\n"
+      "    _ios_cycles_scene.render.image_settings.file_format = 'PNG'\n"
+      "    assert bpy.ops.render.render(write_still=True) == {'FINISHED'}\n"
+      "    assert os.path.getsize(_ios_cycles_path) > 64\n"
+      "finally:\n"
+      "    if os.path.exists(_ios_cycles_path):\n"
+      "        os.remove(_ios_cycles_path)\n"
+      "    (_ios_cycles_scene.render.engine,\n"
+      "     _ios_cycles_scene.render.resolution_x,\n"
+      "     _ios_cycles_scene.render.resolution_y,\n"
+      "     _ios_cycles_scene.render.resolution_percentage,\n"
+      "     _ios_cycles_scene.render.filepath,\n"
+      "     _ios_cycles_scene.render.image_settings.file_format,\n"
+      "     _ios_cycles_scene.cycles.device,\n"
+      "     _ios_cycles_scene.cycles.samples,\n"
+      "     _ios_cycles_scene.cycles.use_adaptive_sampling,\n"
+      "     _ios_cycles_scene.cycles.use_denoising) = _ios_cycles_previous\n"
+      "del _ios_cycles_devices, _ios_cycles_path, _ios_cycles_previous, _ios_cycles_scene\n");
+
+  fprintf(stderr, ok ? "BLENDER_IOS_CYCLES_READY=cpu-render\n" : "BLENDER_IOS_CYCLES_FAILED\n");
+}
+#endif
 
 /* Free strings of open recent files. */
 static void free_openrecent()

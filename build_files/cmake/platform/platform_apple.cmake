@@ -153,6 +153,13 @@ if(WITH_APPLE_CROSSPLATFORM)
   set(ZSTD_ROOT_DIR "${LIBDIR}/zstd")
   find_package(Zstd REQUIRED)
 
+  if(WITH_TBB)
+    set(TBB_DIR "${LIBDIR}/tbb/lib/cmake/TBB")
+    find_package(TBB 2021.13.0 REQUIRED CONFIG)
+    set(TBB_LIBRARIES TBB::tbb)
+    get_target_property(TBB_INCLUDE_DIRS TBB::tbb INTERFACE_INCLUDE_DIRECTORIES)
+  endif()
+
   string(APPEND PLATFORM_CFLAGS " -pipe -funsigned-char -fno-strict-aliasing -ffp-contract=off")
   set(PLATFORM_LINKFLAGS "\
 -fexceptions -framework Foundation -framework UIKit -framework CoreGraphics \

@@ -17,18 +17,20 @@ families, and passes bundle, dependency ABI, executable ABI, archive integrity,
 and embedded-signature audits. Physical iPhone and iPad launch remain unproven
 because the artifact intentionally has no owner signing or provisioning.
 
-CPython 3.13.13, NumPy 2.3.4, and zstandard 0.25.0 are enabled in both
-application lanes. Their
-native extensions are packaged as signable frameworks, and the simulator smoke
-test exercises Blender's Python API, common standard-library modules, arrays,
-linear algebra, zstd compression/decompression, and the Extensions background
-worker on iPhone and iPad. iOS
-does not permit Blender to create child processes, so the standard Python
-`multiprocessing.Process` API is unavailable. The Extensions/remote
+CPython 3.13.13, NumPy 2.3.4, zstandard 0.25.0, and portable CPU Cycles are
+enabled in both application lanes. Python native extensions are packaged as
+signable frameworks. Simulator acceptance exercises Blender's Python API,
+common standard-library modules, arrays, linear algebra, zstd
+compression/decompression, and the Extensions background worker on iPhone and
+iPad. Cycles acceptance discovers a CPU render device and produces a real
+one-sample PNG through the registered desktop render engine on both form
+factors. iOS does not permit Blender to create child processes, so the standard
+Python `multiprocessing.Process` API is unavailable. The Extensions/remote
 asset-library downloader preserves its asynchronous queue, cancellation, and
-reporting behavior with a worker thread. Cycles, OSL, USD, OpenVDB, and optional
-media services remain outside the reduced profile and are being enabled one at
-a time under named smoke tests.
+reporting behavior with a worker thread. The Cycles Metal render device,
+Embree, OSL, path guiding, USD, OpenVDB, and optional media services remain
+separate hardening slices and are being enabled one at a time under named smoke
+tests.
 
 The current GHOST backend supports UIKit/Metal startup, rendering, touch,
 Pencil, mouse/trackpad buttons and motion, hardware-keyboard HID translation,

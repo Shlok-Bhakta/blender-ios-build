@@ -39,7 +39,14 @@ if(WITH_TBB)
   # that it is initialized before MKL and static library initialization order issues are avoided.
   #
   # This isn't fully robust but seems to work.
-  list(INSERT LIB 0 ${TBB_LIBRARIES})
+  if(WITH_APPLE_CROSSPLATFORM)
+    # The static iOS package exposes only a configuration-specific archive
+    # location. Preserve link ordering through its imported target instead of
+    # expanding the intentionally empty legacy path variable.
+    list(INSERT LIB 0 TBB::tbb)
+  else()
+    list(INSERT LIB 0 ${TBB_LIBRARIES})
+  endif()
   list(INSERT LIB 0 bf_blenkernel)
 endif()
 
