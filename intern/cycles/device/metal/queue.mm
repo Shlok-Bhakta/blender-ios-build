@@ -272,6 +272,14 @@ int MetalDeviceQueue::num_concurrent_states(const size_t state_size) const
     const size_t max_recommended_working_set =
         [metal_device_->mtlDevice recommendedMaxWorkingSetSize];
 
+    /* The iOS Simulator can report no recommended working set even though
+     * normal shared Metal buffers are available. Use the minimum viable state
+     * pool in that case instead of converting missing telemetry into an
+     * out-of-memory error. */
+    if (max_recommended_working_set == 0) {
+      return 65536;
+    }
+
     /* Only use 90% of available working set for safety. */
     size_t percent = 90;
     if (auto *str = getenv("CYCLES_METAL_WORKING_SET_PERCENT")) {
@@ -807,7 +815,7 @@ void MetalDeviceQueue::prepare_resources()
     }
     else if (it.second->mtlTexture) {
       /* METAL_WIP - use array version (i.e. useResources) */
-      [mtlComputeEncoder_ useResource:it.second->mtlTexture usage:usage | MTLResourceUsageSample];
+      [mtlComputeEncoder_ useResource:it.second->mtlTexture usage:usage | MTLResourceUsageRead];
     }
   }
 

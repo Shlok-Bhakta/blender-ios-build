@@ -438,9 +438,11 @@ static void wm_init_scripts_extensions_once(bContext *C)
 #if defined(WITH_PYTHON) && defined(WITH_APPLE_CROSSPLATFORM)
 static void wm_init_ios_cycles_smoke(bContext *C)
 {
-  if (BLI_getenv("BLENDER_IOS_CYCLES_SMOKE") == nullptr) {
+  const char *requested_device = BLI_getenv("BLENDER_IOS_CYCLES_SMOKE");
+  if (requested_device == nullptr) {
     return;
   }
+  const bool use_metal = STREQ(requested_device, "METAL");
 
   /* Run only after startup scripts have registered the Cycles render engine. This exercises the
    * embedded module, CPU-device discovery, scene synchronization, TBB task runtime, CPU kernels,
@@ -449,9 +451,25 @@ static void wm_init_ios_cycles_smoke(bContext *C)
       C,
       nullptr,
       "import bpy, _cycles, os, tempfile\n"
-      "_ios_cycles_devices = _cycles.available_devices('NONE')\n"
-      "assert any(device[1] == 'CPU' for device in _ios_cycles_devices), _ios_cycles_devices\n"
+      "_ios_cycles_target = ('METAL' if "
+      "os.environ.get('BLENDER_IOS_CYCLES_SMOKE', '').upper() == 'METAL' else 'CPU')\n"
+      "_ios_cycles_devices = _cycles.available_devices("
+      "_ios_cycles_target if _ios_cycles_target == 'METAL' else 'NONE')\n"
+      "assert any(device[1] == _ios_cycles_target for device in _ios_cycles_devices), "
+      "_ios_cycles_devices\n"
       "_ios_cycles_scene = bpy.context.scene\n"
+      "_ios_cycles_preferences = None\n"
+      "_ios_cycles_previous_compute_type = None\n"
+      "_ios_cycles_previous_device_uses = []\n"
+      "if _ios_cycles_target == 'METAL':\n"
+      "    _ios_cycles_preferences = bpy.context.preferences.addons['cycles'].preferences\n"
+      "    _ios_cycles_previous_compute_type = _ios_cycles_preferences.compute_device_type\n"
+      "    _ios_cycles_preferences.compute_device_type = 'METAL'\n"
+      "    _ios_cycles_metal_devices = _ios_cycles_preferences.get_devices_for_type('METAL')\n"
+      "    _ios_cycles_previous_device_uses = [(device, device.use) "
+      "for device in _ios_cycles_metal_devices]\n"
+      "    for device in _ios_cycles_metal_devices:\n"
+      "        device.use = (device.type == 'METAL')\n"
       "_ios_cycles_previous = (\n"
       "    _ios_cycles_scene.render.engine,\n"
       "    _ios_cycles_scene.render.resolution_x,\n"
@@ -467,7 +485,8 @@ static void wm_init_ios_cycles_smoke(bContext *C)
       "_ios_cycles_path = os.path.join(tempfile.gettempdir(), 'blender-ios-cycles-smoke.png')\n"
       "try:\n"
       "    _ios_cycles_scene.render.engine = 'CYCLES'\n"
-      "    _ios_cycles_scene.cycles.device = 'CPU'\n"
+      "    _ios_cycles_scene.cycles.device = "
+      "('GPU' if _ios_cycles_target == 'METAL' else 'CPU')\n"
       "    _ios_cycles_scene.cycles.samples = 1\n"
       "    _ios_cycles_scene.cycles.use_adaptive_sampling = False\n"
       "    _ios_cycles_scene.cycles.use_denoising = False\n"
@@ -491,9 +510,25 @@ static void wm_init_ios_cycles_smoke(bContext *C)
       "     _ios_cycles_scene.cycles.samples,\n"
       "     _ios_cycles_scene.cycles.use_adaptive_sampling,\n"
       "     _ios_cycles_scene.cycles.use_denoising) = _ios_cycles_previous\n"
-      "del _ios_cycles_devices, _ios_cycles_path, _ios_cycles_previous, _ios_cycles_scene\n");
+      "    for device, previous_use in _ios_cycles_previous_device_uses:\n"
+      "        device.use = previous_use\n"
+      "    if _ios_cycles_preferences is not None:\n"
+      "        _ios_cycles_preferences.compute_device_type = _ios_cycles_previous_compute_type\n"
+      "    if _ios_cycles_target == 'METAL':\n"
+      "        del _ios_cycles_metal_devices\n"
+      "del _ios_cycles_devices, _ios_cycles_path, _ios_cycles_previous, _ios_cycles_scene\n"
+      "del _ios_cycles_preferences, _ios_cycles_previous_compute_type\n"
+      "del _ios_cycles_previous_device_uses\n"
+      "del _ios_cycles_target\n");
 
-  fprintf(stderr, ok ? "BLENDER_IOS_CYCLES_READY=cpu-render\n" : "BLENDER_IOS_CYCLES_FAILED\n");
+  if (ok) {
+    fprintf(stderr,
+            "BLENDER_IOS_CYCLES_READY=%s-render\n",
+            use_metal ? "metal" : "cpu");
+  }
+  else {
+    fprintf(stderr, "BLENDER_IOS_CYCLES_FAILED\n");
+  }
 }
 #endif
 
