@@ -32,7 +32,10 @@ class PythonCrossEnvironmentTests(unittest.TestCase):
         original = {
             "prefix": "/build/python",
             "INCLUDEPY": "/build/python/include/python3.13",
+            "BLDSHARED": "target-clang -dynamiclib -F . -framework Python",
             "LDSHARED": "clang -dynamiclib -F . -framework Python",
+            "LDCXXSHARED": "clang++ -dynamiclib -F . -framework Python",
+            "LINKCC": "target-clang",
         }
         wrappers = {
             name: Path(f"/venv/bin/{name}")
@@ -41,6 +44,10 @@ class PythonCrossEnvironmentTests(unittest.TestCase):
         localized = localized_build_time_vars(original, Path("/target/python"), wrappers)
         self.assertEqual(localized["INCLUDEPY"], "/target/python/include/python3.13")
         self.assertIn("-F /target/python", localized["LDSHARED"])
+        self.assertTrue(localized["BLDSHARED"].startswith("/venv/bin/clang "))
+        self.assertTrue(localized["LDSHARED"].startswith("/venv/bin/clang "))
+        self.assertTrue(localized["LDCXXSHARED"].startswith("/venv/bin/clang++ "))
+        self.assertEqual(localized["LINKCC"], "/venv/bin/clang")
         self.assertEqual(localized["CC"], "/venv/bin/clang")
 
     def test_compiler_wrapper_pins_sdk_and_target(self) -> None:

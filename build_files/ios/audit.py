@@ -138,9 +138,23 @@ def candidate_text_files(paths: Iterable[Path]) -> Iterable[Path]:
             yield path
 
 
+def is_distribution_description(path: Path) -> bool:
+    """Return whether *path* is immutable third-party package prose.
+
+    Wheel metadata can legitimately contain example paths from upstream
+    documentation. Those strings are deterministic package content, not paths
+    captured from the machine that assembled Blender.
+    """
+    return path.name in {"METADATA", "PKG-INFO"} and any(
+        parent.name.endswith((".dist-info", ".egg-info")) for parent in path.parents
+    )
+
+
 def audit_paths(paths: Sequence[Path]) -> list[Finding]:
     findings: list[Finding] = []
     for path in candidate_text_files(paths):
+        if is_distribution_description(path):
+            continue
         try:
             contents = path.read_text(errors="strict")
         except (OSError, UnicodeError):

@@ -51,11 +51,24 @@ def localized_build_time_vars(
             value = value.replace("-F .", f"-F {shlex.quote(os.fspath(python_root))}")
         localized[key] = value
 
+    def target_link_command(key: str, wrapper: Path) -> str:
+        value = localized.get(key)
+        arguments = shlex.split(value) if isinstance(value, str) else []
+        if arguments:
+            arguments[0] = os.fspath(wrapper)
+        else:
+            arguments.append(os.fspath(wrapper))
+        return shlex.join(arguments)
+
     localized.update(
         {
             "AR": os.fspath(wrappers["ar"]),
+            "BLDSHARED": target_link_command("BLDSHARED", wrappers["clang"]),
             "CC": os.fspath(wrappers["clang"]),
             "CXX": os.fspath(wrappers["clang++"]),
+            "LDCXXSHARED": target_link_command("LDCXXSHARED", wrappers["clang++"]),
+            "LDSHARED": target_link_command("LDSHARED", wrappers["clang"]),
+            "LINKCC": os.fspath(wrappers["clang"]),
             "RANLIB": os.fspath(wrappers["ranlib"]),
             "STRIP": os.fspath(wrappers["strip"]),
         }

@@ -37,11 +37,13 @@ import marker at the original module path, and records the reverse mapping in
 the framework. This makes every executable image independently signable while
 preserving normal Python import names.
 
-Physical-device and simulator extensions are always built separately. NumPy's
-build uses a native host interpreter with target CPython sysconfig data, an
-SDK-pinned compiler wrapper, and a Meson cross file. Its output wheel tag,
-Mach-O platform, deployment target, and Python framework dependency are audited
-before the package is copied into Blender.
+Physical-device and simulator extensions are always built separately. A shared,
+disposable native virtual environment supplies pinned build frontends while
+target CPython sysconfig data and SDK-pinned compiler/linker wrappers expose the
+selected iOS ABI. NumPy consumes the generated Meson cross file. zstandard uses
+the same environment through setuptools and statically absorbs the target zstd
+library. Output wheel tags, Mach-O platforms, deployment targets, and Python
+framework dependencies are audited before packages are copied into Blender.
 
 CPython does not expose child-process multiprocessing on iOS. Blender services
 that use a subprocess only to stay off the UI thread must provide an iOS worker

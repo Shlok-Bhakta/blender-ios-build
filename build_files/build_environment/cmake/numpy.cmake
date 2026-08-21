@@ -17,17 +17,10 @@ endif()
 set(NUMPY_POSTFIX "")
 
 if(WITH_APPLE_CROSSPLATFORM)
-  set(_numpy_build_venv ${BUILD_DIR}/numpy-build-venv)
   set(_numpy_wheelhouse ${BUILD_DIR}/numpy-wheelhouse)
   set(_numpy_target_site_packages
     ${LIBDIR}/python/lib/python${PYTHON_SHORT_VERSION}/site-packages
   )
-  if(APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
-    set(_numpy_sdk iphonesimulator)
-  else()
-    set(_numpy_sdk iphoneos)
-  endif()
-
   ExternalProject_Add(external_numpy
     URL file://${PACKAGE_DIR}/${NUMPY_FILE}
     DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -37,37 +30,19 @@ if(WITH_APPLE_CROSSPLATFORM)
     BUILD_IN_SOURCE 1
 
     CONFIGURE_COMMAND
-      ${CMAKE_COMMAND} -E rm -rf ${_numpy_build_venv} ${_numpy_wheelhouse}
-      COMMAND ${PYTHON_BINARY} -m venv ${_numpy_build_venv}
-      COMMAND ${_numpy_build_venv}/bin/python -m pip install
-        --disable-pip-version-check
-        --cache-dir ${DOWNLOAD_DIR}/python-wheels
-        Cython==${CYTHON_VERSION}
-        meson-python==${MESON_PYTHON_VERSION}
-        meson==${MESON_VERSION}
-        packaging==${PACKAGING_VERSION}
-        pyproject-metadata==${PYPROJECT_METADATA_VERSION}
-        setuptools==${SETUPTOOLS_VERSION}
-      COMMAND ${PYTHON_BINARY}
-        ${CMAKE_SOURCE_DIR}/../ios/configure_python_cross_venv.py
-        --venv ${_numpy_build_venv}
-        --python-root ${LIBDIR}/python
-        --sdk ${_numpy_sdk}
-        --arch arm64
-        --deployment-target ${CMAKE_OSX_DEPLOYMENT_TARGET}
-        --python-version ${PYTHON_SHORT_VERSION}
+      ${CMAKE_COMMAND} -E rm -rf ${_numpy_wheelhouse}
 
     BUILD_COMMAND
       ${CMAKE_COMMAND} -E make_directory ${_numpy_wheelhouse}
       COMMAND ${CMAKE_COMMAND} -E env
-        "PATH=${_numpy_build_venv}/bin:$ENV{PATH}"
-        ${_numpy_build_venv}/bin/python -m pip wheel
+        "PATH=${PYTHON_CROSS_VENV}/bin:$ENV{PATH}"
+        ${PYTHON_CROSS_VENV}/bin/python -m pip wheel
           --disable-pip-version-check
           --no-build-isolation
           --no-deps
           --wheel-dir ${_numpy_wheelhouse}
           <SOURCE_DIR>
-          -Csetup-args=--cross-file=${_numpy_build_venv}/ios-cross.ini
+          -Csetup-args=--cross-file=${PYTHON_CROSS_VENV}/ios-cross.ini
           -Csetup-args=-Dallow-noblas=true
           -Csetup-args=-Dcpu-baseline=min
           -Csetup-args=-Dcpu-dispatch=none
@@ -75,7 +50,7 @@ if(WITH_APPLE_CROSSPLATFORM)
 
     INSTALL_COMMAND
       ${CMAKE_COMMAND} -E make_directory ${_numpy_target_site_packages}
-      COMMAND ${_numpy_build_venv}/bin/python -m pip install
+      COMMAND ${PYTHON_CROSS_VENV}/bin/python -m pip install
         --disable-pip-version-check
         --no-index
         --no-deps
@@ -95,6 +70,7 @@ if(WITH_APPLE_CROSSPLATFORM)
   add_dependencies(
     external_numpy
     external_python
+    external_python_cross_environment
     external_python_site_packages
   )
 elseif(WIN32)
@@ -129,7 +105,5 @@ if(NOT WITH_APPLE_CROSSPLATFORM)
   )
 endif()
 
-unset(_numpy_build_venv)
-unset(_numpy_sdk)
 unset(_numpy_target_site_packages)
 unset(_numpy_wheelhouse)

@@ -253,3 +253,29 @@ Desktop platforms continue to use the existing spawn-based subprocess without
 behavioral changes. The iOS runtime smoke starts and stops the worker and the
 thread transport has host tests for duplex messages, blocking poll, event, and
 worker lifecycle.
+
+## ADR-0016: Share one target-aware Python extension build environment
+
+- Status: accepted
+- Date: 2026-08-21
+
+Native Python package frontends must run on macOS while emitting code for the
+selected iOS CPython ABI. NumPy, zstandard, and future extension recipes share
+one disposable virtual environment with pinned frontend versions, localized
+target sysconfig data, and SDK-pinned compiler and linker wrappers. Each device
+lane creates its own environment. Build tools never enter the application
+through this environment; only audited wheel outputs are harvested into target
+site-packages.
+
+zstandard 0.25.0 uses the upstream system-zstd build mode, disables its unused
+CFFI backend, and statically links the target zstd archive. Its sole native
+module is packaged through the same framework conversion used for CPython and
+NumPy. Runtime acceptance requires a real compress/decompress round trip on
+both iPhone and iPad simulators, not merely a successful import.
+
+The release path audit continues to reject paths captured from build machines.
+Installed wheel `METADATA` and `PKG-INFO` descriptions are deterministic
+third-party prose and may contain upstream documentation examples, so those
+description files are excluded from build-path findings under a regression
+test. Executable, configuration, manifest, and other package content remains
+in scope.
