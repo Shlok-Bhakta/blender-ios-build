@@ -311,7 +311,7 @@ void ShaderCache::load_kernel(DeviceKernel device_kernel,
       int max_mtlcompiler_threads = 2;
 
 #  if defined(MAC_OS_VERSION_13_3)
-      if (@available(macOS 13.3, *)) {
+      if (@available(macOS 13.3, iOS 26.0, *)) {
         /* Subtract one to avoid contention with the real-time GPU module. */
         max_mtlcompiler_threads = max(2,
                                       int([mtlDevice maximumConcurrentCompilationTaskCount]) - 1);

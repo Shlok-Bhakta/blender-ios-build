@@ -27,10 +27,14 @@ one-sample PNG through the registered desktop render engine on both form
 factors. iOS does not permit Blender to create child processes, so the standard
 Python `multiprocessing.Process` API is unavailable. The Extensions/remote
 asset-library downloader preserves its asynchronous queue, cancellation, and
-reporting behavior with a worker thread. The Cycles Metal render device,
-Embree, OSL, path guiding, USD, OpenVDB, and optional media services remain
-separate hardening slices and are being enabled one at a time under named smoke
-tests.
+reporting behavior with a worker thread. The Cycles Metal render device now
+compiles and links in both profiles and is exposed only on tier-2
+argument-buffer GPUs. The iOS Simulator's tier-1 Metal device cannot compile
+the roughly 303-resource Cycles bindless pipelines and is intentionally hidden;
+the unsigned iPhoneOS app still needs an owner-signed physical-device Metal
+render before that backend is accepted for daily work. CPU remains the proven
+fallback. Embree, OSL, path guiding, USD, OpenVDB, and optional media services
+remain separate hardening slices.
 
 The current GHOST backend supports UIKit/Metal startup, rendering, touch,
 Pencil, mouse/trackpad buttons and motion, hardware-keyboard HID translation,

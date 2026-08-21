@@ -311,3 +311,30 @@ desktop Cycles add-on, the iOS test path requires a CPU device, performs a
 one-sample 8 by 8 render, validates a written PNG in the sandbox, removes the
 probe output, and restores the scene settings. The same signed simulator app
 passes this render on iPhone and iPad.
+
+## ADR-0018: Compile Cycles Metal but require tier-2 hardware
+
+- Status: accepted build boundary; runtime acceptance pending
+- Date: 2026-08-21
+
+The production iOS profiles compile the Cycles Metal device while retaining
+portable CPU Cycles as the accepted fallback. Cross-build discovery points at
+the Metal framework inside `CMAKE_OSX_SYSROOT`; it must not search the macOS
+host SDK. macOS-only IOKit GPU-core probing and compiler-tuning selectors are
+excluded from iOS, and target availability checks cover both Apple platforms.
+
+Cycles' bindless Metal kernel requires tier-2 argument buffers. Xcode 26.5's
+iOS Simulator device advertises tier 1 and rejects the pipeline because it
+supports 31 buffers while the kernel declares roughly 303 resources. This is a
+simulator capability limit, not a reason to weaken or split the desktop kernel.
+iOS device enumeration therefore exposes Metal only when
+`argumentBuffersSupport == MTLArgumentBuffersTier2`. Missing simulator working
+set telemetry uses the minimum 65,536-state pool rather than reporting false
+out-of-memory, which keeps diagnostics accurate without exposing the
+incompatible GPU.
+
+Both simulator and unsigned iPhoneOS applications compile and link the target
+Metal sources and pass ABI/bundle audits. Simulator CPU render acceptance stays
+green. Runtime acceptance for Metal requires an owner-signed launch on real
+tier-2 iPhone and iPad hardware using the same real-PNG gate; until then, docs
+and artifact names call the build Metal-capable rather than Metal-proven.

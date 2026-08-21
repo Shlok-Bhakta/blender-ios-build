@@ -11,7 +11,10 @@
 #  include "util/string.h"
 #  include "util/time.h"
 
-#  include <IOKit/IOKitLib.h>
+#  include <TargetConditionals.h>
+#  if TARGET_OS_OSX
+#    include <IOKit/IOKitLib.h>
+#  endif
 #  include <ctime>
 #  include <pwd.h>
 #  include <sys/shm.h>
@@ -35,6 +38,7 @@ string MetalInfo::get_device_name(id<MTLDevice> device)
 int MetalInfo::get_apple_gpu_core_count(id<MTLDevice> device)
 {
   int core_count = 0;
+#  if TARGET_OS_OSX
   if (@available(macos 12.0, *)) {
     io_service_t gpu_service = IOServiceGetMatchingService(
         kIOMainPortDefault, IORegistryEntryIDMatching(device.registryID));
@@ -47,6 +51,9 @@ int MetalInfo::get_apple_gpu_core_count(id<MTLDevice> device)
       CFRelease(numberRef);
     }
   }
+#  else
+  (void)device;
+#  endif
   return core_count;
 }
 
@@ -92,6 +99,7 @@ const vector<id<MTLDevice>> &MetalInfo::get_usable_devices()
     string device_name = get_device_name(device);
     bool usable = false;
 
+#  if TARGET_OS_OSX
     if (@available(macos 12.2, *)) {
       const char *device_name_char = [device.name UTF8String];
       if (!(strstr(device_name_char, "Intel") || strstr(device_name_char, "AMD")) &&
@@ -103,6 +111,12 @@ const vector<id<MTLDevice>> &MetalInfo::get_usable_devices()
         usable = [device hasUnifiedMemory];
       }
     }
+#  else
+    /* Cycles relies on tier-2 argument buffers for its bindless kernel
+     * resources. Real iOS Apple GPUs expose that tier, while the simulator
+     * currently caps pipelines at 31 buffers and cannot compile the kernels. */
+    usable = [device argumentBuffersSupport] == MTLArgumentBuffersTier2;
+#  endif
 
     if (usable) {
       metal_printf("- %s", device_name.c_str());

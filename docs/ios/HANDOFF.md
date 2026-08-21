@@ -87,8 +87,9 @@ signatures. The owner must sign and provision the IPA before installing it.
 2. Finish GHOST/UIKit hardening: adopt the scene lifecycle, use scene rather
    than main-screen geometry, respond to dynamic resizing and scale changes,
    and close pointer, keyboard, Pencil, lifecycle, and file-workflow gaps.
-3. Add the Cycles Metal render device as its own P540 build and render proof;
-   do not couple its failures to the accepted portable CPU lane.
+3. Owner-sign the P540-capable device IPA and run
+   `BLENDER_IOS_CYCLES_SMOKE=METAL` on tier-2 iPhone and iPad hardware. Keep
+   portable CPU Cycles as the accepted fallback until both renders pass.
 4. Add optional dependency families individually under simulator, device ABI,
    and physical-device smoke tests. Prioritize Apple Accelerate for NumPy,
    then Embree, OSL, USD, OpenVDB, and media integrations.

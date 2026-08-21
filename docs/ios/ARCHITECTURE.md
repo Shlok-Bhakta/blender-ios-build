@@ -53,20 +53,26 @@ thread on iOS; desktop platforms retain the spawn-based process context.
 
 ## Cycles render boundary
 
-The first production Cycles lane is the portable CPU renderer backed by a
-static arm64 iOS oneTBB archive. Simulator and device profiles enable the same
-feature set. They deliberately keep the Cycles Metal device, Embree, OSL, path
-guiding, and the TBB malloc proxy off until each has an independent build and
-runtime proof. Blender's Metal viewport remains enabled; it is a separate
-backend from the Cycles Metal render device.
+The accepted Cycles fallback is the portable CPU renderer backed by a static
+arm64 iOS oneTBB archive. Simulator and device profiles also compile the native
+Cycles Metal device from the target SDK. iOS enumeration admits only tier-2
+argument-buffer GPUs because the Cycles bindless kernel exceeds tier-1 resource
+limits. The iOS Simulator exposes a tier-1 pseudo-GPU capped at 31 buffers, so
+it is intentionally hidden and CPU acceptance remains authoritative there.
+The unsigned physical-device build contains the tier-2 Metal path, but a signed
+real-device render is still required before Metal becomes an accepted runtime
+lane. Embree, OSL, path guiding, and the TBB malloc proxy remain off. Blender's
+Metal viewport is a separate backend and remains enabled.
 
 iOS arm64 builds do not run host-default x86 feature probes or inject SSE/AVX
 flags. Native half conversion includes the arm64 NEON declarations directly,
 while the initial CPU kernel remains the portable correctness baseline. An
 opt-in post-startup acceptance path waits until the desktop Cycles add-on is
-registered, discovers a CPU device, renders the startup scene at one sample,
-writes and validates an 8 by 8 PNG in the application sandbox, removes it, and
-restores the scene settings.
+registered, selects either CPU or Metal, renders the startup scene at one
+sample, writes and validates an 8 by 8 PNG in the application sandbox, removes
+it, and restores the scene and device-preference settings. Current simulator
+evidence exercises CPU; `BLENDER_IOS_CYCLES_SMOKE=METAL` is reserved for a
+tier-2 physical device.
 
 ## Boot observability
 

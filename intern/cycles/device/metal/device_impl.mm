@@ -92,9 +92,11 @@ MetalDevice::MetalDevice(const DeviceInfo &info, Stats &stats, Profiler &profile
 
     /* Enable increased concurrent shader compiler limit.
      * This is also done by MTLContext::MTLContext, but only in GUI mode. */
+#  if TARGET_OS_OSX
     if (@available(macOS 13.3, *)) {
       [mtlDevice setShouldMaximizeConcurrentCompilation:YES];
     }
+#  endif
 
     max_threads_per_threadgroup = 512;
 
@@ -567,7 +569,18 @@ void MetalDevice::compile_and_load(const int device_id, MetalPipelineType pso_ty
 
     MTLCompileOptions *options = [[MTLCompileOptions alloc] init];
 
-    options.fastMathEnabled = YES;
+#  if defined(WITH_APPLE_CROSSPLATFORM)
+    /* The iOS port targets 18.0 or newer, where mathMode replaces the
+     * deprecated fastMathEnabled property. */
+    options.mathMode = MTLMathModeFast;
+#  else
+    if (@available(macOS 15.0, *)) {
+      options.mathMode = MTLMathModeFast;
+    }
+    else {
+      options.fastMathEnabled = YES;
+    }
+#  endif
     if (@available(macos 12.0, *)) {
       options.languageVersion = MTLLanguageVersion2_4;
     }
