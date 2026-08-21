@@ -1821,7 +1821,39 @@ elseif(APPLE)
   endif()
 
   # Python.
-  if(WITH_PYTHON AND NOT WITH_PYTHON_MODULE AND NOT WITH_PYTHON_FRAMEWORK)
+  if(WITH_APPLE_CROSSPLATFORM AND WITH_PYTHON AND NOT WITH_PYTHON_MODULE)
+    # iOS requires the interpreter itself and every extension module to live in
+    # a framework. Pure Python files remain in Blender's versioned Assets tree.
+    install(
+      DIRECTORY ${LIBDIR}/python/Python.framework
+      DESTINATION "Blender.app/Frameworks"
+      PATTERN "Headers" EXCLUDE
+    )
+    install_dir(
+      ${PYTHON_LIBPATH}/python${PYTHON_VERSION}
+      ${TARGETDIR_VER}/python/lib
+    )
+
+    if(APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
+      set(_python_ios_platform "iPhoneSimulator")
+    else()
+      set(_python_ios_platform "iPhoneOS")
+    endif()
+    install(CODE "
+      execute_process(
+        COMMAND \"${PYTHON_EXECUTABLE}\"
+          \"${CMAKE_SOURCE_DIR}/build_files/ios/package_python_frameworks.py\"
+          --app-bundle \"\${CMAKE_INSTALL_PREFIX}/Blender.app\"
+          --import-root
+            \"\${CMAKE_INSTALL_PREFIX}/${TARGETDIR_VER}/python/lib/python${PYTHON_VERSION}\"
+          --bundle-identifier \"org.blenderfoundation.blender.ios\"
+          --platform \"${_python_ios_platform}\"
+          --minimum-os \"${CMAKE_OSX_DEPLOYMENT_TARGET}\"
+        COMMAND_ERROR_IS_FATAL ANY
+      )
+    ")
+    unset(_python_ios_platform)
+  elseif(WITH_PYTHON AND NOT WITH_PYTHON_MODULE AND NOT WITH_PYTHON_FRAMEWORK)
     # Copy the python libraries into the install directory.
     install_dir(
       ${PYTHON_LIBPATH}/python${PYTHON_VERSION}
@@ -1851,7 +1883,8 @@ elseif(APPLE)
     )
   endif()
 
-  if(NOT WITH_PYTHON_MODULE AND WITH_PYTHON AND WITH_PYTHON_INSTALL)
+  if(NOT WITH_APPLE_CROSSPLATFORM AND
+     NOT WITH_PYTHON_MODULE AND WITH_PYTHON AND WITH_PYTHON_INSTALL)
     get_filename_component(PYTHON_EXECUTABLE_NAME_ONLY ${PYTHON_EXECUTABLE} NAME)
     configure_file(
       ${CMAKE_SOURCE_DIR}/release/darwin/scripts/blender-system-info.sh.in

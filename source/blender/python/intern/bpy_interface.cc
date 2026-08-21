@@ -462,6 +462,13 @@ void BPY_python_start(bContext *C, int argc, const char **argv)
      * While harmless, it's noisy. */
     config.pathconfig_warnings = 0;
 
+#  ifdef WITH_APPLE_CROSSPLATFORM
+    /* iOS app bundles are immutable. CPython's iOS embedding contract also
+     * requires unbuffered standard streams because no terminal owns them. */
+    config.write_bytecode = 0;
+    config.buffered_stdio = 0;
+#  endif
+
     {
       /* NOTE: running scripts directly uses the default behavior *but* the default
        * warning filter doesn't show warnings form module besides `__main__`.
@@ -523,6 +530,15 @@ void BPY_python_start(bContext *C, int argc, const char **argv)
     /* Setting the program name is important so the 'multiprocessing' module
      * can launch new Python instances. */
     {
+#  ifdef WITH_APPLE_CROSSPLATFORM
+      /* CPython's AppleFrameworkLoader resolves extension frameworks relative
+       * to sys.executable. iOS has no standalone Python executable, so use the
+       * application executable and do not replace it with None below. */
+      const char *program_path = BKE_appdir_program_path();
+      status = PyConfig_SetBytesString(&config, &config.executable, program_path);
+      pystatus_exit_on_error(status);
+      has_python_executable = true;
+#  else
       char program_path[FILE_MAX];
       if (BKE_appdir_program_python_search(
               program_path, sizeof(program_path), PY_MAJOR_VERSION, PY_MINOR_VERSION))
@@ -537,6 +553,7 @@ void BPY_python_start(bContext *C, int argc, const char **argv)
                 "Unable to find the Python binary, "
                 "the multiprocessing module may not be functional!\n");
       }
+#  endif
     }
 
     /* Allow to use our own included Python. `py_path_bundle` may be nullptr. */
@@ -641,6 +658,23 @@ void BPY_python_start(bContext *C, int argc, const char **argv)
   pyrna_alloc_types();
 
 #ifndef WITH_PYTHON_MODULE
+#  ifdef WITH_APPLE_CROSSPLATFORM
+  /* Simulator/device acceptance can opt into a deterministic import probe
+   * without adding work or logging to normal application launches. */
+  if (BLI_getenv("BLENDER_IOS_PYTHON_SMOKE") != nullptr) {
+    const int smoke_result = PyRun_SimpleString(
+        "import bpy, bz2, ctypes, lzma, sqlite3, ssl\n"
+        "assert bpy.app.version[:2] == (5, 2)\n");
+    if (smoke_result == 0) {
+      fprintf(stderr, "BLENDER_IOS_PYTHON_READY=5.2\n");
+    }
+    else {
+      PyErr_Print();
+      fprintf(stderr, "BLENDER_IOS_PYTHON_FAILED\n");
+    }
+  }
+#  endif
+
   /* Python module runs `atexit` when `bpy` is freed. */
   BPY_atexit_register(); /* This can initialize any time. */
 

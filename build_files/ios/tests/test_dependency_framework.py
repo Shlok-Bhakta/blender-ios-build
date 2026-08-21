@@ -8,7 +8,7 @@ import subprocess
 import sys
 import unittest
 
-from build_files.ios.configure_dependencies import cache_key_for_inputs
+from build_files.ios.configure_dependencies import cache_key_for_inputs, find_build_python
 
 
 REPOSITORY = Path(__file__).resolve().parents[3]
@@ -28,6 +28,11 @@ class CacheKeyTests(unittest.TestCase):
 
 
 class ConfigurePlanTests(unittest.TestCase):
+    def test_native_build_python_matches_blender_minor_version(self) -> None:
+        path, version = find_build_python()
+        self.assertTrue(path.is_file())
+        self.assertTrue(version.startswith("3.13."), version)
+
     def test_plan_routes_every_bulk_path_to_external_volume(self) -> None:
         result = subprocess.run(
             [
@@ -55,6 +60,17 @@ class ConfigurePlanTests(unittest.TestCase):
         self.assertEqual(
             plan["cache_inputs"]["target_triple"], "arm64-apple-ios18.0-simulator"
         )
+        self.assertTrue(plan["cache_inputs"]["build_python_version"].startswith("3.13."))
+
+
+class PythonFrameworkRecipeTests(unittest.TestCase):
+    def test_supported_platform_array_is_replaced_instead_of_partially_edited(self) -> None:
+        recipe = (
+            REPOSITORY / "build_files" / "build_environment" / "cmake" / "python.cmake"
+        ).read_text()
+        self.assertIn("-remove CFBundleSupportedPlatforms", recipe)
+        self.assertIn("-insert CFBundleSupportedPlatforms", recipe)
+        self.assertNotIn("-replace CFBundleSupportedPlatforms.0", recipe)
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 import plistlib
 import shlex
+import shutil
 import subprocess
 import sys
 from typing import Mapping, Sequence
@@ -23,6 +24,7 @@ from typing import Mapping, Sequence
 CANONICAL_VOLUME = Path("/Volumes/BlenderBuild")
 CANONICAL_BULK = CANONICAL_VOLUME / "blender-ios"
 EXPECTED_VOLUME_UUID = "EC4DA5DD-B2A4-4056-934E-5B703096BEF1"
+DONOR_SHA = "a1de44dd54af75a4c8c4a29a5fed2a1334a87446"
 TOOL_PATHS = (
     "/opt/homebrew/opt/bison/bin",
     "/opt/homebrew/opt/flex/bin",
@@ -78,7 +80,31 @@ def volume_uuid() -> str:
     return str(document.get("VolumeUUID", ""))
 
 
-def build_inputs(repository: Path, target: str, deployment_target: str, profile: str) -> dict[str, str]:
+def find_build_python() -> tuple[Path, str]:
+    configured = os.environ.get("BLENDER_IOS_BUILD_PYTHON")
+    candidate = configured or shutil.which("python3.13")
+    if not candidate:
+        fallback = Path("/opt/homebrew/opt/python@3.13/bin/python3.13")
+        candidate = os.fspath(fallback) if fallback.is_file() else None
+    if not candidate:
+        raise SystemExit("Python 3.13 is required as the native iOS build interpreter")
+    path = Path(candidate).resolve()
+    version = checked_output(
+        [os.fspath(path), "-c", "import sys; print('.'.join(map(str, sys.version_info[:3])))"]
+    )
+    if not version.startswith("3.13."):
+        raise SystemExit(f"iOS build interpreter must be Python 3.13, found {version}: {path}")
+    return path, version
+
+
+def build_inputs(
+    repository: Path,
+    target: str,
+    deployment_target: str,
+    profile: str,
+    build_python: Path,
+    build_python_version: str,
+) -> dict[str, str]:
     sdk = "iphonesimulator" if target == "ios-simulator" else "iphoneos"
     dependency_root = repository / "build_files" / "build_environment"
     # Every recipe participates because iOS adaptations are intentionally kept as
@@ -102,6 +128,8 @@ def build_inputs(repository: Path, target: str, deployment_target: str, profile:
         "deployment_target": deployment_target,
         "cmake": checked_output(["cmake", "--version"]).splitlines()[0],
         "feature_profile": profile,
+        "build_python": str(build_python),
+        "build_python_version": build_python_version,
     }
 
 
@@ -131,8 +159,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     if arguments.threads < 1 or arguments.threads > 2:
         raise SystemExit("dependency configure permits 1 or 2 threads on this host")
 
+    build_python, build_python_version = find_build_python()
     inputs = build_inputs(
-        repository, arguments.target, arguments.deployment_target, arguments.feature_profile
+        repository,
+        arguments.target,
+        arguments.deployment_target,
+        arguments.feature_profile,
+        build_python,
+        build_python_version,
     )
     cache_key = cache_key_for_inputs(inputs)
     target_directory = arguments.target
@@ -154,7 +188,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "run_id": run_id,
         "packet": "N100",
         "baseline_sha": inputs["baseline_sha"],
-        "donor_sha": checked_output(["git", "rev-parse", "origin/ios"], repository),
+        "donor_sha": DONOR_SHA,
         "target": "ios-simulator-arm64" if arguments.target == "ios-simulator" else "ios-device-arm64",
         "feature_profile": arguments.feature_profile,
         "signing_mode": "SIMULATOR_LOCAL" if arguments.target == "ios-simulator" else "UNSIGNED",
@@ -203,6 +237,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         f"-DCMAKE_OSX_DEPLOYMENT_TARGET={arguments.deployment_target}",
         "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY",
         f"-DCMAKE_DEPS_HOST_TOOLS_DIR={host_tools_directory}",
+        f"-DBLENDER_IOS_BUILD_PYTHON={build_python}",
         f"-DDOWNLOAD_DIR={download_directory}",
         f"-DPACKAGE_DIR={package_directory}",
         f"-DHARVEST_TARGET={install_directory}",
