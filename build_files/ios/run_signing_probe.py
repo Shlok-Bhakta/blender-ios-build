@@ -197,7 +197,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise SystemExit(f"bulk volume is not mounted: {CANONICAL_BULK_ROOT.parent}")
 
     baseline = git_output(repository, "rev-parse", "v5.2.0")
-    donor = git_output(repository, "rev-parse", "origin/ios")
+    donor = "a1de44dd54af75a4c8c4a29a5fed2a1334a87446"
     short_sha = git_output(repository, "rev-parse", "--short=12", "HEAD")
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + f"-{short_sha}-signing-probe"
     artifact_root = bulk_root / "artifacts" / run_id

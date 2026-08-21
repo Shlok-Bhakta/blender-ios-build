@@ -77,10 +77,15 @@ def collect(repository: Path) -> dict[str, object]:
     sdk_path = sdk.stdout.strip()
     add(checks, "simulator-sdk", sdk.returncode == 0 and Path(sdk_path).exists(), sdk_path)
 
-    for reference, expected in (("v5.2.0", BASELINE_SHA), ("origin/ios", DONOR_SHA)):
-        result = run(["git", "rev-parse", reference], repository)
-        actual = result.stdout.strip()
-        add(checks, f"git-{reference}", result.returncode == 0 and actual == expected, actual)
+    result = run(["git", "rev-parse", "v5.2.0"], repository)
+    actual = result.stdout.strip()
+    add(checks, "git-v5.2.0", result.returncode == 0 and actual == BASELINE_SHA, actual)
+
+    # The donor is an immutable object, not the current tip of a remote branch.
+    # A fetch may legitimately advance origin/ios without changing this port's
+    # reviewed 213-file input delta.
+    donor = run(["git", "cat-file", "-e", f"{DONOR_SHA}^{{commit}}"], repository)
+    add(checks, "git-donor-object", donor.returncode == 0, DONOR_SHA)
 
     power = run(["pmset", "-g", "batt"])
     power_detail = power.stdout.strip()
