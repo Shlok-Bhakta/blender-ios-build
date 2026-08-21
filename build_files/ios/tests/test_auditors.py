@@ -80,6 +80,14 @@ class PathAuditTests(AuditorTestCase):
             result = self.run_audit("paths", document)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_allows_upstream_examples_in_distribution_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            metadata = Path(directory) / "vendor-1.0.dist-info" / "METADATA"
+            metadata.parent.mkdir()
+            metadata.write_text("Example output: /Users/upstream/Documents\n")
+            result = self.run_audit("paths", Path(directory))
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
 
 class BundleAuditTests(AuditorTestCase):
     @staticmethod

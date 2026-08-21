@@ -665,6 +665,7 @@ void BPY_python_start(bContext *C, int argc, const char **argv)
     const int smoke_result = PyRun_SimpleString(
         "import bpy, bz2, ctypes, lzma, sqlite3, ssl\n"
         "import numpy as np\n"
+        "import zstandard as zstd\n"
         "import tempfile\n"
         "from pathlib import Path\n"
         "from _bpy_internal.http import downloader as http_dl\n"
@@ -672,6 +673,11 @@ void BPY_python_start(bContext *C, int argc, const char **argv)
         "assert np.__version__ == '2.3.4'\n"
         "assert np.array([1, 2, 3]).sum() == 6\n"
         "assert np.linalg.det(np.eye(2)) == 1.0\n"
+        "assert zstd.__version__ == '0.25.0'\n"
+        "_zstd_payload = b'Blender iOS zstandard smoke'\n"
+        "_zstd_compressed = zstd.ZstdCompressor().compress(_zstd_payload)\n"
+        "assert zstd.ZstdDecompressor().decompress(_zstd_compressed) == _zstd_payload\n"
+        "del _zstd_compressed, _zstd_payload\n"
         "assert http_dl._background_worker_kind == 'thread'\n"
         "_http_metadata = http_dl.MetadataProviderFilesystem(\n"
         "    Path(tempfile.gettempdir()) / 'blender-ios-http-smoke')\n"
@@ -686,6 +692,7 @@ void BPY_python_start(bContext *C, int argc, const char **argv)
     if (smoke_result == 0) {
       fprintf(stderr, "BLENDER_IOS_PYTHON_READY=5.2\n");
       fprintf(stderr, "BLENDER_IOS_NUMPY_READY=2.3.4\n");
+      fprintf(stderr, "BLENDER_IOS_ZSTANDARD_READY=0.25.0\n");
       fprintf(stderr, "BLENDER_IOS_HTTP_READY=thread\n");
     }
     else {

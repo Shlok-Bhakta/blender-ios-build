@@ -12,4 +12,4 @@ set(WITH_PYTHON_INSTALL ON CACHE BOOL "" FORCE)
 # Native Python packages are enabled in their own feature slices after their
 # iOS wheels pass the same simulator and device runtime gates as CPython.
 set(WITH_PYTHON_INSTALL_NUMPY     ON CACHE BOOL "" FORCE)
-set(WITH_PYTHON_INSTALL_ZSTANDARD OFF CACHE BOOL "" FORCE)
+set(WITH_PYTHON_INSTALL_ZSTANDARD ON CACHE BOOL "" FORCE)
