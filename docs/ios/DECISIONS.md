@@ -467,3 +467,26 @@ global drawable pointer and counter are gone, both target lanes compile, and
 repeated iPhone and iPad simulator launch/render passes complete without the
 previous duplicate-present messages. Physical display timing remains part of
 the owner-signed device gate.
+
+## ADR-0024: Track one complete Apple Pencil contact
+
+- Status: accepted source boundary; hardware acceptance pending
+- Date: 2026-08-22
+
+The old touch path saved a Pencil touch at contact but left tablet data inactive
+until movement. It also cleared the active Pencil whenever any touch ended or
+cancelled, so lifting an unrelated finger during a simultaneous gesture could
+erase stylus pressure. Pressure divided by UIKit's maximum force without
+guarding a zero or invalid range.
+
+Pencil contact and movement now share one tablet-update method. Contact
+immediately activates stylus data; movement updates only the same tracked
+`UITouch`; and end or cancellation resets state only when its touch set contains
+that Pencil. Pressure defaults to zero when no positive maximum is available,
+then pressure and both tilt axes are clamped to the ranges GHOST consumers
+expect.
+
+Source contracts, both target builds, full iPhone/iPad simulator runtime gates,
+and recursive product audits pass. Simulator UIKit cannot provide physical
+Pencil force and tilt, so owner-signed iPad hardware remains the acceptance
+authority for the sensor values and simultaneous-touch behavior.

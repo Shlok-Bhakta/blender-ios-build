@@ -10,6 +10,8 @@ Metal overlay textures now take their native-pixel size from the current
 geometry, while offscreen contexts use a neutral 1 by 1 backing.
 Metal presentation now coalesces Blender's swap requests and submits at most
 one drawable per MetalKit delegate frame without global drawable tracking.
+Apple Pencil state now starts on contact, follows only its tracked touch, and
+keeps force and tilt in valid GHOST ranges.
 UIKit keyboard results now use owned UTF-8 storage, and every input target and
 delegate detaches before a GHOST window releases its native objects.
 The same simulator
@@ -51,7 +53,9 @@ and packages as one universal unsigned IPA for device families 1 and 2.
   process-main-screen fallback.
 - iPhone and iPad complete the full runtime gate without the previous
   duplicate-present diagnostic.
-- All 73 tests under `build_files/ios/tests` pass.
+- Pencil pressure/tilt state is safe against zero force ranges and unrelated
+  simultaneous finger endings; physical sensor acceptance remains pending.
+- All 76 tests under `build_files/ios/tests` pass.
 
 ## Evidence
 
@@ -79,6 +83,10 @@ and packages as one universal unsigned IPA for device families 1 and 2.
   `/Volumes/BlenderBuild/blender-ios/artifacts/20260822-metal-present-scheduling/Blender-5.2.0-Python-NumPy-Zstandard-Cycles-CPU-Metal-capable-Present-scheduling-iPhone-iPad-unsigned.ipa`
 - Present-scheduling IPA SHA-256:
   `1a75df365993c7dabd6512b0ddfab45014f3218daab85db9377c0e692057f7f1`
+- Pencil-state unsigned IPA:
+  `/Volumes/BlenderBuild/blender-ios/artifacts/20260822-pencil-state/Blender-5.2.0-Python-NumPy-Zstandard-Cycles-CPU-Metal-capable-Pencil-state-iPhone-iPad-unsigned.ipa`
+- Pencil-state IPA SHA-256:
+  `a31965f9b66d324a3b9c2e9d869628ab2e4773112e0e90275e4935344ba5862a`
 - iPad acceptance recording:
   `/Volumes/BlenderBuild/blender-ios/artifacts/20260821-scene-lifecycle/Blender-iPad-scene-lifecycle.mp4`
 
@@ -97,7 +105,9 @@ and packages as one universal unsigned IPA for device families 1 and 2.
    nonzero-origin window, and test external-display and safe-area or scale
    transitions.
 5. Exercise software-keyboard empty text, Unicode, Cancel, and repeated
-   open/close cycles on both devices.
+   open/close cycles on both devices. On iPad, validate Pencil contact,
+   pressure, tilt, simultaneous finger input, cancellation, hover, and
+   double-tap.
 6. Do not merge the historical `origin/ios` donor branch. Do not ad-hoc sign an
    iPhoneOS handoff; the owner supplies distribution signing and provisioning.
 7. Physical-device installation and launch are the next owner-signed release
@@ -105,5 +115,5 @@ and packages as one universal unsigned IPA for device families 1 and 2.
 
 Current source milestone: scene-owned UIKit startup, drawable-sized and
 single-present Metal frames, resizing, windowed coordinate mapping, and input
-lifetime safety plus portable CPU Cycles runtime and a tier-2-gated Cycles
-Metal build.
+lifetime/Pencil state safety plus portable CPU Cycles runtime and a tier-2-gated
+Cycles Metal build.
