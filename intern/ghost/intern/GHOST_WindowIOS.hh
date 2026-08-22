@@ -99,11 +99,6 @@ class GHOST_WindowIOS : public GHOST_Window {
   std::string getTitle() const override;
 
   /**
-   * Makes sure we get another draw request.
-   */
-  void needsDisplayUpdate();
-
-  /**
    * Returns the window rectangle dimensions.
    * The dimensions are given in screen coordinates that are
    * relative to the upper-left corner of the screen.
@@ -327,6 +322,10 @@ class GHOST_WindowIOS : public GHOST_Window {
 
   void beginFrame();
   void endFrame();
+  bool hasDeferredSwapBuffers() const
+  {
+    return deferred_swap_buffers_;
+  }
   /* The current approach is to issue the swap/present from the main
    * draw loop *only* for the currently active window. This is because trying
    * to issue presents on anything but the MTKView supplied to drawInMTKView
@@ -338,7 +337,7 @@ class GHOST_WindowIOS : public GHOST_Window {
    * sub windows then we may need to revisit this.
    */
   void flushDeferredSwapBuffers();
-  int deferred_swap_buffers_count;
+  bool deferred_swap_buffers_ = false;
 
   /* Keyboard handling */
   GHOST_TSuccess popupOnscreenKeyboard(const GHOST_KeyboardProperties &keyboard_properties);

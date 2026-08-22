@@ -42,13 +42,6 @@ class GHOST_ContextIOS : public GHOST_Context {
    * (which will both break command submissions), rather than increasing this limit. */
   static const int max_command_buffer_count = 64;
 
-  /* Drawable tracking:
-   * As we only have a single window, we can only present one display at a time. We track whether
-   * any present call has already displayed to the current drawable.  */
-  static bool current_drawable_presented;
-  static id<CAMetalDrawable> prevDrawable;
-
- public:
   /**
    * Constructor.
    */
@@ -143,6 +136,9 @@ class GHOST_ContextIOS : public GHOST_Context {
 
   void metalSwapBuffers();
 
+  /** Begin one presentation opportunity owned by an MTKView delegate callback. */
+  void beginFrame();
+
   const MTKView *getMTKView()
   {
     return metal_view_;
@@ -156,6 +152,7 @@ class GHOST_ContextIOS : public GHOST_Context {
   /** Metal state */
   MTLRenderPipelineState *metal_render_pipeline_;
   bool owns_metal_device_;
+  bool drawable_presented_in_frame_ = false;
 
   /** The virtualized default frame-buffer's texture. */
   /**

@@ -440,3 +440,30 @@ iPhone and iPad simulators retain their full Python and CPU Cycles runtime
 gates, and recursive product audits pass. Exact rotation, Stage Manager resize,
 and external-display behavior still requires owner-signed physical-device
 acceptance.
+
+## ADR-0023: Present at most once per MetalKit delegate frame
+
+- Status: accepted
+- Date: 2026-08-22
+
+Blender can request multiple buffer swaps while processing one UI frame, but a
+MetalKit drawable has one presentation lifetime. The inherited iOS path counted
+every request and tried to infer duplicate presentation by comparing the raw
+address of the current drawable with a process-global, unretained pointer. A
+released drawable object can be recreated at the same address, so that state
+was neither lifetime-safe nor scoped to a context.
+
+The window now coalesces swap requests into one pending-present bit. Every
+`drawInMTKView` callback opens a presentation frame before servicing an older
+pending request or running Blender's main-loop body. The context resets its
+per-frame guard at that boundary and accepts no second submission until the
+next callback. A pending request is consumed before calling the presentation
+path so a later request cannot be erased. Continuous MetalKit drawing supplies
+the next callback; the old `setNeedsDisplay` call was ineffective because the
+view has `enableSetNeedsDisplay` disabled and has been removed.
+
+This makes scheduling explicit rather than suppressing a diagnostic. The old
+global drawable pointer and counter are gone, both target lanes compile, and
+repeated iPhone and iPad simulator launch/render passes complete without the
+previous duplicate-present messages. Physical display timing remains part of
+the owner-signed device gate.

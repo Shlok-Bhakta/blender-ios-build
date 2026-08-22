@@ -73,6 +73,13 @@ the last valid backing texture until UIKit publishes a drawable again.
 Contexts without a UIKit window use a neutral 1 by 1 view; they never guess a
 particular iPhone resolution.
 
+Each `drawInMTKView` delegate callback opens exactly one presentation frame.
+Blender may request several swaps while processing that callback, but the
+window stores one pending-present bit and submits only the newest overlay at
+the callback boundary. The context independently guards against more than one
+drawable submission in the same frame. Presentation state belongs to the
+context; it never depends on a process-global or unretained drawable pointer.
+
 GHOST keeps its public coordinate contract in native pixels. UIKit conversion
 APIs use points, so the iOS window divides by the attached scene screen's scale,
 converts through `UIWindowScene.coordinateSpace`, and rounds the result back to
