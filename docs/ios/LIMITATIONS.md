@@ -47,6 +47,11 @@ state does not assume that an iPad window starts at the display origin. The
 iPadOS 26 simulator renders the desktop UI inside the native OS-managed scene,
 and both simulator form factors keep the full runtime and CPU Cycles gates
 green. Physical trackpad acceptance of nonzero window origins remains pending.
+The software-keyboard result and Cancel snapshot now own their storage, input
+objects detach during GHOST window teardown, and a failed first-responder
+request reaches the caller as a failure. Simulator startup stays green after
+this change. Direct software-keyboard acceptance for empty text, Unicode,
+Cancel, and repeated open/close cycles remains pending on a signed device.
 Multi-scene Blender sessions, physical rotation and resize acceptance,
 safe-area transitions, external-display moves, memory-pressure handling, and
 broader document workflows still require device hardening.
