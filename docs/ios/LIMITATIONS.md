@@ -49,7 +49,11 @@ preserves its last valid texture during a temporary zero-size transition;
 offscreen contexts use a display-independent 1 by 1 backing. The
 iPadOS 26 simulator renders the desktop UI inside the native OS-managed scene,
 and both simulator form factors keep the full runtime and CPU Cycles gates
-green. Physical trackpad acceptance of nonzero window origins remains pending.
+green. Swap requests are coalesced to one presentation per MetalKit delegate
+frame, and the earlier process-global drawable identity heuristic has been
+removed. iPhone and iPad simulator launch/render acceptance emits no duplicate
+presentation diagnostics. Physical trackpad acceptance of nonzero window
+origins remains pending.
 The software-keyboard result and Cancel snapshot now own their storage, input
 objects detach during GHOST window teardown, and a failed first-responder
 request reaches the caller as a failure. Simulator startup stays green after

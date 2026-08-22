@@ -19,9 +19,6 @@
 #import <QuartzCore/QuartzCore.h>
 #import <UIKit/UIKit.h>
 
-bool GHOST_ContextIOS::current_drawable_presented = false;
-id<CAMetalDrawable> GHOST_ContextIOS::prevDrawable = nil;
-
 static void ghost_fatal_error_dialog(const char * /*msg*/)
 {
   exit(1);
@@ -370,8 +367,20 @@ void GHOST_ContextIOS::metalRegisterPresentCallback(void (*callback)(
   this->contextPresentCallback = callback;
 }
 
+void GHOST_ContextIOS::beginFrame()
+{
+  drawable_presented_in_frame_ = false;
+}
+
 void GHOST_ContextIOS::metalSwapBuffers()
 {
+  /* Blender can request more than one swap while handling a display callback. The window
+   * coalesces those requests, and this context guard makes the one-present-per-callback contract
+   * explicit at the drawable owner. */
+  if (drawable_presented_in_frame_) {
+    return;
+  }
+
   /* clang-format off */
   @autoreleasepool {
     /* clang-format on */
@@ -397,25 +406,13 @@ void GHOST_ContextIOS::metalSwapBuffers()
       return;
     }
 
-    /* Double presents indicate that we are trying to present updates faster
-     * than the display's refresh rate. We should always display the latest update
-     * (or the screen will lag Blender's view of the world) but output a message
-     * so we are aware and can investigate. */
-    if (current_drawable != GHOST_ContextIOS::prevDrawable) {
-      GHOST_ContextIOS::current_drawable_presented = false;
-      GHOST_ContextIOS::prevDrawable = current_drawable;
-    }
-    if (current_drawable_presented) {
-      NSLog(@"Double present (MTKView)%p!", metal_view_);
-    }
-
     GHOST_ASSERT(contextPresentCallback, "iOS: Missing context present callback");
     GHOST_ASSERT(m_defaultFramebufferMetalTexture[current_swapchain_index].texture != nil,
                  "iOS: Default Framebuffer Metal Texture is nil");
+    drawable_presented_in_frame_ = true;
     (*contextPresentCallback)(passDescriptor,
                               (id<MTLRenderPipelineState>)metal_render_pipeline_,
                               m_defaultFramebufferMetalTexture[current_swapchain_index].texture,
                               current_drawable);
-    GHOST_ContextIOS::current_drawable_presented = true;
   }
 }

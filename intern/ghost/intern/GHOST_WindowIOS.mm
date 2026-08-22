@@ -1660,8 +1660,6 @@ GHOST_WindowIOS::GHOST_WindowIOS(GHOST_SystemIOS *system_ios,
   /* Gesture recognizers. */
   [ghost_rootWindow registerGestureRecognizers];
 
-  deferred_swap_buffers_count = 0;
-
   /* Deactive the parent (if it exists) and activate this one. */
   if (parent_window_) {
     parent_window_->requestToDeactivateWindow();
@@ -1743,40 +1741,44 @@ void *GHOST_WindowIOS::getOSWindow() const
 
 GHOST_TSuccess GHOST_WindowIOS::swapBufferRelease()
 {
-  deferred_swap_buffers_count++;
+  deferred_swap_buffers_ = true;
   return GHOST_kSuccess;
 }
 
 void GHOST_WindowIOS::flushDeferredSwapBuffers()
 {
-  if (deferred_swap_buffers_count) {
-
-    /* These two messages should be made asserts when we've fixed all the issues. */
-    if (!getValid()) {
-      IOS_WINDOW_LOG(@"Ignoring swap (invalid) con(%p) (win=%p)", getContext(), this);
-      return;
-    }
-
-    if (!is_active_window_) {
-      IOS_WINDOW_LOG(@"Ignoring swap (not active window) con(%p) (win=%p)", getContext(), this);
-      return;
-    }
-
-    IOS_WINDOW_LOG(@"Swapping (ui_View)%p (mtkView)%p con(%p) (win=%p) (sc=%d)",
-                   uiview_,
-                   metal_view_,
-                   getContext(),
-                   this,
-                   deferred_swap_buffers_count);
-
-    GHOST_ContextIOS *context = reinterpret_cast<GHOST_ContextIOS *>(getContext());
-    context->swapBufferRelease();
-    deferred_swap_buffers_count = 0;
+  if (!deferred_swap_buffers_) {
+    return;
   }
+
+  /* Consume the request before presenting so a later request cannot be erased by this frame. */
+  deferred_swap_buffers_ = false;
+
+  /* These two messages should be made asserts when we've fixed all the issues. */
+  if (!getValid()) {
+    IOS_WINDOW_LOG(@"Ignoring swap (invalid) con(%p) (win=%p)", getContext(), this);
+    return;
+  }
+
+  if (!is_active_window_) {
+    IOS_WINDOW_LOG(@"Ignoring swap (not active window) con(%p) (win=%p)", getContext(), this);
+    return;
+  }
+
+  IOS_WINDOW_LOG(@"Swapping (ui_View)%p (mtkView)%p con(%p) (win=%p)",
+                 uiview_,
+                 metal_view_,
+                 getContext(),
+                 this);
+
+  GHOST_ContextIOS *context = reinterpret_cast<GHOST_ContextIOS *>(getContext());
+  context->swapBufferRelease();
 }
 
 void GHOST_WindowIOS::beginFrame()
 {
+  GHOST_ContextIOS *context = reinterpret_cast<GHOST_ContextIOS *>(getContext());
+  context->beginFrame();
   GHOSTUIWindow *ui_window = (GHOSTUIWindow *)rootWindow;
   [ui_window beginFrame];
 }
@@ -1805,11 +1807,6 @@ void GHOST_WindowIOS::setTitle(const char *title)
 std::string GHOST_WindowIOS::getTitle() const
 {
   return window_title_;
-}
-
-void GHOST_WindowIOS::needsDisplayUpdate()
-{
-  [uiview_ setNeedsDisplay];
 }
 
 void GHOST_WindowIOS::getWindowBounds(GHOST_Rect &bounds) const

@@ -207,19 +207,17 @@ static BOOL IOS_open_document_url(NSURL *url)
 
   /* We should always have a window... */
   if (system->current_active_window_) {
+    system->current_active_window_->beginFrame();
 
     /* If the current window has some outstanding swaps we need to
      * service them before handing control back to Blender otherwise
      * they may go missing. */
-    if (system->current_active_window_->deferred_swap_buffers_count) {
-      IOS_SYSTEM_LOG(@"Issuing oustanding swaps");
+    if (system->current_active_window_->hasDeferredSwapBuffers()) {
+      IOS_SYSTEM_LOG(@"Issuing outstanding swap");
       system->current_active_window_->flushDeferredSwapBuffers();
-      /* Make sure we get another call to draw. */
-      system->current_active_window_->needsDisplayUpdate();
+      system->current_active_window_->endFrame();
       return;
     }
-
-    system->current_active_window_->beginFrame();
   }
 
   /* Run the main loop to handle all events. */
