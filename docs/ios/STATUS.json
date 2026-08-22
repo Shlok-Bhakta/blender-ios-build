@@ -3,12 +3,12 @@
   "baseline_sha": "fbe6228777e7d9afefcd61a413844e790ae75db7",
   "donor_sha": "a1de44dd54af75a4c8c4a29a5fed2a1334a87446",
   "donor_base_sha": "ec6e62d40fa9e9d1bea33ad5d00148c99a4f0832",
-  "port_branch": "story/ios-window-coordinates",
+  "port_branch": "story/ios-input-lifetime",
   "phase": "G3",
-  "active_packet": "windowed-scene-coordinates",
-  "last_green_packet": "windowed-scene-coordinates",
-  "last_green_sha": "d0978f0b9cff748df762f0db486755ac9da4a4e7",
-  "last_green_run": "/Volumes/BlenderBuild/blender-ios/artifacts/20260821-window-coordinates/result.json",
+  "active_packet": "uikit-input-lifetime",
+  "last_green_packet": "uikit-input-lifetime",
+  "last_green_sha": "df39c814eea4d13cdf4dc7c641c6b90a40110960",
+  "last_green_run": "/Volumes/BlenderBuild/blender-ios/artifacts/20260822-input-lifetime/result.json",
   "target": "ios-device-arm64",
   "feature_profile": "ios_device",
   "signing_mode": "UNSIGNED",
@@ -21,7 +21,8 @@
     "owner-signed-cycles-metal-device-smoke",
     "owner-signed-scene-transition-smoke",
     "owner-signed-window-coordinate-smoke",
-    "GHOST-UIKit-keyboard-pencil-hardening",
+    "owner-signed-software-keyboard-smoke",
+    "GHOST-UIKit-pencil-hardening",
     "optional-dependency-closure"
   ]
 }
