@@ -1,10 +1,12 @@
-# Morning handoff — 2026-08-21
+# Morning handoff — 2026-08-22
 
 Portable CPU Cycles remains green, and the production simulator and device
 profiles compile the native Cycles Metal device. UIKit now owns the app through
 a single window scene with scene-relative geometry and drawable resize events.
 Screen/client conversion now maps through that scene while preserving GHOST's
 native-pixel coordinate contract.
+UIKit keyboard results now use owned UTF-8 storage, and every input target and
+delegate detaches before a GHOST window releases its native objects.
 The same simulator
 `Blender.app` runs the desktop UI on iPhone and iPad, imports CPython 3.13.13,
 NumPy 2.3.4, and zstandard 0.25.0, starts the thread-backed Extensions worker,
@@ -37,7 +39,9 @@ and packages as one universal unsigned IPA for device families 1 and 2.
   Python and CPU Cycles markers after the lifecycle change.
 - Scene screen/client conversion and both directions of cached software cursor
   state are protected against regression.
-- All 63 tests under `build_files/ios/tests` pass.
+- Input teardown is idempotent, blocks edit-end callbacks, and releases the
+  window's manually owned UIKit input objects.
+- All 68 tests under `build_files/ios/tests` pass.
 
 ## Evidence
 
@@ -53,6 +57,10 @@ and packages as one universal unsigned IPA for device families 1 and 2.
   `/Volumes/BlenderBuild/blender-ios/artifacts/20260821-window-coordinates/Blender-5.2.0-Python-NumPy-Zstandard-Cycles-CPU-Metal-capable-Window-coordinates-iPhone-iPad-unsigned.ipa`
 - Window-coordinate IPA SHA-256:
   `cecb1064ccf94be3ecf9e1b66c6c69c3e5bccdbd17cc9ca7d6f6d2a6280be3ce`
+- Input-lifetime unsigned IPA:
+  `/Volumes/BlenderBuild/blender-ios/artifacts/20260822-input-lifetime/Blender-5.2.0-Python-NumPy-Zstandard-Cycles-CPU-Metal-capable-Input-lifetime-iPhone-iPad-unsigned.ipa`
+- Input-lifetime IPA SHA-256:
+  `e19deb007d1586de6cbfe10e92e7a00ea4e1f0dc463eab4fc0f227619aefa43a`
 - iPad acceptance recording:
   `/Volumes/BlenderBuild/blender-ios/artifacts/20260821-scene-lifecycle/Blender-iPad-scene-lifecycle.mp4`
 
@@ -69,11 +77,13 @@ and packages as one universal unsigned IPA for device families 1 and 2.
 4. On the same signed devices, rotate, background and foreground, resize the
    iPad scene, test a trackpad in a nonzero-origin window, and test
    external-display and safe-area or scale transitions.
-5. Do not merge the historical `origin/ios` donor branch. Do not ad-hoc sign an
+5. Exercise software-keyboard empty text, Unicode, Cancel, and repeated
+   open/close cycles on both devices.
+6. Do not merge the historical `origin/ios` donor branch. Do not ad-hoc sign an
    iPhoneOS handoff; the owner supplies distribution signing and provisioning.
-6. Physical-device installation and launch are the next owner-signed release
+7. Physical-device installation and launch are the next owner-signed release
    gate. Simulator success and an unsigned IPA do not prove that gate.
 
-Current source milestone: scene-owned UIKit startup, resizing, and windowed
-coordinate mapping plus portable CPU Cycles runtime and a tier-2-gated Cycles
-Metal build.
+Current source milestone: scene-owned UIKit startup, resizing, windowed
+coordinate mapping, and input lifetime safety plus portable CPU Cycles runtime
+and a tier-2-gated Cycles Metal build.

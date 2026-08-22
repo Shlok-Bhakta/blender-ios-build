@@ -391,3 +391,27 @@ The contract is protected by source tests and by successful arm64 device and
 simulator compilation. Final interaction acceptance still requires an
 owner-signed iPad with a trackpad, a nonzero-origin window, and an external
 display pass.
+
+## ADR-0021: Own UIKit input state until GHOST consumes it
+
+- Status: accepted
+- Date: 2026-08-22
+
+`NSString.UTF8String` returns storage owned by the string. The old keyboard path
+saved that pointer and then cleared the `UITextField`, which left GHOST with a
+dangling result. The Cancel snapshot had the same lifetime problem because it
+kept an autoreleased string between callbacks.
+
+`GHOSTUIWindow` now copies keyboard text into `std::string` and copies the
+original `NSString`. Empty text remains a valid result. A failed
+`becomeFirstResponder` call returns `GHOST_kFailure` instead of marking the
+keyboard active. Teardown first blocks edit-end callbacks, then removes target
+actions, gesture recognizers, and the Pencil delegate before releasing every
+object owned by the input window. The cleanup method is idempotent because the
+C++ destructor calls it before releasing UIKit and Objective-C `dealloc` calls
+it again if the scene retained the window.
+
+The port also removes keyboard-frame and GameController connection observers
+that only wrote unread state. Hardware-key events still arrive through
+`pressesBegan`, `pressesEnded`, and `pressesCancelled`; those observers were not
+part of event delivery.

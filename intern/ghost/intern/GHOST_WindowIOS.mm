@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <string>
 #include <unordered_map>
 
 // #define IOS_INPUT_LOGGING
@@ -63,15 +64,13 @@ typedef struct UserInputEvent {
   CGPoint location;
   CGPoint translation;
   CGFloat distance;
-  bool pencil_used;
 
-  UserInputEvent(CGPoint *loc, CGPoint *tran, CGFloat *dist, bool pencil)
+  UserInputEvent(CGPoint *loc, CGPoint *tran, CGFloat *dist)
   {
     num_events = 0;
     location = loc ? *loc : CGPointMake(-1.0f, -1.0f);
     translation = tran ? *tran : CGPointMake(0.0f, 0.0f);
     distance = dist ? *dist : 0.0f;
-    pencil_used = pencil;
   }
 
   void add_event(EventTypes event_type)
@@ -255,15 +254,12 @@ typedef struct UserInputEvent {
   /* Data from the Apple pencil */
   UITouch *current_pencil_touch;
   GHOST_TabletData tablet_data;
-  bool last_tap_with_pencil;
 
   /* Keyboard handling. */
   UITextField *text_field;
   NSString *original_text;
   bool onscreen_keyboard_active;
-  const char *text_field_string;
-  GHOST_KeyboardProperties current_keyboard_properties;
-  bool external_keyboard_connected;
+  std::string text_field_string;
 
   /* Toolbar */
   bool toolbar_enabled;
@@ -295,6 +291,7 @@ typedef struct UserInputEvent {
 - (GHOST_TSuccess)popupOnscreenKeyboard:(const GHOST_KeyboardProperties &)keyboard_properties;
 - (GHOST_TSuccess)hideOnscreenKeyboard;
 - (const char *)getLastKeyboardString;
+- (void)invalidateInput;
 - (void)generateHardwareKeyEvents:(NSSet<UIPress *> *)presses type:(GHOST_TEventType)event_type;
 @end
 
@@ -465,41 +462,92 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   text_field = nil;
   original_text = nil;
   onscreen_keyboard_active = false;
-  text_field_string = nullptr;
+  text_field_string.clear();
   current_pencil_touch = nil;
   tablet_data = GHOST_TABLET_DATA_NONE;
   toolbar_enabled = true;
   toolbar = nil;
-  last_tap_with_pencil = false;
-  external_keyboard_connected = [GCKeyboard coalescedKeyboard] != nil;
+}
 
-  /* Register for notifications of chnanges to the onscreen keyboard. */
-  [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(keyboardWillChange:)
-                                               name:UIKeyboardWillChangeFrameNotification
-                                             object:nil];
-  [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(keyboardWillChange:)
-                                               name:UIKeyboardWillShowNotification
-                                             object:nil];
-  [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(keyboardWillChange:)
-                                               name:UIKeyboardWillHideNotification
-                                             object:nil];
-
-  /* Check whether we've linked the GameController framework. */
-  if (&GCKeyboardDidConnectNotification != NULL) {
-    /* Register for notifcations an external keyboard has been added/removed. */
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(externalKeyboardChange:)
-                                                 name:GCKeyboardDidConnectNotification
-                                               object:nil];
-
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(externalKeyboardChange:)
-                                                 name:GCKeyboardDidDisconnectNotification
-                                               object:nil];
+- (void)releaseGestureRecognizer:(UIGestureRecognizer *)recognizer fromView:(UIView *)view
+{
+  if (recognizer == nil) {
+    return;
   }
+  recognizer.delegate = nil;
+  [view removeGestureRecognizer:recognizer];
+  [recognizer release];
+}
+
+- (void)invalidateInput
+{
+  UIView *input_view = window != nullptr ? window->getView() : nil;
+  /* Resigning the text field synchronously calls its edit-end target. */
+  onscreen_keyboard_active = false;
+
+  [self releaseGestureRecognizer:tap_gesture_recognizer fromView:input_view];
+  [self releaseGestureRecognizer:tap2f_gesture_recognizer fromView:input_view];
+  [self releaseGestureRecognizer:tap3f_gesture_recognizer fromView:input_view];
+  [self releaseGestureRecognizer:tap4f_gesture_recognizer fromView:input_view];
+  [self releaseGestureRecognizer:pan_gesture_recognizer fromView:input_view];
+  [self releaseGestureRecognizer:pan2f_gesture_recognizer fromView:input_view];
+  [self releaseGestureRecognizer:zoom_gesture_recognizer fromView:input_view];
+  [self releaseGestureRecognizer:hover_gesture_recognizer fromView:input_view];
+  [self releaseGestureRecognizer:edge_swipe_left fromView:input_view];
+  [self releaseGestureRecognizer:edge_swipe_right fromView:input_view];
+  tap_gesture_recognizer = nil;
+  tap2f_gesture_recognizer = nil;
+  tap3f_gesture_recognizer = nil;
+  tap4f_gesture_recognizer = nil;
+  pan_gesture_recognizer = nil;
+  pan2f_gesture_recognizer = nil;
+  zoom_gesture_recognizer = nil;
+  hover_gesture_recognizer = nil;
+  edge_swipe_left = nil;
+  edge_swipe_right = nil;
+
+  if (pencil_interaction != nil) {
+    [pencil_interaction setDelegate:nil];
+    [input_view removeInteraction:pencil_interaction];
+    [pencil_interaction release];
+    pencil_interaction = nil;
+  }
+
+  if (text_field != nil) {
+    [text_field resignFirstResponder];
+    [text_field removeTarget:self action:NULL forControlEvents:UIControlEventAllEvents];
+    text_field.inputAccessoryView = nil;
+    [text_field removeFromSuperview];
+    [text_field release];
+    text_field = nil;
+  }
+  [original_text release];
+  original_text = nil;
+
+  if (toolbar != nil) {
+    toolbar.items = nil;
+  }
+  [toolbar_tip_item release];
+  [toolbar_live_text_item release];
+  [toolbar_done_editing_item release];
+  [toolbar_cancel_editing_item release];
+  [toolbar release];
+  toolbar_tip_item = nil;
+  toolbar_live_text_item = nil;
+  toolbar_done_editing_item = nil;
+  toolbar_cancel_editing_item = nil;
+  toolbar = nil;
+
+  current_pencil_touch = nil;
+  tablet_data = GHOST_TABLET_DATA_NONE;
+  system = nullptr;
+  window = nullptr;
+}
+
+- (void)dealloc
+{
+  [self invalidateInput];
+  [super dealloc];
 }
 
 - (void)generateHardwareKeyEvents:(NSSet<UIPress *> *)presses
@@ -836,8 +884,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 - (void)handleTap:(GHOSTUITapGestureRecognizer *)sender
 {
   CGPoint touch_point = [sender getScaledTouchPoint:window];
-  last_tap_with_pencil = current_pencil_touch ? true : false;
-  UserInputEvent event_info(&touch_point, nullptr, nullptr, last_tap_with_pencil);
+  UserInputEvent event_info(&touch_point, nullptr, nullptr);
 
   /* Send events to indicate a 'click' on event end. */
   if (sender.state == UIGestureRecognizerStateEnded) {
@@ -898,9 +945,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 {
   CGPoint touch_point = [sender getScaledTouchPoint:window];
   CGPoint translation = [sender getScaledTranslation:window];
-  bool pencil_pan = current_pencil_touch ? true : false;
-
-  UserInputEvent event_info(&touch_point, nullptr, nullptr, pencil_pan);
+  UserInputEvent event_info(&touch_point, nullptr, nullptr);
 
   if (sender.state == UIGestureRecognizerStateBegan ||
       sender.state == UIGestureRecognizerStateChanged)
@@ -956,8 +1001,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
     /* Generate pan event if translation is non zero. */
     if (!CGPointEqualToPoint(relative_translation, CGPointMake(0.0f, 0.0f))) {
       CGPoint touch_point = [sender getScaledTouchPoint:window];
-      bool pencil_pan = current_pencil_touch ? true : false;
-      UserInputEvent event_info(&touch_point, &relative_translation, nullptr, pencil_pan);
+      UserInputEvent event_info(&touch_point, &relative_translation, nullptr);
       event_info.add_event(UserInputEvent::EventTypes::PAN_GESTURE_TWO_FINGERS);
       [self generateUserInputEvents:event_info];
     }
@@ -1007,7 +1051,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
     tablet_data.Active = GHOST_kTabletModeStylus;
     CGPoint hover_point = [sender getScaledTouchPoint:window];
     /* Add cursor move event. */
-    UserInputEvent event_info(&hover_point, nullptr, nullptr, true);
+    UserInputEvent event_info(&hover_point, nullptr, nullptr);
     event_info.add_event(UserInputEvent::EventTypes::CURSOR_MOVE);
     [self generateUserInputEvents:event_info];
   }
@@ -1046,7 +1090,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
       /* Calculate midpoint between the two touch points. */
       CGPoint midPoint = [sender getPinchMidpoint:window];
 
-      UserInputEvent event_info(&midPoint, nullptr, &relative_dist, false);
+      UserInputEvent event_info(&midPoint, nullptr, &relative_dist);
       event_info.add_event(UserInputEvent::EventTypes::PINCH_GESTURE);
       [self generateUserInputEvents:event_info];
     }
@@ -1061,7 +1105,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 
 - (void)pencilInteractionDidTap:(UIPencilInteraction *)interaction
 {
-  UserInputEvent event_info(nullptr, nullptr, nullptr, true);
+  UserInputEvent event_info(nullptr, nullptr, nullptr);
   event_info.add_event(UserInputEvent::EventTypes::PENCIL_TAP);
   [self generateUserInputEvents:event_info];
 }
@@ -1166,21 +1210,8 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
       [toolbar layoutIfNeeded];
     }
     IOS_INPUT_LOG(@"Keyboard Edit change detected %@", text_field.text);
-
-    /* IOS_FIXME - Enabling this will propogate text changes back into the Blender text field
-     as they happen. Since pushing back individual key presses appears to be difficult this
-     might be the best we can do. However this currently causes a segmentation fault if you delete
-     text as the Blender-side string ends up being NULL in some cases. */
-    bool push_edits_back_to_blender = false;
-
-    if (push_edits_back_to_blender) {
-      system->pushEvent(std::make_unique<GHOST_EventKey>(system->getMilliSeconds(),
-                                                         GHOST_kEventKeyDown,
-                                                         window,
-                                                         GHOST_kKeyTextEdit,
-                                                         false,
-                                                         nullptr));
-    }
+    const char *utf8 = [sender.text UTF8String];
+    text_field_string = utf8 != nullptr ? utf8 : "";
   }
 }
 
@@ -1289,9 +1320,6 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
     [self initUITextField];
   }
 
-  /* Save this set of keyboard properties */
-  current_keyboard_properties = keyboard_properties;
-
   /* Convert the text box coords to display coords */
   CGRect displayRect;
   [self convertWindowCoordToDisplayCoordWithWindow:keyboard_properties.text_box_origin[0]
@@ -1313,10 +1341,9 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   text_field.text = keyboard_properties.text_string ?
                         [NSString stringWithUTF8String:keyboard_properties.text_string] :
                         @"";
-  /* Take a copy of the string so we can restore it if neccessary */
-  original_text = keyboard_properties.text_string ?
-                      [NSString stringWithUTF8String:keyboard_properties.text_string] :
-                      @"";
+  /* Keep the cancel value alive for the full edit session. */
+  [original_text release];
+  original_text = [text_field.text copy];
 
   /* Set keyboard type and text alignment.
    * NOTE - the keyboard type is only honoured if using an Apple
@@ -1344,12 +1371,6 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
       text_field.textAlignment = NSTextAlignmentLeft;
     }
   }
-  /* Reset keyboard type to default if not using Apple Pencil
-   * or it's not floating. (Need to add floating detection.) */
-  if (!last_tap_with_pencil) {
-    // text_field.keyboardType = UIKeyboardTypeDefault;
-  }
-
   /* Set light/dark mode or adopt system default. */
   text_field.keyboardAppearance = UIKeyboardAppearanceDefault;
 
@@ -1410,24 +1431,6 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   }
 }
 
-- (void)externalKeyboardChange:(NSNotification *)notification
-{
-  external_keyboard_connected = [GCKeyboard coalescedKeyboard] != nil;
-  IOS_INPUT_LOG(@"External Keyboard %s",
-                external_keyboard_connected ? "Connected" : "Disconnected");
-}
-
-/* IOS_FIXME - Not currently used, could be removed. */
-- (void)keyboardWillChange:(NSNotification *)notification
-{
-
-  CGRect keyboardRect = [notification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
-  /* Sometimes we see a zero value for the end-frame value, possibly because... timing? */
-  if (keyboardRect.size.width == 0 || keyboardRect.size.height == 0) {
-    keyboardRect = [notification.userInfo[UIKeyboardFrameBeginUserInfoKey] CGRectValue];
-  }
-}
-
 - (const GHOST_TabletData)getTabletData
 {
   return tablet_data;
@@ -1442,7 +1445,8 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
     if (!onscreen_keyboard_active) {
       text_field.userInteractionEnabled = YES;
       if (![text_field becomeFirstResponder]) {
-        GHOST_ASSERT(FALSE, "GHOST_SystemIOS::popupOnScreenKeyboard Failed to display keyboard");
+        text_field.userInteractionEnabled = NO;
+        return GHOST_kFailure;
       }
       onscreen_keyboard_active = true;
     }
@@ -1481,14 +1485,15 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
        */
       text_field.userInteractionEnabled = NO;
 
-      /* Save the input to a c-string */
-      text_field_string = [[text_field text] UTF8String];
+      /* NSString owns its UTF8String buffer, so copy it before clearing the field. */
+      const char *utf8 = [[text_field text] UTF8String];
+      text_field_string = utf8 != nullptr ? utf8 : "";
 
       /* Delete the text field copy of the string */
       text_field.text = nil;
     }
   }
-  IOS_INPUT_LOG(@"Text field value was %s", text_field_string);
+  IOS_INPUT_LOG(@"Text field value was %s", text_field_string.c_str());
   return GHOST_kSuccess;
 }
 
@@ -1497,13 +1502,12 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   /* Lock access around keyboard handling events */
   @synchronized(self) {
 
-    /* Update text string if one exists */
-    if (text_field.text && ![text_field.text isEqualToString:@""]) {
-      /* Save the input to a c-string */
-      text_field_string = [[text_field text] UTF8String];
+    if (text_field.text != nil) {
+      const char *utf8 = [text_field.text UTF8String];
+      text_field_string = utf8 != nullptr ? utf8 : "";
     }
   }
-  return text_field_string;
+  return text_field_string.c_str();
 }
 
 @end
@@ -1691,6 +1695,10 @@ GHOST_WindowIOS::~GHOST_WindowIOS()
     IOS_WINDOW_LOG(@"~GHOST_WindowIOS(): Warning, deactivating the active window %p?", this);
     requestToDeactivateWindow();
     resignKeyWindow();
+  }
+
+  if (rootWindow) {
+    [(GHOSTUIWindow *)rootWindow invalidateInput];
   }
 
   if (metal_view_) {

@@ -75,6 +75,15 @@ client coordinates; cursor polling converts them back to scene screen
 coordinates. Programmatic cursor updates perform the inverse conversion before
 emitting a client-space event. UIKit cannot warp the physical system pointer.
 
+The UIKit input window uses manual Objective-C reference counting. It owns each
+gesture recognizer, Pencil interaction, text field, toolbar item, and saved
+cancel string that it allocates. `invalidateInput` detaches targets and
+delegates before the C++ GHOST window releases UIKit. It also disables edit-end
+callbacks before resigning the text field. Keyboard results live in an owned
+`std::string`; a pointer returned by `NSString.UTF8String` is copied before the
+field changes or releases its string. Empty edits therefore return a stable
+empty C string instead of a dangling pointer or `nullptr`.
+
 ## Cycles render boundary
 
 The accepted Cycles fallback is the portable CPU renderer backed by a static
