@@ -415,3 +415,28 @@ The port also removes keyboard-frame and GameController connection observers
 that only wrote unread state. Hardware-key events still arrive through
 `pressesBegan`, `pressesEnded`, and `pressesCancelled`; those observers were not
 part of event delivery.
+
+## ADR-0022: Size Metal backing textures from the active drawable
+
+- Status: accepted
+- Date: 2026-08-22
+
+An iOS Metal view can occupy only part of an iPad scene, move to an external
+display, or change native-pixel size without matching the process main screen.
+Using `UIScreen.mainScreen` to allocate Blender's overlay texture therefore
+produced the wrong framebuffer outside a full-screen primary-display window.
+
+`GHOST_ContextIOS` now treats `MTKView.drawableSize` as the authoritative pixel
+size. If UIKit temporarily reports zero in either dimension while the scene is
+inactive or resizing, the context preserves its last valid backing texture and
+waits for a later drawable update instead of allocating a fabricated fallback.
+An offscreen context has no window scene to consult, so its private Metal view
+starts at a deterministic 1 by 1 size rather than a hard-coded device
+resolution.
+
+Source contracts forbid process-main-screen reads throughout the iOS GHOST
+system, window, and context implementations. Both target lanes compile, the
+iPhone and iPad simulators retain their full Python and CPU Cycles runtime
+gates, and recursive product audits pass. Exact rotation, Stage Manager resize,
+and external-display behavior still requires owner-signed physical-device
+acceptance.
