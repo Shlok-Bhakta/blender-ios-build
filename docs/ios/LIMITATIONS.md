@@ -44,6 +44,9 @@ file-open callbacks, scene-relative geometry and scale, and MetalKit drawable
 resize events. Screen/client coordinate conversion now routes through the
 attached scene coordinate space, including its native-pixel scale, so pointer
 state does not assume that an iPad window starts at the display origin. The
+Metal overlay framebuffer follows the active view's native-pixel drawable and
+preserves its last valid texture during a temporary zero-size transition;
+offscreen contexts use a display-independent 1 by 1 backing. The
 iPadOS 26 simulator renders the desktop UI inside the native OS-managed scene,
 and both simulator form factors keep the full runtime and CPU Cycles gates
 green. Physical trackpad acceptance of nonzero window origins remains pending.

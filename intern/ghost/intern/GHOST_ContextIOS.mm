@@ -56,27 +56,11 @@ GHOST_ContextIOS::GHOST_ContextIOS(const GHOST_ContextParams &context_params,
     /* Initialize Metal device (Using system default) */
     id<MTLDevice> metalDevice = MTLCreateSystemDefaultDevice();
 
-    CGRect screenRect = [[UIScreen mainScreen] bounds];
-    CGFloat screenWidth = screenRect.size.width;
-    CGFloat screenHeight = screenRect.size.height;
-    if (screenWidth <= 0 || screenHeight <= 0) {
-      /* TODO: Avoid using default resolution, this path should however not be hit. */
-      screenWidth = 2532;
-      screenHeight = 1170;
-    }
-
-    GHOST_ASSERT(screenWidth > 0 && screenHeight > 0, "Negative or null display dimmensions");
-
-    if (screenWidth <= 0) {
-      /* TODO: Avoid using default resolution, this path should however not be hit. */
-      screenWidth = 2532;
-      screenHeight = 1170;
-    }
-
-    /* Create own device */
-    metal_view_ = [[MTKView alloc] initWithFrame:CGRectMake(0, 0, screenWidth, screenHeight)];
+    /* Off-screen contexts have no window scene or display whose dimensions they can inherit. */
+    metal_view_ = [[MTKView alloc] initWithFrame:CGRectMake(0, 0, 1, 1)];
     GHOST_ASSERT(metal_view_, "iOS: Failed to initialize Metal View");
     metal_view_.device = metalDevice;
+    metal_view_.drawableSize = CGSizeMake(1, 1);
     ui_view_ = (UIView *)metal_view_;
 
     owns_metal_device_ = true;
@@ -321,19 +305,14 @@ void GHOST_ContextIOS::metalInitFramebuffer()
 
 void GHOST_ContextIOS::metalUpdateFramebuffer()
 {
-  CGRect screenRect = [[UIScreen mainScreen] bounds];
-  CGFloat scaling_fac = [UIScreen mainScreen].scale;
-  CGFloat screenWidth = screenRect.size.width;
-  CGFloat screenHeight = screenRect.size.height;
-  size_t width = screenWidth * scaling_fac;
-  size_t height = screenHeight * scaling_fac;
+  const CGSize drawable_size = metal_view_.drawableSize;
+  const size_t width = size_t(drawable_size.width);
+  const size_t height = size_t(drawable_size.height);
 
-  if (width <= 0 && height <= 0) {
-    GHOST_ASSERT(false, "Negative or null display dimmensions");
-    /* TOOD: Better default size. This should not happen but is here to avoid erroneous
-     * initialization. */
-    width = 1440;
-    height = 960;
+  /* UIKit can temporarily report an empty drawable while a scene is inactive or resizing. Keep
+   * the last valid backing texture until the view has a drawable again. */
+  if (width == 0 || height == 0) {
+    return;
   }
 
   /* METAL-only path -- Test metal overlay. */

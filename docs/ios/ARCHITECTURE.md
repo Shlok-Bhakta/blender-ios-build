@@ -66,6 +66,13 @@ scene's screen. No production GHOST path reads `UIScreen.mainScreen`. MetalKit
 drawable-size callbacks call the normal GHOST window-size handler, which
 updates Blender's drawing context before queuing the resize event.
 
+The Metal overlay framebuffer is sized from `MTKView.drawableSize`, which is
+already expressed in native pixels for the current window and display. A
+temporary zero-sized drawable during scene deactivation or live resize keeps
+the last valid backing texture until UIKit publishes a drawable again.
+Contexts without a UIKit window use a neutral 1 by 1 view; they never guess a
+particular iPhone resolution.
+
 GHOST keeps its public coordinate contract in native pixels. UIKit conversion
 APIs use points, so the iOS window divides by the attached scene screen's scale,
 converts through `UIWindowScene.coordinateSpace`, and rounds the result back to
