@@ -284,6 +284,8 @@ typedef struct UserInputEvent {
 - (void)handlePan:(GHOSTUIPanGestureRecognizer *)sender;
 - (void)handlePan2f:(GHOSTUIPanGestureRecognizer *)sender;
 - (void)handleZoom:(GHOSTUIPinchGestureRecognizer *)sender;
+- (void)updateTabletDataFromTouch:(UITouch *)touch;
+- (void)resetTabletData;
 
 /* On screen keyboard handling */
 - (UITextField *)getUITextField;
@@ -818,13 +820,41 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 }
 
 /* Override touch methods to capture the UITouch object. */
+- (void)updateTabletDataFromTouch:(UITouch *)touch
+{
+  GHOST_ASSERT(touch.type == UITouchTypePencil, "Tablet data requires an Apple Pencil touch");
+  current_pencil_touch = touch;
+  tablet_data.Active = GHOST_kTabletModeStylus;
+
+  CGFloat normalized_pressure = 0.0;
+  if (touch.maximumPossibleForce > 0.0) {
+    normalized_pressure = touch.force / touch.maximumPossibleForce;
+  }
+  tablet_data.Pressure = std::clamp(float(normalized_pressure), 0.0f, 1.0f);
+
+  const CGFloat azimuth_angle = [touch azimuthAngleInView:window->getView()];
+  const CGFloat altitude_angle = touch.altitudeAngle;
+  const CGFloat tilt = cos(altitude_angle);
+
+  tablet_data.Xtilt = std::clamp(float(sin(azimuth_angle) * tilt), -1.0f, 1.0f);
+  tablet_data.Ytilt = std::clamp(float(-cos(azimuth_angle) * tilt), -1.0f, 1.0f);
+  IOS_INPUT_LOG(
+      @"TABLET: X:%f,Y:%f,P:%f", tablet_data.Xtilt, tablet_data.Ytilt, tablet_data.Pressure);
+}
+
+- (void)resetTabletData
+{
+  current_pencil_touch = nil;
+  tablet_data = GHOST_TABLET_DATA_NONE;
+}
+
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
   [super touchesBegan:touches withEvent:event];
 
   for (UITouch *touch in touches) {
     if (touch.type == UITouchTypePencil) {
-      current_pencil_touch = touch;
+      [self updateTabletDataFromTouch:touch];
       break;
     }
   }
@@ -835,30 +865,10 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 {
   [super touchesMoved:touches withEvent:event];
 
-  /* Check if one of the touches was from a pencil. */
-  if (current_pencil_touch) {
-    /* Iterate through all pencil touches. */
+  if (current_pencil_touch != nil) {
     for (UITouch *touch in touches) {
-      if (touch.type == UITouchTypePencil) {
-        current_pencil_touch = touch;
-
-        tablet_data.Active = GHOST_kTabletModeStylus;
-
-        /* Map apple pessure Range to Blender range: 0.0 (not touching) to 1.0 (full pressure). */
-        tablet_data.Pressure = current_pencil_touch.force /
-                               current_pencil_touch.maximumPossibleForce;
-
-        CGFloat azimuthAngle = [current_pencil_touch azimuthAngleInView:window->getView()];
-        CGFloat altitudeAngle = [current_pencil_touch altitudeAngle];
-
-        /* Calculate the maximum possible tilt (1.0) when altitude is 0. */
-        CGFloat maxTilt = cos(0);
-
-        /* Convert to x and y tilt - range -1.0 (left) to +1.0 (right). */
-        tablet_data.Xtilt = sin(azimuthAngle) * cos(altitudeAngle) / maxTilt;
-        tablet_data.Ytilt = -cos(azimuthAngle) * cos(altitudeAngle) / maxTilt;
-        IOS_INPUT_LOG(
-            @"TABLET: X:%f,Y:%f,P:%f", tablet_data.Xtilt, tablet_data.Ytilt, tablet_data.Pressure);
+      if (touch == current_pencil_touch) {
+        [self updateTabletDataFromTouch:touch];
         break;
       }
     }
@@ -869,16 +879,18 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
   [super touchesEnded:touches withEvent:event];
-  current_pencil_touch = nil;
-  tablet_data = GHOST_TABLET_DATA_NONE;
+  if (current_pencil_touch != nil && [touches containsObject:current_pencil_touch]) {
+    [self resetTabletData];
+  }
 }
 
 /* Reset tablet data. */
 - (void)touchesCancelled:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
   [super touchesCancelled:touches withEvent:event];
-  current_pencil_touch = nil;
-  tablet_data = GHOST_TABLET_DATA_NONE;
+  if (current_pencil_touch != nil && [touches containsObject:current_pencil_touch]) {
+    [self resetTabletData];
+  }
 }
 
 - (void)handleTap:(GHOSTUITapGestureRecognizer *)sender

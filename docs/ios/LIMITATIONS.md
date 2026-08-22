@@ -59,6 +59,11 @@ objects detach during GHOST window teardown, and a failed first-responder
 request reaches the caller as a failure. Simulator startup stays green after
 this change. Direct software-keyboard acceptance for empty text, Unicode,
 Cancel, and repeated open/close cycles remains pending on a signed device.
+Pencil tablet state now starts on contact, follows only the tracked stylus, and
+keeps pressure and tilt bounded even if UIKit reports an unusable force range.
+The simulator cannot synthesize physical Pencil pressure or tilt, so real
+Pencil contact, motion, simultaneous finger input, cancellation, hover, and
+double-tap remain owner-signed iPad acceptance gates.
 Multi-scene Blender sessions, physical rotation and resize acceptance,
 safe-area transitions, external-display moves, memory-pressure handling, and
 broader document workflows still require device hardening.

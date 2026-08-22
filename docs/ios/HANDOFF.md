@@ -89,8 +89,9 @@ signatures. The owner must sign and provision the IPA before installing it.
    `MTKView.drawableSize` framebuffer dimensions before and after each
    transition. Verify the new scene-space pointer mapping with a physical
    trackpad in a nonzero-origin iPad window. Exercise software-keyboard empty
-   text, Unicode, Cancel, and repeated open/close cycles, then close Pencil,
-   memory-pressure, and file-workflow gaps.
+   text, Unicode, Cancel, and repeated open/close cycles. Validate Pencil
+   pressure, tilt, simultaneous finger input, cancellation, hover, and
+   double-tap, then close memory-pressure and file-workflow gaps.
 3. Owner-sign the P540-capable device IPA and run
    `BLENDER_IOS_CYCLES_SMOKE=METAL` on tier-2 iPhone and iPad hardware. Keep
    portable CPU Cycles as the accepted fallback until both renders pass.

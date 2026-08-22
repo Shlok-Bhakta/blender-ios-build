@@ -98,6 +98,13 @@ callbacks before resigning the text field. Keyboard results live in an owned
 field changes or releases its string. Empty edits therefore return a stable
 empty C string instead of a dangling pointer or `nullptr`.
 
+Apple Pencil tablet state begins with the Pencil touch rather than waiting for
+its first movement. Only that tracked touch may update or end the tablet
+session, so an unrelated finger ending cannot erase pressure during a
+simultaneous gesture. Force is normalized only when UIKit provides a positive
+maximum and pressure plus both tilt axes are clamped to GHOST's documented
+ranges.
+
 ## Cycles render boundary
 
 The accepted Cycles fallback is the portable CPU renderer backed by a static
