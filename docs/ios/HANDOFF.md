@@ -59,6 +59,22 @@ The generated dependency graph is `DEPENDENCY_DAG.json`. Its bootstrap queue is
 dependency-free and ordered for bounded `-j2` packets; do not replace it with the
 global `install` target.
 
+## Touch and software-keyboard boundary
+
+One-finger drag is Blender left-button input only. Do not reintroduce a
+single-finger `GHOST_EventTrackpad`: it races selection with viewport
+navigation. Two-finger drag remains orbit, pinch remains zoom, and three-finger
+drag selects Blender's Shift+trackpad-pan mapping. Direct double tap is right
+click and must use the first tap position.
+
+Blender's `textedit_begin`/`textedit_end` pair owns the native keyboard bridge.
+Keep the full keyboard for numeric fields so expressions and drivers remain
+possible. The final string is captured during hide and must not be overwritten
+by rereading the cleared UIKit field. Run
+`build_files/ios/maestro/input_polish.yaml` after changing either side; its
+`3+4` acceptance must end at `7 m` and its double tap must open the Object
+context menu.
+
 ## Immutable anchors
 
 - Production baseline: `v5.2.0` / `fbe6228777e7d9afefcd61a413844e790ae75db7`
@@ -109,8 +125,10 @@ signatures. The owner must sign and provision the IPA before installing it.
 ## Recommended next order
 
 1. Sign the current IPA and run a physical iPhone/iPad smoke test for launch,
-   one/two/three-finger navigation, rotation, background/foreground, save/open,
-   thermal behavior, jetsam, and memory pressure.
+   precise one-finger selection drags, first-position double-tap right click,
+   one/two/three-finger navigation, keyboard expressions and Cancel, rotation,
+   background/foreground, save/open, thermal behavior, jetsam, and memory
+   pressure.
 2. Finish GHOST/UIKit hardening: run physical rotation, resize, safe-area, and
    external-display acceptance against the scene-owned window, including exact
    `MTKView.drawableSize` framebuffer dimensions before and after each

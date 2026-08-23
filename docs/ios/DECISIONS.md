@@ -569,3 +569,35 @@ growth and reclamation cycles. Both runs reported zero application-owned leak
 roots, zero leak growth, and the same stable 19,584-byte Simulator Metal-driver
 root set. These results accept the simulator lane only; physical jetsam,
 thermal, and long-scene behavior remain owner-signed device gates.
+
+## ADR-0028: Isolate direct selection and bridge Blender text editing to UIKit
+
+- Status: accepted simulator boundary; physical-device acceptance pending
+- Date: 2026-08-23
+
+The inherited one-finger pan recognizer emitted both a left-button drag and a
+one-contact trackpad-scroll event. A fast selection drag could therefore enter
+Blender's viewport navigation keymap for one frame before continuing as a tool
+drag. The recognizer now emits only an initial-position left press, cursor
+motion, and release. Pinch can run simultaneously only with two-finger pan.
+
+One-finger double tap is the direct-touch right-click gesture. UIKit delays the
+single-tap recognizer until the double tap fails, while the double-tap
+recognizer caches its first contact position and emits the right click there.
+This avoids a preceding selection and prevents small differences between the
+two tap locations from moving the context-menu target.
+
+The native keyboard implementation existed below GHOST but was no longer
+connected to Blender 5.2's UI text lifecycle. `textedit_begin` now passes the
+active buffer, selection, geometry, and tooltip to GHOST; `textedit_end` hides
+the keyboard and copies the owned result into Blender before its normal apply
+path runs. Every field uses the full keyboard because numeric fields accept
+expressions and drivers. Selection is applied after first-responder activation.
+The committed value captured during hide is retained while inactive, because
+UIKit turns a cleared `UITextField.text` into a non-null empty string.
+
+Contract tests, production simulator/device builds, recursive product audits,
+and a 30-second rendered viewport pass. Maestro acceptance enters `3+4`, proves
+the resulting `7 m`, and opens the Object context menu with a double tap. Real
+multi-touch arbitration, keyboard avoidance, and hardware-keyboard behavior
+remain signed-device gates.
