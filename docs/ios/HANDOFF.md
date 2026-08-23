@@ -42,6 +42,19 @@ viewport on both form factors. The narrow source tests identify the three iOS
 Metal compatibility seams, so a forward port should adapt those seams before
 changing shader behavior globally.
 
+For a long-running memory gate, run each booted form factor explicitly:
+
+```sh
+python3 build_files/ios/simulator_memory_soak.py \
+  --app /path/to/ios-simulator-build/bin/Blender.app \
+  --udid DEVICE_UDID --warmup-seconds 60 --duration-seconds 300
+```
+
+The command must finish with zero application-owned leak roots and zero leak
+growth. Treat stable Simulator Metal-driver roots as a separate diagnostic,
+and do not replace the physical-device jetsam and thermal gate with simulator
+RSS evidence.
+
 The generated dependency graph is `DEPENDENCY_DAG.json`. Its bootstrap queue is
 dependency-free and ordered for bounded `-j2` packets; do not replace it with the
 global `install` target.
@@ -96,7 +109,8 @@ signatures. The owner must sign and provision the IPA before installing it.
 ## Recommended next order
 
 1. Sign the current IPA and run a physical iPhone/iPad smoke test for launch,
-   touch, rotation, background/foreground, save/open, and memory pressure.
+   one/two/three-finger navigation, rotation, background/foreground, save/open,
+   thermal behavior, jetsam, and memory pressure.
 2. Finish GHOST/UIKit hardening: run physical rotation, resize, safe-area, and
    external-display acceptance against the scene-owned window, including exact
    `MTKView.drawableSize` framebuffer dimensions before and after each

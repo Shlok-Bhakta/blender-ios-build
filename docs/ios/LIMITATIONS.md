@@ -11,9 +11,16 @@ Splash and cube viewport screenshots exist for each simulator. iPad runs as
 is a native iPad windowed scene. Full-screen versus windowed placement on
 iPadOS 26 is controlled by the user and operating system.
 The release smoke gate also renders the factory cube to a validated 1920 by
-1080 EEVEE PNG and holds a live rendered viewport for 15 seconds on each
-simulator. Physical-device EEVEE performance, thermal behavior, and long-scene
-memory pressure remain owner-signed acceptance work.
+1080 EEVEE PNG and holds a live rendered viewport for 30 seconds on each
+simulator. A separate rendered-viewport soak uses a 60-second warmup and five
+minutes of continuous scene changes. Its final iPhone run used 87.0-117.8 MiB
+RSS with 1.1 MiB latter-half growth; iPad used 84.1-117.2 MiB with 11.1 MiB
+latter-half growth and visible reclamation cycles. Both live `leaks` scans found
+zero application-owned roots and zero leak growth. The stable 19,584-byte
+`_MTLFunctionInternal` roots are owned by the Simulator Metal driver and are
+reported separately rather than waived as application leaks. Physical-device
+EEVEE performance, thermal behavior, jetsam behavior, and long-scene memory
+pressure remain owner-signed acceptance work.
 
 The arm64 iPhoneOS build, runtime bundle, and universal unsigned IPA are now
 proven. The IPA targets iOS 18.0 or newer, declares iPhone and iPad device
@@ -75,8 +82,8 @@ synthesize three concurrent contacts, so the recognizer, event translation,
 keymap selection, teardown, and both target builds are proven while final
 gesture-feel acceptance remains a physical iPhone/iPad gate.
 Multi-scene Blender sessions, physical rotation and resize acceptance,
-safe-area transitions, external-display moves, memory-pressure handling, and
-broader document workflows still require device hardening.
+safe-area transitions, external-display moves, physical memory-pressure
+handling, and broader document workflows still require device hardening.
 
 The unsigned device IPA cannot install or run on physical hardware before
 owner-controlled signing and provisioning. This lane does not inspect

@@ -14,6 +14,10 @@ Apple Pencil state now starts on contact, follows only its tracked touch, and
 keeps force and tilt in valid GHOST ranges.
 UIKit keyboard results now use owned UTF-8 storage, and every input target and
 delegate detaches before a GHOST window releases its native objects.
+Three-finger drag now reaches Blender's standard viewport-pan mapping while
+one-finger tools, two-finger orbit, and pinch zoom keep their existing roles.
+Generic Metal ownership now follows Objective-C create rules, deletes compute
+PSO cache records, and has a reproducible five-minute rendered-viewport soak.
 The same simulator
 `Blender.app` runs the desktop UI on iPhone and iPad, imports CPython 3.13.13,
 NumPy 2.3.4, and zstandard 0.25.0, starts the thread-backed Extensions worker,
@@ -55,7 +59,10 @@ and packages as one universal unsigned IPA for device families 1 and 2.
   duplicate-present diagnostic.
 - Pencil pressure/tilt state is safe against zero force ranges and unrelated
   simultaneous finger endings; physical sensor acceptance remains pending.
-- All 76 tests under `build_files/ios/tests` pass.
+- The final five-minute EEVEE soak reports zero application-owned leak roots
+  and zero leak growth on both simulator form factors. iPhone latter-half RSS
+  growth is 1.1 MiB; iPad is 11.1 MiB with visible reclamation cycles.
+- All 100 tests under `build_files/ios/tests` pass.
 
 ## Evidence
 
@@ -89,6 +96,16 @@ and packages as one universal unsigned IPA for device families 1 and 2.
   `a31965f9b66d324a3b9c2e9d869628ab2e4773112e0e90275e4935344ba5862a`
 - iPad acceptance recording:
   `/Volumes/BlenderBuild/blender-ios/artifacts/20260821-scene-lifecycle/Blender-iPad-scene-lifecycle.mp4`
+- Memory-soak unsigned IPA:
+  `/Volumes/BlenderBuild/blender-ios/artifacts/20260823-memory-soak/Blender-5.2.0-Python-NumPy-Zstandard-Cycles-CPU-Metal-capable-Memory-soak-iPhone-iPad-unsigned.ipa`
+- Memory-soak IPA SHA-256:
+  `c99ee373c2cf85865ba8ff01472a2da72d06d1b3dda1de4d80a4ad13b4ce8b72`
+- Current iPad release recording:
+  `/Volumes/BlenderBuild/blender-ios/artifacts/20260822-touch-memory/Blender-iPad-touch-memory-final.mp4`
+- Current recording review permalink:
+  `https://planista.shloklab.us/KRHbnyG-JQXGTnpy`
+- Current recording SHA-256:
+  `1af202110da4fc55c9b5887e909ae3f719e53b5b95dd72f1294958e49a359d96`
 
 ## Resume
 
@@ -114,6 +131,6 @@ and packages as one universal unsigned IPA for device families 1 and 2.
    gate. Simulator success and an unsigned IPA do not prove that gate.
 
 Current source milestone: scene-owned UIKit startup, drawable-sized and
-single-present Metal frames, resizing, windowed coordinate mapping, and input
-lifetime/Pencil state safety plus portable CPU Cycles runtime and a tier-2-gated
-Cycles Metal build.
+single-present Metal frames, resizing, windowed coordinate mapping, owned input
+and Metal lifetimes, Pencil state safety, touch orbit/zoom/pan, portable CPU
+Cycles runtime, and a tier-2-gated Cycles Metal build.
