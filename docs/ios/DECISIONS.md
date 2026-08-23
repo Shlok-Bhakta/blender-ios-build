@@ -542,3 +542,30 @@ Source contracts and both arm64 iOS target builds pass. Maestro 2.8.0 exposes
 only single-pointer tap and swipe synthesis, and public Simulator I/O exposes
 no multi-contact injection. Gesture feel and simultaneous touch arbitration
 therefore remain an owner-signed physical-device acceptance gate.
+
+## ADR-0027: Separate steady-state growth from ownership leaks
+
+- Status: accepted
+- Date: 2026-08-23
+
+A rendered viewport warms Metal shaders, pipeline caches, Blender allocators,
+and operating-system graphics state. A single RSS delta therefore cannot tell a
+bounded cache from an ownership bug. Release validation must measure both: RSS
+after a warmup window for steady-state behavior, and live `leaks` roots before
+and after the sample window for ownership growth.
+
+The soak runner uses 60 seconds of warmup followed by five minutes of
+continuously changing EEVEE work. It fails on every application-owned leak root
+or any positive leak growth. Stable `_MTLFunctionInternal` roots in the iOS
+Simulator are classified and reported as driver-owned, never silently ignored.
+The first full calibration exposed generic Metal teardown defects: compute PSO
+records were not deleted, three `new...` results were retained a second time,
+and one texture cache was freed twice. The backend now follows create-rule
+ownership and deletes its C++ cache records.
+
+On the final binary, iPhone RSS stayed within 87.0-117.8 MiB with 1.1 MiB
+latter-half growth. iPad stayed within 84.1-117.2 MiB with 11.1 MiB latter-half
+growth and reclamation cycles. Both runs reported zero application-owned leak
+roots, zero leak growth, and the same stable 19,584-byte Simulator Metal-driver
+root set. These results accept the simulator lane only; physical jetsam,
+thermal, and long-scene behavior remain owner-signed device gates.

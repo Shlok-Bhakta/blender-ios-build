@@ -113,6 +113,25 @@ drag carries its finger count through GHOST so the window manager selects the
 default Shift+Trackpad Pan mapping without changing persistent keyboard state.
 Every recognizer is detached and released with its GHOST window.
 
+## Metal ownership and memory soak
+
+The generic Metal backend follows Objective-C's create rule: objects returned
+by `new...` already have an owning reference and must not be retained again.
+The context owns and releases its null buffers and buffer-clear pipeline once.
+Compute pipeline cache entries are C++ allocations, so shader teardown releases
+their Objective-C pipeline/function members and deletes every cache record.
+The texture utility destructor visits each cache exactly once. These are shared
+Metal-backend rules rather than iOS-only branches, which keeps a forward port
+small and preserves desktop behavior.
+
+`build_files/ios/simulator_memory_soak.py` installs the production app, enters
+EEVEE rendered shading, and continuously changes the scene for a 60-second
+warmup plus a five-minute sample window. It records resident memory and runs
+`leaks` against the live process before and after sampling. The gate fails for
+any application-owned leak root or positive leak growth and separately reports
+stable simulator-driver roots. RSS is evaluated over the latter half so shader
+and pipeline cache warmup is not mistaken for an unbounded leak.
+
 ## Cycles render boundary
 
 The accepted Cycles fallback is the portable CPU renderer backed by a static

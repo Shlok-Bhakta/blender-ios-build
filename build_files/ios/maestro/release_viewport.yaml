@@ -1,0 +1,13 @@
+appId: org.blenderfoundation.blender.ios
+name: Blender iPad release viewport
+---
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 15000
+- takeScreenshot: blender-release-setup
+- tapOn:
+    point: 50%,66%
+- waitForAnimationToEnd:
+    timeout: 15000
+- takeScreenshot: blender-release-viewport
