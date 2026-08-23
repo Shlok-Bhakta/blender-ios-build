@@ -1,6 +1,6 @@
 # Blender iOS limitations
 
-Simulator Workbench is proven on both iPhone and iPad. Packet P530 installs the
+Simulator Workbench and EEVEE are proven on both iPhone and iPad. Packet P530 installs the
 same `org.blenderfoundation.blender.ios` bundle (`UIDeviceFamily` 1 and 2) on an
 iPhone 17 simulator and an iPad Pro 13-inch (M5) simulator, both on iOS 26.5.
 The bundle declares a modern launch screen so current full-screen iPhones use
@@ -10,6 +10,10 @@ Splash and cube viewport screenshots exist for each simulator. iPad runs as
 `UIRequiresFullScreen` no longer forces a full-screen scene; the iPad capture
 is a native iPad windowed scene. Full-screen versus windowed placement on
 iPadOS 26 is controlled by the user and operating system.
+The release smoke gate also renders the factory cube to a validated 1920 by
+1080 EEVEE PNG and holds a live rendered viewport for 15 seconds on each
+simulator. Physical-device EEVEE performance, thermal behavior, and long-scene
+memory pressure remain owner-signed acceptance work.
 
 The arm64 iPhoneOS build, runtime bundle, and universal unsigned IPA are now
 proven. The IPA targets iOS 18.0 or newer, declares iPhone and iPad device

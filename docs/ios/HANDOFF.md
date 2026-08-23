@@ -29,6 +29,19 @@ physical-device launch remain outside this repository.
 5. Claim only a packet in `next_safe_packets`. Update the ledger before code if
    recorded state and the checkout disagree.
 
+Before handing off a Metal or EEVEE change, run the production app through the
+render gate on one booted iPhone and iPad simulator:
+
+```sh
+build_files/ios/simulator_render_smoke.py \
+  --app /path/to/ios-simulator-build/bin/Blender.app
+```
+
+The command requires a nonblank factory-cube EEVEE PNG and a live rendered
+viewport on both form factors. The narrow source tests identify the three iOS
+Metal compatibility seams, so a forward port should adapt those seams before
+changing shader behavior globally.
+
 The generated dependency graph is `DEPENDENCY_DAG.json`. Its bootstrap queue is
 dependency-free and ordered for bounded `-j2` packets; do not replace it with the
 global `install` target.
