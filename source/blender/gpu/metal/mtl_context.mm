@@ -571,7 +571,6 @@ id<MTLBuffer> MTLContext::get_null_buffer()
   options = MTLResourceStorageModeManaged;
 #endif
   null_buffer_ = [this->device newBufferWithLength:null_buffer_size options:options];
-  [null_buffer_ retain];
   uint32_t *null_data = (uint32_t *)calloc(1, null_buffer_size);
   memcpy([null_buffer_ contents], null_data, null_buffer_size);
 #if MTL_BACKEND_SUPPORTS_MANAGED_BUFFERS
@@ -598,7 +597,6 @@ id<MTLBuffer> MTLContext::get_null_attribute_buffer()
 #endif
   null_attribute_buffer_ = [this->device newBufferWithLength:null_buffer_size options:options];
   BLI_assert(null_attribute_buffer_ != nil);
-  [null_attribute_buffer_ retain];
   float data[4] = {0.0f, 0.0f, 0.0f, 1.0f};
   memcpy([null_attribute_buffer_ contents], data, sizeof(float) * 4);
 #if MTL_BACKEND_SUPPORTS_MANAGED_BUFFERS
@@ -1986,7 +1984,6 @@ id<MTLComputePipelineState> MTLContextComputeUtils::get_buffer_clear_pso()
       return nil;
     }
 
-    [buffer_clear_pso_ retain];
   }
 
   BLI_assert(buffer_clear_pso_ != nil);

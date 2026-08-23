@@ -307,7 +307,6 @@ struct MTLContextTextureUtils {
 
     /* Free Read shader maps */
     free_cached_pso_map(texture_1d_read_compute_psos);
-    free_cached_pso_map(texture_1d_read_compute_psos);
     free_cached_pso_map(texture_1d_array_read_compute_psos);
     free_cached_pso_map(texture_2d_read_compute_psos);
     free_cached_pso_map(texture_2d_array_read_compute_psos);

@@ -135,6 +135,7 @@ MTLShader::~MTLShader()
       if (pso_inst->compute) {
         [pso_inst->compute release];
       }
+      delete pso_inst;
     }
     compute_pso_cache_.clear();
     pso_cache_lock_.unlock();
