@@ -54,6 +54,7 @@ typedef struct UserInputEvent {
     CURSOR_MOVE,
     PAN_GESTURE,
     PAN_GESTURE_TWO_FINGERS,
+    PAN_GESTURE_THREE_FINGERS,
     PINCH_GESTURE,
     LEFT_BUTTON_DOWN,
     LEFT_BUTTON_UP,
@@ -90,6 +91,8 @@ typedef struct UserInputEvent {
         return @"PAN";
       case PAN_GESTURE_TWO_FINGERS:
         return @"PAN2F";
+      case PAN_GESTURE_THREE_FINGERS:
+        return @"PAN3F";
       case PINCH_GESTURE:
         return @"PINCH";
       case LEFT_BUTTON_DOWN:
@@ -244,6 +247,7 @@ typedef struct UserInputEvent {
   GHOSTUITapGestureRecognizer *tap4f_gesture_recognizer;
   GHOSTUIPanGestureRecognizer *pan_gesture_recognizer;
   GHOSTUIPanGestureRecognizer *pan2f_gesture_recognizer;
+  GHOSTUIPanGestureRecognizer *pan3f_gesture_recognizer;
   GHOSTUIPinchGestureRecognizer *zoom_gesture_recognizer;
   GHOSTUIHoverGestureRecognizer *hover_gesture_recognizer;
   UIPencilInteraction *pencil_interaction;
@@ -283,6 +287,7 @@ typedef struct UserInputEvent {
 - (void)handleTap:(GHOSTUITapGestureRecognizer *)sender;
 - (void)handlePan:(GHOSTUIPanGestureRecognizer *)sender;
 - (void)handlePan2f:(GHOSTUIPanGestureRecognizer *)sender;
+- (void)handlePan3f:(GHOSTUIPanGestureRecognizer *)sender;
 - (void)handleZoom:(GHOSTUIPinchGestureRecognizer *)sender;
 - (void)updateTabletDataFromTouch:(UITouch *)touch;
 - (void)resetTabletData;
@@ -493,6 +498,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   [self releaseGestureRecognizer:tap4f_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:pan_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:pan2f_gesture_recognizer fromView:input_view];
+  [self releaseGestureRecognizer:pan3f_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:zoom_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:hover_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:edge_swipe_left fromView:input_view];
@@ -503,6 +509,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   tap4f_gesture_recognizer = nil;
   pan_gesture_recognizer = nil;
   pan2f_gesture_recognizer = nil;
+  pan3f_gesture_recognizer = nil;
   zoom_gesture_recognizer = nil;
   hover_gesture_recognizer = nil;
   edge_swipe_left = nil;
@@ -667,6 +674,17 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   pan2f_gesture_recognizer.maximumNumberOfTouches = 2;
   [window->getView() addGestureRecognizer:pan2f_gesture_recognizer];
 
+  /* Three-finger drag pans the 3D view. Keeping this separate from two-finger orbit avoids
+   * changing Blender's established touch interaction and makes the gesture unambiguous. */
+  pan3f_gesture_recognizer = [[GHOSTUIPanGestureRecognizer alloc]
+      initWithTarget:self
+              action:@selector(handlePan3f:)];
+  pan3f_gesture_recognizer.delegate = self;
+  pan3f_gesture_recognizer.cancelsTouchesInView = false;
+  pan3f_gesture_recognizer.minimumNumberOfTouches = 3;
+  pan3f_gesture_recognizer.maximumNumberOfTouches = 3;
+  [window->getView() addGestureRecognizer:pan3f_gesture_recognizer];
+
   /* Pinch/Zoom gesture recognizer. */
   zoom_gesture_recognizer = [[GHOSTUIPinchGestureRecognizer alloc]
       initWithTarget:self
@@ -751,6 +769,17 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
                                                                   event_info.translation.y,
                                                                   true,
                                                                   2));
+          break;
+        case UserInputEvent::EventTypes::PAN_GESTURE_THREE_FINGERS:
+          system->pushEvent(std::make_unique<GHOST_EventTrackpad>(system->getMilliSeconds(),
+                                                                  window,
+                                                                  GHOST_kTrackpadEventScroll,
+                                                                  event_info.location.x,
+                                                                  event_info.location.y,
+                                                                  event_info.translation.x,
+                                                                  event_info.translation.y,
+                                                                  true,
+                                                                  3));
           break;
         case UserInputEvent::EventTypes::LEFT_BUTTON_DOWN:
           system->updateButtonState(GHOST_kButtonMaskLeft, true);
@@ -1023,6 +1052,30 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
            sender.state == UIGestureRecognizerStateFailed)
   {
     /* Set translation back to zero. */
+    [sender setCachedTranslation:CGPointMake(0.0f, 0.0f)];
+  }
+}
+
+- (void)handlePan3f:(GHOSTUIPanGestureRecognizer *)sender
+{
+  if (sender.state == UIGestureRecognizerStateBegan ||
+      sender.state == UIGestureRecognizerStateChanged)
+  {
+    CGPoint translation = [sender getScaledTranslation:window];
+    CGPoint relative_translation = [sender getRelativeTranslation:translation];
+    [sender setCachedTranslation:translation];
+
+    if (!CGPointEqualToPoint(relative_translation, CGPointMake(0.0f, 0.0f))) {
+      CGPoint touch_point = [sender getScaledTouchPoint:window];
+      UserInputEvent event_info(&touch_point, &relative_translation, nullptr);
+      event_info.add_event(UserInputEvent::EventTypes::PAN_GESTURE_THREE_FINGERS);
+      [self generateUserInputEvents:event_info];
+    }
+  }
+  else if (sender.state == UIGestureRecognizerStateEnded ||
+           sender.state == UIGestureRecognizerStateCancelled ||
+           sender.state == UIGestureRecognizerStateFailed)
+  {
     [sender setCachedTranslation:CGPointMake(0.0f, 0.0f)];
   }
 }
