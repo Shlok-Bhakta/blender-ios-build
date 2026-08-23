@@ -6190,6 +6190,14 @@ void wm_event_add_ghostevent(wmWindowManager *wm,
         event.flag |= WM_EVENT_SCROLL_INVERT;
       }
 
+#if defined(WITH_APPLE_CROSSPLATFORM)
+      /* iOS reserves three-finger scroll for viewport panning. Reuse Blender's existing
+       * Shift+Trackpad Pan key-map entry without mutating the persistent keyboard state. */
+      if (pd->subtype == GHOST_kTrackpadEventScroll && pd->numFingers == 3) {
+        event.modifier |= KM_SHIFT;
+      }
+#endif
+
 #if !defined(WIN32) && !defined(__APPLE__)
       /* Ensure "auto" is used when supported. */
       char trackpad_scroll_direction = U.trackpad_scroll_direction;

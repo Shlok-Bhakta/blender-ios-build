@@ -105,6 +105,14 @@ simultaneous gesture. Force is normalized only when UIKit provides a positive
 maximum and pressure plus both tilt axes are clamped to GHOST's documented
 ranges.
 
+Touch navigation preserves direct manipulation while exposing the desktop
+viewport operators through GHOST's existing trackpad events. A one-finger tap
+or drag remains left-button input for selection and tools. Two-finger drag
+keeps Blender's orbit behavior, pinch remains trackpad zoom, and three-finger
+drag carries its finger count through GHOST so the window manager selects the
+default Shift+Trackpad Pan mapping without changing persistent keyboard state.
+Every recognizer is detached and released with its GHOST window.
+
 ## Cycles render boundary
 
 The accepted Cycles fallback is the portable CPU renderer backed by a static
