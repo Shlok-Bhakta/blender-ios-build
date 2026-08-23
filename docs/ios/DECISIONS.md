@@ -522,7 +522,7 @@ performance or native tile-input claims for shipping hardware.
 
 ## ADR-0026: Reserve three-finger drag for viewport panning
 
-- Status: accepted source/build boundary; hardware acceptance pending
+- Status: superseded by ADR-0029
 - Date: 2026-08-22
 
 Direct touch must not turn every drag into camera movement because Blender's
@@ -601,3 +601,29 @@ and a 30-second rendered viewport pass. Maestro acceptance enters `3+4`, proves
 the resulting `7 m`, and opens the Object context menu with a double tap. Real
 multi-touch arbitration, keyboard avoidance, and hardware-keyboard behavior
 remain signed-device gates.
+
+## ADR-0029: Use two-finger pan and three-finger orbit
+
+- Status: accepted source/build boundary; hardware acceptance pending
+- Date: 2026-08-23
+
+The first navigation mapping made two-finger drag orbit and three-finger drag
+pan. That kept the inherited iOS behavior but made the common pan and zoom pair
+awkward. Direct touch now uses two-finger movement for pan, simultaneous pinch
+for zoom, and three-finger movement for orbit around Blender's existing view
+center. One finger remains reserved for selection and tool input.
+
+The UIKit backend continues to emit scroll events tagged with the direct-touch
+contact count. The window manager adds a transient Shift modifier only to
+two-contact scroll, which selects Blender's existing Shift+Trackpad Pan binding.
+Three-contact scroll remains unmodified and selects the existing orbit binding.
+macOS trackpad scroll uses the constructor default of one contact, so this remap
+does not change desktop trackpad behavior.
+
+The simultaneous-recognition delegate accepts pan and pinch in either callback
+order. No UIKit rotation recognizer is registered, so finger twist produces no
+rotation event. Contract tests, 112 iOS tests, production simulator and device
+builds, recursive ABI/bundle/path audits, and 30-second rendered viewports on
+both simulator form factors pass. Simulator automation cannot inject multiple
+independent contacts, so gesture feel and arbitration remain an owner-signed
+physical-device gate.

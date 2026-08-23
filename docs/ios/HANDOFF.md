@@ -63,9 +63,10 @@ global `install` target.
 
 One-finger drag is Blender left-button input only. Do not reintroduce a
 single-finger `GHOST_EventTrackpad`: it races selection with viewport
-navigation. Two-finger drag remains orbit, pinch remains zoom, and three-finger
-drag selects Blender's Shift+trackpad-pan mapping. Direct double tap is right
-click and must use the first tap position.
+navigation. Two-finger movement selects Blender's Shift+trackpad-pan mapping,
+and pinch zoom may run at the same time. Three-finger movement uses the
+unmodified trackpad-orbit mapping. iOS registers no twist recognizer. Direct
+double tap is right click and must use the first tap position.
 
 Blender's `textedit_begin`/`textedit_end` pair owns the native keyboard bridge.
 Keep the full keyboard for numeric fields so expressions and drivers remain
