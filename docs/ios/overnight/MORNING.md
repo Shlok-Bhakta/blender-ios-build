@@ -112,6 +112,8 @@ and packages as one universal unsigned IPA for device families 1 and 2.
   `1af202110da4fc55c9b5887e909ae3f719e53b5b95dd72f1294958e49a359d96`
 - Touch/keyboard acceptance recording:
   `/Volumes/BlenderBuild/blender-ios/artifacts/20260823-input-polish/maestro-accepted/2026-08-23_023337/Blender iPad touch and keyboard polish/startRecording/blender-ios-input-polish.mp4`
+- Touch/keyboard recording review permalink:
+  `https://planista.shloklab.us/3QgY6Vs3aDKVsYZp`
 - Touch/keyboard unsigned IPA:
   `/Volumes/BlenderBuild/blender-ios/artifacts/20260823-input-polish/DevBlender-ios-touch-keyboard-unsigned.ipa`
 - Touch/keyboard IPA SHA-256:
