@@ -56,6 +56,7 @@
 #include "BLT_translation.hh"
 
 #include "GHOST_ISystem.hh"
+#include "GHOST_IWindow.hh"
 
 #include "IMB_colormanagement.hh"
 
@@ -3912,6 +3913,36 @@ static void textedit_begin(bContext *C, Button *but, HandleButtonData *data)
 
   /* Temporarily turn off window auto-focus on platforms that support it. */
   GHOST_ISystem *ghost_system = GHOST_ISystem::getSystem();
+
+#if defined(WITH_APPLE_CROSSPLATFORM)
+  if (win->runtime->ghostwin != nullptr) {
+    rctf text_box;
+    block_to_window_rctf(data->region, but->block, &text_box, &but->rect);
+
+    const uiFontStyle &font_style = style_get()->widget;
+    GHOST_KeyboardProperties keyboard_properties{};
+    /* Keep the full keyboard available for numeric expressions and driver shortcuts. */
+    keyboard_properties.keyboard_type = GHOST_KeyboardProperties::ascii_keyboard_type;
+    keyboard_properties.font_size = font_style.points;
+    keyboard_properties.font_color[0] = 1.0f;
+    keyboard_properties.font_color[1] = 1.0f;
+    keyboard_properties.font_color[2] = 1.0f;
+    keyboard_properties.font_color[3] = 1.0f;
+    keyboard_properties.inital_text_state = GHOST_KeyboardProperties::select_text_range;
+    keyboard_properties.text_select_range[0] = but->selsta;
+    keyboard_properties.text_select_range[1] = but->selend;
+    keyboard_properties.text_box_origin[0] = text_box.xmin;
+    keyboard_properties.text_box_origin[1] = text_box.ymin;
+    keyboard_properties.text_box_size[0] = BLI_rctf_size_x(&text_box);
+    keyboard_properties.text_box_size[1] = BLI_rctf_size_y(&text_box);
+    keyboard_properties.tip_text = but->tip.is_empty() ? nullptr : but->tip.data();
+    keyboard_properties.text_string = text_edit.edit_string;
+
+    ghost_system->popupOnScreenKeyboard(
+        static_cast<GHOST_IWindow *>(win->runtime->ghostwin), keyboard_properties);
+  }
+#endif
+
   ghost_system->setAutoFocus(false);
 
 #ifdef WITH_INPUT_IME
@@ -3927,6 +3958,18 @@ static void textedit_end(bContext *C, Button *but, HandleButtonData *data)
   wmWindow *win = data->window;
 
   ED_workspace_status_text(C, nullptr);
+
+#if defined(WITH_APPLE_CROSSPLATFORM)
+  if (win->runtime->ghostwin != nullptr) {
+    GHOST_ISystem *ghost_system = GHOST_ISystem::getSystem();
+    GHOST_IWindow *ghost_window = static_cast<GHOST_IWindow *>(win->runtime->ghostwin);
+    ghost_system->hideOnScreenKeyboard(ghost_window);
+    const char *keyboard_string = ghost_system->getKeyboardInput(ghost_window);
+    if (but != nullptr && keyboard_string != nullptr) {
+      textedit_string_set(but, text_edit, keyboard_string);
+    }
+  }
+#endif
 
   if (but) {
     if (but_is_utf8(but)) {
