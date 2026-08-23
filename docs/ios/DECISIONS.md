@@ -519,3 +519,26 @@ contracts in `build_files/ios/tests/test_eevee_metal_capability.py`,
 factory-cube image plus a sustained rendered viewport on both iPhone and iPad
 simulators. An owner-signed physical-device run remains required before making
 performance or native tile-input claims for shipping hardware.
+
+## ADR-0026: Reserve three-finger drag for viewport panning
+
+- Status: accepted source/build boundary; hardware acceptance pending
+- Date: 2026-08-22
+
+Direct touch must not turn every drag into camera movement because Blender's
+desktop UI depends on left-button selection, gizmos, painting, and tool drags.
+The existing iOS backend already maps two-finger drag to the default trackpad
+orbit action and pinch to zoom, leaving panning undiscoverable.
+
+The iOS window now recognizes exactly three contacts for panning and carries
+that count in `GHOST_TEventTrackpadData`. The window manager adds Shift only to
+that event, which selects Blender's default Shift+Trackpad Pan keymap entry
+without pressing a synthetic key or mutating persistent modifier state. This
+keeps one-finger tools, two-finger orbit, and pinch zoom intact. The recognizer
+is owned and released by the same idempotent input teardown as the other UIKit
+objects.
+
+Source contracts and both arm64 iOS target builds pass. Maestro 2.8.0 exposes
+only single-pointer tap and swipe synthesis, and public Simulator I/O exposes
+no multi-contact injection. Gesture feel and simultaneous touch arbitration
+therefore remain an owner-signed physical-device acceptance gate.
