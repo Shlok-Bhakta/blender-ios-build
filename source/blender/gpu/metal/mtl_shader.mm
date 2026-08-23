@@ -256,6 +256,10 @@ id<MTLLibrary> MTLShader::create_shader_library(const shader::ShaderCreateInfo &
       ss << "#define MTL_SUPPORTS_TEXTURE_ATOMICS 1\n";
     }
 
+    if (MTLBackend::get_capabilities().supports_simdgroup_reduction) {
+      ss << "#define MTL_SUPPORTS_SIMDGROUP_REDUCTION\n";
+    }
+
     shader::GeneratedSource defines_src{"gpu_shader_msl_defines.msl", {}, ss.str()};
     shader::GeneratedSource wrapper_src{
         "gpu_shader_msl_wrapper.msl", {"gpu_shader_msl_types.msl"}, wrapper.first};
@@ -289,7 +293,9 @@ id<MTLLibrary> MTLShader::create_shader_library(const shader::ShaderCreateInfo &
 
   {
     ::MTLCompileOptions *options = get_compile_options(
-        !info.subpass_inputs_.is_empty(), bool(info.builtins_ & BuiltinBits::TEXTURE_ATOMIC));
+        !info.subpass_inputs_.is_empty() &&
+            MTLBackend::get_capabilities().supports_native_tile_inputs,
+        bool(info.builtins_ & BuiltinBits::TEXTURE_ATOMIC));
 
     NSError *error = nullptr;
     id<MTLLibrary> library = [context_->device
@@ -666,8 +672,10 @@ MTLRenderPipelineStateInstance *MTLShader::bake_current_pipeline_state(
   pipeline_descriptor.color_attachment_mask = 0xFFu;
   for (int attachment = 0; attachment < GPU_FB_MAX_COLOR_ATTACHMENT; attachment++) {
     MTLAttachment color_attachment = framebuffer->get_color_attachment(attachment);
+    const bool texture_backed_subpass_input =
+        color_attachment.read && !MTLBackend::capabilities.supports_native_tile_inputs;
 
-    if (color_attachment.used) {
+    if (color_attachment.used && !texture_backed_subpass_input) {
       /* If SRGB is disabled and format is SRGB, use color data directly with no conversions
        * between linear and SRGB. */
       MTLPixelFormat mtl_format = gpu_texture_format_to_metal(
@@ -681,7 +689,10 @@ MTLRenderPipelineStateInstance *MTLShader::bake_current_pipeline_state(
       pipeline_descriptor.color_attachment_format[attachment] = MTLPixelFormatInvalid;
     }
 
-    pipeline_descriptor.num_color_attachments += (color_attachment.used) ? 1 : 0;
+    pipeline_descriptor.num_color_attachments += (color_attachment.used &&
+                                                  !texture_backed_subpass_input) ?
+                                                     1 :
+                                                     0;
 
     if (color_attachment.ignored) {
       pipeline_descriptor.color_attachment_mask &= ~(1 << attachment);
@@ -697,6 +708,16 @@ MTLRenderPipelineStateInstance *MTLShader::bake_current_pipeline_state(
       (stencil_attachment.used) ?
           gpu_texture_format_to_metal(stencil_attachment.texture->format_get()) :
           MTLPixelFormatInvalid;
+
+#ifdef WITH_APPLE_CROSSPLATFORM
+  if (framebuffer->requires_attachmentless_color_target()) {
+    /* Match the hidden render-pass attachment supplied by MTLFrameBuffer. Color writes remain
+     * disabled because the logical pass only uses fragment-shader buffer side effects. */
+    pipeline_descriptor.color_attachment_format[0] = framebuffer->attachmentless_color_format();
+    pipeline_descriptor.num_color_attachments = 1;
+    pipeline_descriptor.color_attachment_mask &= ~1u;
+  }
+#endif
 
   /* Resolve Context Pipeline State (required by PSO). */
   pipeline_descriptor.color_write_mask = ctx->pipeline_state.color_write_mask;

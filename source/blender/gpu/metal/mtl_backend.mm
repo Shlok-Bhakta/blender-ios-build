@@ -31,6 +31,7 @@
 
 #ifdef WITH_APPLE_CROSSPLATFORM
 #  include <Foundation/Foundation.h>
+#  include <TargetConditionals.h>
 #else
 #  include <Cocoa/Cocoa.h>
 #endif
@@ -464,6 +465,11 @@ void MTLBackend::capabilities_init(MTLContext *ctx)
       supportsFamily:MTLGPUFamilyMacCatalyst1];
   MTLBackend::capabilities.supports_family_mac_catalyst2 = [device
       supportsFamily:MTLGPUFamilyMacCatalyst2];
+  /* EEVEE uses Metal SIMD-scoped reductions as a light-list optimization. Apple mobile GPU
+   * families expose this feature separately, and the simulator does not expose it at all. Keep
+   * the scalar path unless the long-standing desktop Metal baseline guarantees the operations. */
+  MTLBackend::capabilities.supports_simdgroup_reduction =
+      MTLBackend::capabilities.supports_family_mac2;
   /* NOTE(Metal): Texture gather is supported on AMD, but results are non consistent
    * with Apple Silicon GPUs. Disabling for now to avoid erroneous rendering. */
   MTLBackend::capabilities.supports_texture_gather = [device hasUnifiedMemory];
@@ -492,6 +498,12 @@ void MTLBackend::capabilities_init(MTLContext *ctx)
 #endif
 
   /** Identify support for tile inputs. */
+#if defined(WITH_APPLE_CROSSPLATFORM) && TARGET_OS_SIMULATOR
+  /* The iOS Simulator reports the host Apple GPU's tile architecture, but its Metal compiler
+   * rejects framebuffer-fetch inputs when a render pipeline is created. Use the texture-backed
+   * subpass emulation path there. Physical iOS GPUs retain native tile inputs. */
+  MTLBackend::capabilities.supports_native_tile_inputs = false;
+#else
   const bool is_tile_based_arch = (GPU_platform_architecture() == GPU_ARCHITECTURE_TBDR);
   if (is_tile_based_arch) {
     MTLBackend::capabilities.supports_native_tile_inputs = true;
@@ -500,6 +512,7 @@ void MTLBackend::capabilities_init(MTLContext *ctx)
     /* NOTE: If emulating tile input reads, we must ensure we also expose position data. */
     MTLBackend::capabilities.supports_native_tile_inputs = false;
   }
+#endif
 
   /* CPU Info */
   MTLBackend::capabilities.num_performance_cores = get_num_performance_cpu_cores(ctx->device);

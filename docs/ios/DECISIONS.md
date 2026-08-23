@@ -490,3 +490,32 @@ Source contracts, both target builds, full iPhone/iPad simulator runtime gates,
 and recursive product audits pass. Simulator UIKit cannot provide physical
 Pencil force and tilt, so owner-signed iPad hardware remains the acceptance
 authority for the sensor values and simultaneous-touch behavior.
+
+## ADR-0025: Keep EEVEE's iOS Metal fallbacks capability-scoped
+
+- Status: accepted simulator boundary; physical-device acceptance pending
+- Date: 2026-08-22
+
+EEVEE exposed three Metal assumptions that are valid on the desktop baseline
+but not across iOS targets. The iOS Simulator compiler rejects SIMD-group
+reduction intrinsics, iOS rejects raster pipelines without any valid pixel
+format, and the simulator rejects native framebuffer-fetch reads even though
+it reports a tile-based host GPU.
+
+The port keeps the desktop paths intact and selects narrow fallbacks through
+Metal capabilities. Light-list reduction uses the scalar shader path when the
+operation is unavailable. Attachmentless fragment passes receive a private
+`R8Unorm` no-write target on Apple cross-platform builds. Simulator subpass
+inputs end the producer pass, detach read attachments, bind them as textures,
+and generate fragment-position texture reads; physical tiered Apple GPUs retain
+native tile inputs.
+
+Forward ports must preserve the capability macro, the hidden render-pass/PSO
+format match, and the generated subpass image binding as one unit. The source
+contracts in `build_files/ios/tests/test_eevee_metal_capability.py`,
+`test_metal_attachmentless_rendering.py`, and
+`test_metal_subpass_fallback.py` guard those seams. Runtime acceptance uses
+`build_files/ios/simulator_render_smoke.py`, which requires a nonblank EEVEE
+factory-cube image plus a sustained rendered viewport on both iPhone and iPad
+simulators. An owner-signed physical-device run remains required before making
+performance or native tile-input claims for shipping hardware.
