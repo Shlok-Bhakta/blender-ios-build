@@ -25,6 +25,7 @@ class MTLContext;
 struct MTLAttachment {
   bool used = false;
   bool ignored = false;
+  bool read = false;
   gpu::MTLTexture *texture = nullptr;
   double4 clear_value;
 
@@ -114,6 +115,15 @@ class MTLFrameBuffer : public FrameBuffer {
    */
   int attachment_width_ = 0;
   int attachment_height_ = 0;
+
+#ifdef WITH_APPLE_CROSSPLATFORM
+  /**
+   * iOS requires every raster render pass and pipeline to expose at least one valid attachment.
+   * Keep this target outside Blender's logical attachment list: it exists only to preserve the
+   * attachmentless passes used for fragment-shader buffer side effects.
+   */
+  id<MTLTexture> attachmentless_color_texture_ = nil;
+#endif
 
  public:
   /**
@@ -206,6 +216,14 @@ class MTLFrameBuffer : public FrameBuffer {
   MTLAttachment get_depth_attachment();
   MTLAttachment get_stencil_attachment();
 
+#ifdef WITH_APPLE_CROSSPLATFORM
+  bool requires_attachmentless_color_target() const;
+  static constexpr MTLPixelFormat attachmentless_color_format()
+  {
+    return MTLPixelFormatR8Unorm;
+  }
+#endif
+
   /* Metal API resources and validation. */
   bool validate_render_pass();
   MTLRenderPassDescriptor *bake_render_pass_descriptor(bool load_contents);
@@ -251,6 +269,10 @@ class MTLFrameBuffer : public FrameBuffer {
  private:
   /* Clears a render target by force-opening a render pass. */
   void force_clear();
+
+#ifdef WITH_APPLE_CROSSPLATFORM
+  id<MTLTexture> ensure_attachmentless_color_target();
+#endif
 
   MEM_CXX_CLASS_ALLOC_FUNCS("MTLFrameBuffer");
 };

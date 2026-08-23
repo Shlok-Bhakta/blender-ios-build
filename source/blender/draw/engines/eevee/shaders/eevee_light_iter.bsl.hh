@@ -89,7 +89,7 @@ void foreach_visible([[resource_table]] const LightRenderData &srt,
     uint min_index = zbin_data & 0xFFFFu;
     uint max_index = zbin_data >> 16u;
     /* Ensure all threads inside a subgroup get the same value to reduce VGPR usage. */
-#ifdef GPU_METAL
+#if defined(GPU_METAL) && defined(MTL_SUPPORTS_SIMDGROUP_REDUCTION)
     /* Waiting to implement extensions support. We need:
      * - GL_KHR_shader_subgroup_ballot
      * - GL_KHR_shader_subgroup_arithmetic
@@ -106,7 +106,7 @@ void foreach_visible([[resource_table]] const LightRenderData &srt,
       uint word = words[tile_word_offset + word_idx];
       word &= zbin_mask(word_idx, min_index, max_index);
       /* Ensure all threads inside a subgroup get the same value to reduce VGPR usage. */
-#ifdef GPU_METAL
+#if defined(GPU_METAL) && defined(MTL_SUPPORTS_SIMDGROUP_REDUCTION)
       /* Waiting to implement extensions support. We need:
        * - GL_KHR_shader_subgroup_ballot
        * - GL_KHR_shader_subgroup_arithmetic

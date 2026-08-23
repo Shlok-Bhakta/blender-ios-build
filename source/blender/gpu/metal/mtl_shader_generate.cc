@@ -1127,6 +1127,76 @@ static std::string generate_fragment_builtins(GeneratedStreams &ss, const Shader
   return decl.str();
 }
 
+static StringRefNull subpass_input_swizzle(const Type type)
+{
+  switch (type) {
+    case Type::float_t:
+    case Type::int_t:
+    case Type::uint_t:
+      return ".x";
+    case Type::float2_t:
+    case Type::int2_t:
+    case Type::uint2_t:
+      return ".xy";
+    case Type::float3_t:
+    case Type::int3_t:
+    case Type::uint3_t:
+      return ".xyz";
+    case Type::float4_t:
+    case Type::int4_t:
+    case Type::uint4_t:
+      return "";
+    default:
+      BLI_assert_unreachable();
+      return "";
+  }
+}
+
+static bool subpass_input_is_2d_array(const ImageType type)
+{
+  return ELEM(type, ImageType::Float2DArray, ImageType::Int2DArray, ImageType::Uint2DArray);
+}
+
+static void generate_subpass_input_fallback(GeneratedStreams &generated,
+                                            const ShaderCreateInfo &info)
+{
+  const bool has_frag_coord = bool(info.builtins_ & BuiltinBits::FRAG_COORD);
+  const std::string position = has_frag_coord ? "mtl_vert_out.gl_FragCoord" :
+                                                "mtl_subpass_position";
+  if (!has_frag_coord) {
+    generated.entry_point_parameters << Sep() << "float4 mtl_subpass_position [[position]]";
+  }
+
+  for (const ShaderCreateInfo::SubpassIn &input : info.subpass_inputs_) {
+    BLI_assert(ELEM(input.img_type,
+                    ImageType::Float2D,
+                    ImageType::Int2D,
+                    ImageType::Uint2D,
+                    ImageType::Float2DArray,
+                    ImageType::Int2DArray,
+                    ImageType::Uint2DArray));
+
+    const std::string texture_name = "gpu_subpass_img_" + std::to_string(input.index);
+    const std::string texture_type = std::string(to_raw_type(input.img_type)) + "<" +
+                                     to_component_type(input.img_type) + ", access::read>";
+    generated.entry_point_parameters << Sep() << texture_type << " " << texture_name
+                                     << " [[texture(" << (MTL_IMAGE_SLOT_OFFSET + input.index)
+                                     << ")]]";
+
+    generated.wrapper_class_members << "  const " << input.type << " " << input.name << ";\n";
+    generated.wrapper_constructor_parameters << Sep() << "const " << input.type << " "
+                                             << input.name;
+    generated.wrapper_constructor_assign << Sep() << input.name << "(" << input.name << ")";
+
+    generated.wrapper_instance_init << Sep() << input.type << "(" << texture_name << ".read(uint2("
+                                    << position << ".xy), 0";
+    if (subpass_input_is_2d_array(input.img_type)) {
+      generated.wrapper_instance_init << ", 0";
+    }
+    generated.wrapper_instance_init << ")" << subpass_input_swizzle(input.type) << ")";
+  }
+}
+
 static void generate_subpass_inputs(GeneratedStreams &generated, const ShaderCreateInfo &info)
 {
   constexpr ShaderStage stage = ShaderStage::FRAGMENT;
@@ -1134,6 +1204,11 @@ static void generate_subpass_inputs(GeneratedStreams &generated, const ShaderCre
   std::string in_class = wrap_type(in_class_local, stage);
 
   if (info.subpass_inputs_.is_empty()) {
+    return;
+  }
+
+  if (!MTLBackend::get_capabilities().supports_native_tile_inputs) {
+    generate_subpass_input_fallback(generated, info);
     return;
   }
 

@@ -12,6 +12,7 @@
 
 #include "GPU_capabilities.hh"
 
+#include "mtl_backend.hh"
 #include "mtl_common.hh"
 #include "mtl_debug.hh"
 #include "mtl_push_constant.hh"
@@ -63,11 +64,22 @@ MTLShaderInterface::MTLShaderInterface(const char *name,
     }
   }
 
+  const bool use_subpass_fallback = !MTLBackend::get_capabilities().supports_native_tile_inputs &&
+                                    !info.subpass_inputs_.is_empty();
+  size_t subpass_names_size = 0;
+  if (use_subpass_fallback) {
+    uniform_len_ += info.subpass_inputs_.size();
+    for (const ShaderCreateInfo::SubpassIn &subpass_input : info.subpass_inputs_) {
+      subpass_names_size += std::string("gpu_subpass_img_").size() +
+                            std::to_string(subpass_input.index).size() + 1;
+    }
+  }
+
   int32_t input_tot_len = attr_len_ + ubo_len_ + uniform_len_ + ssbo_len_ + constant_len_;
   inputs_ = MEM_new_array_zeroed<ShaderInput>(input_tot_len, __func__);
   ShaderInput *input = inputs_;
 
-  size_t names_size = info.interface_names_size_;
+  size_t names_size = info.interface_names_size_ + subpass_names_size;
   name_buffer_ = MEM_new_array_uninitialized<char>(names_size, "name_buffer");
   uint32_t name_buffer_offset = 0;
 
@@ -109,6 +121,18 @@ MTLShaderInterface::MTLShaderInterface(const char *name,
       copy_input_name(input, res.image.name, name_buffer_, name_buffer_offset);
       input->location = -1; /* Setting location is not possible in MSL. */
       input->binding = res.slot;
+      enabled_ima_mask_ |= (1 << input->binding);
+      input++;
+    }
+  }
+  if (use_subpass_fallback) {
+    for (const ShaderCreateInfo::SubpassIn &subpass_input : info.subpass_inputs_) {
+      const std::string fallback_name = "gpu_subpass_img_" + std::to_string(subpass_input.index);
+      BLI_assert((enabled_ima_mask_ & (1 << subpass_input.index)) == 0);
+      image_names_offsets_[subpass_input.index] = name_buffer_offset;
+      copy_input_name(input, fallback_name, name_buffer_, name_buffer_offset);
+      input->location = -1;
+      input->binding = subpass_input.index;
       enabled_ima_mask_ |= (1 << input->binding);
       input++;
     }

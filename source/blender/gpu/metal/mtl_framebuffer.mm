@@ -86,6 +86,13 @@ MTLFrameBuffer::~MTLFrameBuffer()
     }
   }
 
+#ifdef WITH_APPLE_CROSSPLATFORM
+  if (attachmentless_color_texture_ != nil) {
+    [attachmentless_color_texture_ release];
+    attachmentless_color_texture_ = nil;
+  }
+#endif
+
   /* Remove attachments - release FB texture references. */
   this->remove_all_attachments();
 
@@ -450,7 +457,16 @@ void MTLFrameBuffer::subpass_transition_impl(const GPUAttachmentState /*depth_at
 
   for (int i : color_attachment_states.index_range()) {
     /* The ignored state is baked into the PSO as color mask. */
-    mtl_color_attachments_[i].ignored = (color_attachment_states[i] == GPU_ATTACHMENT_IGNORE);
+    MTLAttachment &attachment_config = mtl_color_attachments_[i];
+    const bool was_read = attachment_config.read;
+    attachment_config.read = (color_attachment_states[i] == GPU_ATTACHMENT_READ);
+    attachment_config.ignored = (color_attachment_states[i] != GPU_ATTACHMENT_WRITE);
+    if (!MTLBackend::capabilities.supports_native_tile_inputs &&
+        was_read != attachment_config.read)
+    {
+      /* Texture-backed subpass inputs must be detached from the next render pass. */
+      this->mark_dirty();
+    }
   }
 }
 
@@ -1475,6 +1491,53 @@ bool MTLFrameBuffer::validate_render_pass()
   return true;
 }
 
+#ifdef WITH_APPLE_CROSSPLATFORM
+bool MTLFrameBuffer::requires_attachmentless_color_target() const
+{
+  if (mtl_depth_attachment_.used || mtl_stencil_attachment_.used) {
+    return false;
+  }
+  for (const MTLAttachment &attachment : mtl_color_attachments_) {
+    if (attachment.used &&
+        !(attachment.read && !MTLBackend::capabilities.supports_native_tile_inputs))
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+id<MTLTexture> MTLFrameBuffer::ensure_attachmentless_color_target()
+{
+  BLI_assert(this->requires_attachmentless_color_target());
+  BLI_assert(width_ > 0 && height_ > 0);
+
+  if (attachmentless_color_texture_ != nil && (attachmentless_color_texture_.width != width_ ||
+                                               attachmentless_color_texture_.height != height_))
+  {
+    [attachmentless_color_texture_ release];
+    attachmentless_color_texture_ = nil;
+  }
+
+  if (attachmentless_color_texture_ == nil) {
+    MTLTextureDescriptor *texture_descriptor = [MTLTextureDescriptor
+        texture2DDescriptorWithPixelFormat:this->attachmentless_color_format()
+                                     width:width_
+                                    height:height_
+                                 mipmapped:NO];
+    texture_descriptor.usage = MTLTextureUsageRenderTarget;
+    /* Private storage works on both physical iOS devices and the simulator. The attachment uses
+     * no load, store, or color writes, so tile contents never need to leave the GPU. */
+    texture_descriptor.storageMode = MTLStorageModePrivate;
+    attachmentless_color_texture_ = [context_->device newTextureWithDescriptor:texture_descriptor];
+    attachmentless_color_texture_.label = @"Blender attachmentless render target";
+    BLI_assert(attachmentless_color_texture_ != nil);
+  }
+
+  return attachmentless_color_texture_;
+}
+#endif
+
 MTLLoadAction mtl_load_action_from_gpu(GPULoadOp action)
 {
   return (action == GPU_LOADACTION_LOAD) ?
@@ -1590,8 +1653,10 @@ MTLRenderPassDescriptor *MTLFrameBuffer::bake_render_pass_descriptor(bool load_c
     int colour_attachments = 0;
     for (int attachment_ind = 0; attachment_ind < GPU_FB_MAX_COLOR_ATTACHMENT; attachment_ind++) {
       MTLAttachment &attachment_config = mtl_color_attachments_[attachment_ind];
+      const bool texture_backed_subpass_input =
+          attachment_config.read && !MTLBackend::capabilities.supports_native_tile_inputs;
 
-      if (attachment_config.used) {
+      if (attachment_config.used && !texture_backed_subpass_input) {
         id<MTLTexture> texture = attachment_config.texture->get_metal_handle_base();
         if (texture == nil) {
           MTL_LOG_ERROR("Attempting to assign invalid texture as attachment");
@@ -1662,8 +1727,7 @@ MTLRenderPassDescriptor *MTLFrameBuffer::bake_render_pass_descriptor(bool load_c
                                                             atIndexedSubscript:attachment_ind];
       }
     }
-    BLI_assert(colour_attachments == colour_attachment_count_);
-    UNUSED_VARS_NDEBUG(colour_attachments);
+    BLI_assert(colour_attachments <= int(colour_attachment_count_));
 
     /* Depth attachment. */
     if (mtl_depth_attachment_.used) {
@@ -1765,13 +1829,24 @@ MTLRenderPassDescriptor *MTLFrameBuffer::bake_render_pass_descriptor(bool load_c
     }
 
     /* Attachmentless render support. */
-    int total_num_attachments = colour_attachment_count_ + (mtl_depth_attachment_.used ? 1 : 0) +
+    int total_num_attachments = colour_attachments + (mtl_depth_attachment_.used ? 1 : 0) +
                                 (mtl_stencil_attachment_.used ? 1 : 0);
     if (total_num_attachments == 0) {
       BLI_assert(width_ > 0 && height_ > 0);
+#ifdef WITH_APPLE_CROSSPLATFORM
+      /* iOS rejects raster render pipelines with no valid pixel format. Bind a hidden no-write
+       * target so attachmentless passes can keep using fragment shaders for buffer side effects.
+       */
+      MTLRenderPassColorAttachmentDescriptor *attachment =
+          framebuffer_descriptor_[descriptor_config].colorAttachments[0];
+      attachment.texture = this->ensure_attachmentless_color_target();
+      attachment.loadAction = MTLLoadActionDontCare;
+      attachment.storeAction = MTLStoreActionDontCare;
+#else
       framebuffer_descriptor_[descriptor_config].renderTargetWidth = width_;
       framebuffer_descriptor_[descriptor_config].renderTargetHeight = height_;
       framebuffer_descriptor_[descriptor_config].defaultRasterSampleCount = 1;
+#endif
     }
 
     descriptor_dirty_[descriptor_config] = false;
