@@ -65,22 +65,27 @@ frame, and the earlier process-global drawable identity heuristic has been
 removed. iPhone and iPad simulator launch/render acceptance emits no duplicate
 presentation diagnostics. Physical trackpad acceptance of nonzero window
 origins remains pending.
-The software-keyboard result and Cancel snapshot now own their storage, input
+The software-keyboard result and Cancel snapshot own their storage, input
 objects detach during GHOST window teardown, and a failed first-responder
-request reaches the caller as a failure. Simulator startup stays green after
-this change. Direct software-keyboard acceptance for empty text, Unicode,
-Cancel, and repeated open/close cycles remains pending on a signed device.
+request reaches the caller as a failure. Blender UI text editing now opens the
+native full keyboard for every field, preserves the initial selection, disables
+UIKit text rewriting, and commits through Blender's normal validation path. An
+iPad Simulator acceptance run entered `3+4` into Location X, committed `7 m`,
+and moved the cube. Empty text, Unicode, Cancel, repeated open/close cycles,
+keyboard avoidance for fields behind the overlay, and hardware-keyboard
+interoperability still require signed-device acceptance.
 Pencil tablet state now starts on contact, follows only the tracked stylus, and
 keeps pressure and tilt bounded even if UIKit reports an unusable force range.
 The simulator cannot synthesize physical Pencil pressure or tilt, so real
 Pencil contact, motion, simultaneous finger input, cancellation, hover, and
 double-tap remain owner-signed iPad acceptance gates.
 Direct touch keeps one-finger selection and tool drags, two-finger orbit, and
-pinch zoom; three-finger drag now pans the viewport through Blender's standard
-trackpad navigation path. The installed Simulator/Maestro stack cannot
-synthesize three concurrent contacts, so the recognizer, event translation,
-keymap selection, teardown, and both target builds are proven while final
-gesture-feel acceptance remains a physical iPhone/iPad gate.
+pinch zoom; three-finger drag pans the viewport through Blender's standard
+trackpad navigation path. One-finger drag no longer emits the scroll event that
+caused a brief viewport rotation before selection, and a one-finger double tap
+opens the right-click menu at the first tap location. The installed
+Simulator/Maestro stack cannot synthesize three concurrent contacts, so final
+gesture arbitration and feel remain a physical iPhone/iPad gate.
 Multi-scene Blender sessions, physical rotation and resize acceptance,
 safe-area transitions, external-display moves, physical memory-pressure
 handling, and broader document workflows still require device hardening.

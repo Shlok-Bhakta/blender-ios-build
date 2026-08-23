@@ -1,4 +1,4 @@
-# Morning handoff — 2026-08-22
+# Morning handoff — 2026-08-23
 
 Portable CPU Cycles remains green, and the production simulator and device
 profiles compile the native Cycles Metal device. UIKit now owns the app through
@@ -16,6 +16,10 @@ UIKit keyboard results now use owned UTF-8 storage, and every input target and
 delegate detaches before a GHOST window releases its native objects.
 Three-finger drag now reaches Blender's standard viewport-pan mapping while
 one-finger tools, two-finger orbit, and pinch zoom keep their existing roles.
+One-finger drags no longer leak a trackpad-scroll event into selection, direct
+double tap opens the right-click menu at its first tap, and Blender text fields
+now open the native full keyboard and commit expressions through the normal UI
+apply path.
 Generic Metal ownership now follows Objective-C create rules, deletes compute
 PSO cache records, and has a reproducible five-minute rendered-viewport soak.
 The same simulator
@@ -62,7 +66,7 @@ and packages as one universal unsigned IPA for device families 1 and 2.
 - The final five-minute EEVEE soak reports zero application-owned leak roots
   and zero leak growth on both simulator form factors. iPhone latter-half RSS
   growth is 1.1 MiB; iPad is 11.1 MiB with visible reclamation cycles.
-- All 100 tests under `build_files/ios/tests` pass.
+- All 110 tests under `build_files/ios/tests` pass.
 
 ## Evidence
 
@@ -106,6 +110,14 @@ and packages as one universal unsigned IPA for device families 1 and 2.
   `https://planista.shloklab.us/KRHbnyG-JQXGTnpy`
 - Current recording SHA-256:
   `1af202110da4fc55c9b5887e909ae3f719e53b5b95dd72f1294958e49a359d96`
+- Touch/keyboard acceptance recording:
+  `/Volumes/BlenderBuild/blender-ios/artifacts/20260823-input-polish/maestro-accepted/2026-08-23_023337/Blender iPad touch and keyboard polish/startRecording/blender-ios-input-polish.mp4`
+- Touch/keyboard recording review permalink:
+  `https://planista.shloklab.us/3QgY6Vs3aDKVsYZp`
+- Touch/keyboard unsigned IPA:
+  `/Volumes/BlenderBuild/blender-ios/artifacts/20260823-input-polish/DevBlender-ios-touch-keyboard-unsigned.ipa`
+- Touch/keyboard IPA SHA-256:
+  `b0c38431d655b3fef3c9bf3668139417335e2ff1084a8d2690e15bd2d4326142`
 
 ## Resume
 

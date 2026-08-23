@@ -98,6 +98,18 @@ callbacks before resigning the text field. Keyboard results live in an owned
 field changes or releases its string. Empty edits therefore return a stable
 empty C string instead of a dangling pointer or `nullptr`.
 
+Blender's normal text-edit activation is the authority for showing the native
+iOS keyboard. The interface layer passes the edit buffer, selection, button
+rectangle, and tooltip through GHOST, then retrieves the final owned string
+before Blender's existing apply path evaluates it. UIKit always exposes the
+full keyboard because numeric fields also accept expressions, units, and driver
+shortcuts. Autocorrection and smart punctuation are disabled. The native field
+overlays rather than resizes Blender's desktop layout, while its accessory bar
+keeps the active value and Done/Cancel actions visible. Selection is restored
+after first-responder activation because UIKit resets it during activation.
+After hide, GHOST returns the captured string without rereading the cleared
+UIKit field, whose `text` property normalizes to an empty string.
+
 Apple Pencil tablet state begins with the Pencil touch rather than waiting for
 its first movement. Only that tracked touch may update or end the tablet
 session, so an unrelated finger ending cannot erase pressure during a
@@ -107,11 +119,16 @@ ranges.
 
 Touch navigation preserves direct manipulation while exposing the desktop
 viewport operators through GHOST's existing trackpad events. A one-finger tap
-or drag remains left-button input for selection and tools. Two-finger drag
-keeps Blender's orbit behavior, pinch remains trackpad zoom, and three-finger
-drag carries its finger count through GHOST so the window manager selects the
-default Shift+Trackpad Pan mapping without changing persistent keyboard state.
-Every recognizer is detached and released with its GHOST window.
+or drag is exclusively left-button input for selection and tools; it never
+emits a trackpad-scroll event. The press is anchored at the initial touch and
+later motion updates only the cursor, preventing a fast selection drag from
+briefly rotating the viewport. Two-finger drag keeps Blender's orbit behavior,
+pinch remains trackpad zoom, and three-finger drag carries its finger count
+through GHOST so the window manager selects the default Shift+Trackpad Pan
+mapping without changing persistent keyboard state. A direct one-finger double
+tap emits a balanced right click at the first tap's cached position. The normal
+single tap waits for the double-tap recognizer to fail so both actions cannot
+fire. Every recognizer is detached and released with its GHOST window.
 
 ## Metal ownership and memory soak
 

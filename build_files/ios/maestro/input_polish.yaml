@@ -1,0 +1,29 @@
+appId: org.blenderfoundation.blender.ios
+name: Blender iPad touch and keyboard polish
+---
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 15000
+- tapOn:
+    point: 50%,66%
+- waitForAnimationToEnd:
+    timeout: 15000
+- startRecording: blender-ios-input-polish
+- tapOn:
+    point: 92%,27%
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: blender-full-keyboard
+- inputText: "3+4"
+- takeScreenshot: blender-expression-entry
+- tapOn: Done
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: blender-expression-committed
+- doubleTapOn:
+    point: 41%,46%
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: blender-double-tap-right-click
+- stopRecording
