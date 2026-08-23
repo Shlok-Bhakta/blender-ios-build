@@ -6191,9 +6191,10 @@ void wm_event_add_ghostevent(wmWindowManager *wm,
       }
 
 #if defined(WITH_APPLE_CROSSPLATFORM)
-      /* iOS reserves three-finger scroll for viewport panning. Reuse Blender's existing
-       * Shift+Trackpad Pan key-map entry without mutating the persistent keyboard state. */
-      if (pd->subtype == GHOST_kTrackpadEventScroll && pd->numFingers == 3) {
+      /* iOS reserves two-finger scroll for viewport panning. Reuse Blender's existing
+       * Shift+Trackpad Pan key-map entry without mutating the persistent keyboard state.
+       * Three-finger scroll stays unmodified and uses Blender's orbit key-map entry. */
+      if (pd->subtype == GHOST_kTrackpadEventScroll && pd->numFingers == 2) {
         event.modifier |= KM_SHIFT;
       }
 #endif

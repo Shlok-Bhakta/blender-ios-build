@@ -739,8 +739,8 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   pan2f_gesture_recognizer.maximumNumberOfTouches = 2;
   [window->getView() addGestureRecognizer:pan2f_gesture_recognizer];
 
-  /* Three-finger drag pans the 3D view. Keeping this separate from two-finger orbit avoids
-   * changing Blender's established touch interaction and makes the gesture unambiguous. */
+  /* Three-finger drag orbits the 3D view. Keep it separate from the simultaneous two-finger
+   * pan and pinch gestures so finger twist never changes the view rotation. */
   pan3f_gesture_recognizer = [[GHOSTUIPanGestureRecognizer alloc]
       initWithTarget:self
               action:@selector(handlePan3f:)];
@@ -884,13 +884,15 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   }
 }
 
-/* Allow simultaneous gestures for two finger pans and zooms but nothing else. */
+/* Allow simultaneous two-finger pan and pinch gestures, regardless of callback order. */
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer
     shouldRecognizeSimultaneouslyWithGestureRecognizer:
         (UIGestureRecognizer *)otherGestureRecognizer
 {
-  if (gestureRecognizer == pan2f_gesture_recognizer &&
-      otherGestureRecognizer == zoom_gesture_recognizer)
+  if ((gestureRecognizer == pan2f_gesture_recognizer &&
+       otherGestureRecognizer == zoom_gesture_recognizer) ||
+      (gestureRecognizer == zoom_gesture_recognizer &&
+       otherGestureRecognizer == pan2f_gesture_recognizer))
   {
     return YES;
   }

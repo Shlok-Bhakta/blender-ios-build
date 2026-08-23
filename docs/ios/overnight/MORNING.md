@@ -14,8 +14,9 @@ Apple Pencil state now starts on contact, follows only its tracked touch, and
 keeps force and tilt in valid GHOST ranges.
 UIKit keyboard results now use owned UTF-8 storage, and every input target and
 delegate detaches before a GHOST window releases its native objects.
-Three-finger drag now reaches Blender's standard viewport-pan mapping while
-one-finger tools, two-finger orbit, and pinch zoom keep their existing roles.
+Two-finger movement now pans while pinch zooms at the same time, and
+three-finger movement orbits around Blender's existing view center. Finger
+twist is ignored because iOS registers no rotation recognizer.
 One-finger drags no longer leak a trackpad-scroll event into selection, direct
 double tap opens the right-click menu at its first tap, and Blender text fields
 now open the native full keyboard and commit expressions through the normal UI
@@ -66,7 +67,7 @@ and packages as one universal unsigned IPA for device families 1 and 2.
 - The final five-minute EEVEE soak reports zero application-owned leak roots
   and zero leak growth on both simulator form factors. iPhone latter-half RSS
   growth is 1.1 MiB; iPad is 11.1 MiB with visible reclamation cycles.
-- All 110 tests under `build_files/ios/tests` pass.
+- All 112 tests under `build_files/ios/tests` pass.
 
 ## Evidence
 
@@ -144,5 +145,5 @@ and packages as one universal unsigned IPA for device families 1 and 2.
 
 Current source milestone: scene-owned UIKit startup, drawable-sized and
 single-present Metal frames, resizing, windowed coordinate mapping, owned input
-and Metal lifetimes, Pencil state safety, touch orbit/zoom/pan, portable CPU
-Cycles runtime, and a tier-2-gated Cycles Metal build.
+and Metal lifetimes, Pencil state safety, two-finger pan/zoom plus three-finger
+orbit, portable CPU Cycles runtime, and a tier-2-gated Cycles Metal build.

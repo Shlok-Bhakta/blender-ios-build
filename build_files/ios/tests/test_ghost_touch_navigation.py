@@ -32,15 +32,29 @@ class GhostTouchNavigationTests(unittest.TestCase):
         self.assertIn("PAN_GESTURE_THREE_FINGERS", handler)
         self.assertIn("setCachedTranslation:CGPointMake(0.0f, 0.0f)", handler)
 
-    def test_three_finger_trackpad_event_selects_blender_pan_keymap(self) -> None:
+    def test_two_finger_trackpad_event_selects_blender_pan_keymap(self) -> None:
         source = EVENT_SOURCE.read_text()
         trackpad_case = source[
             source.index("case GHOST_kEventTrackpad:") : source.index("/* Mouse button. */")
         ]
 
-        self.assertIn("pd->numFingers == 3", trackpad_case)
+        self.assertIn("pd->numFingers == 2", trackpad_case)
         self.assertIn("event.modifier |= KM_SHIFT", trackpad_case)
         self.assertIn("#if defined(WITH_APPLE_CROSSPLATFORM)", trackpad_case)
+
+    def test_three_finger_trackpad_event_keeps_blender_orbit_keymap(self) -> None:
+        source = EVENT_SOURCE.read_text()
+        trackpad_case = source[
+            source.index("case GHOST_kEventTrackpad:") : source.index("/* Mouse button. */")
+        ]
+
+        self.assertNotIn("pd->numFingers == 3", trackpad_case)
+
+    def test_ios_does_not_register_a_twist_rotation_gesture(self) -> None:
+        source = WINDOW_SOURCE.read_text()
+
+        self.assertNotIn("UIRotationGestureRecognizer", source)
+        self.assertNotIn("GHOST_kTrackpadEventRotate", source)
 
 
 if __name__ == "__main__":

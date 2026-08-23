@@ -21,7 +21,7 @@ class GhostTouchPolishTests(unittest.TestCase):
         self.assertIn("getScaledInitialTouchPoint", handler)
         self.assertNotIn("PAN_GESTURE", handler)
 
-    def test_only_two_finger_pan_can_run_with_pinch(self) -> None:
+    def test_two_finger_pan_and_pinch_can_run_together_in_either_order(self) -> None:
         source = WINDOW_SOURCE.read_text()
         delegate = source[
             source.rindex("shouldRecognizeSimultaneouslyWithGestureRecognizer:") : source.rindex(
@@ -29,8 +29,18 @@ class GhostTouchPolishTests(unittest.TestCase):
             )
         ]
 
-        self.assertIn("gestureRecognizer == pan2f_gesture_recognizer", delegate)
+        self.assertRegex(
+            delegate,
+            r"gestureRecognizer\s*==\s*pan2f_gesture_recognizer\s*&&\s*"
+            r"otherGestureRecognizer\s*==\s*zoom_gesture_recognizer",
+        )
+        self.assertRegex(
+            delegate,
+            r"gestureRecognizer\s*==\s*zoom_gesture_recognizer\s*&&\s*"
+            r"otherGestureRecognizer\s*==\s*pan2f_gesture_recognizer",
+        )
         self.assertNotIn("gestureRecognizer == pan_gesture_recognizer", delegate)
+        self.assertNotIn("gestureRecognizer == pan3f_gesture_recognizer", delegate)
 
     def test_double_tap_right_click_is_anchored_to_the_first_tap(self) -> None:
         source = WINDOW_SOURCE.read_text()
