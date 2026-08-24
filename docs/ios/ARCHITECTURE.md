@@ -60,11 +60,12 @@ events, and receives scene-routed document URLs. The app delegate retains
 process-wide security-scoped document handles and releases them at termination.
 
 Every GHOST window uses `initWithWindowScene:` against that active scene.
-Initial geometry comes from the scene coordinate space, and display dimensions,
-pixel bounds, input scale, drawable scale, and refresh rate come from the
-scene's screen. No production GHOST path reads `UIScreen.mainScreen`. MetalKit
-drawable-size callbacks call the normal GHOST window-size handler, which
-updates Blender's drawing context before queuing the resize event.
+Initial geometry comes from the scene coordinate space, and refresh rate comes
+from the scene's screen. The Metal view is pinned to the scene window bounds and
+keeps a flexible width and height. No production GHOST path reads
+`UIScreen.mainScreen`. MetalKit drawable-size callbacks call the normal GHOST
+window-size handler, which updates Blender's drawing context before queuing the
+resize event.
 
 The Metal overlay framebuffer is sized from `MTKView.drawableSize`, which is
 already expressed in native pixels for the current window and display. A
@@ -72,6 +73,14 @@ temporary zero-sized drawable during scene deactivation or live resize keeps
 the last valid backing texture until UIKit publishes a drawable again.
 Contexts without a UIKit window use a neutral 1 by 1 view; they never guess a
 particular iPhone resolution.
+
+Blender's client bounds also come directly from `MTKView.drawableSize`. GHOST
+derives its point-to-pixel ratio from the drawable size divided by the current
+view bounds. It does not force `UIScreen.scale` onto MetalKit. This distinction
+matters when Display Zoom or another display mode gives UIKit's logical
+coordinate space a different scale from the native Metal backing. Using one
+measured backing ratio for rendering, pointer events, and keyboard placement
+keeps all three aligned.
 
 Each `drawInMTKView` delegate callback opens exactly one presentation frame.
 Blender may request several swaps while processing that callback, but the
@@ -81,7 +90,7 @@ drawable submission in the same frame. Presentation state belongs to the
 context; it never depends on a process-global or unretained drawable pointer.
 
 GHOST keeps its public coordinate contract in native pixels. UIKit conversion
-APIs use points, so the iOS window divides by the attached scene screen's scale,
+APIs use points, so the iOS window divides by the current view backing ratio,
 converts through `UIWindowScene.coordinateSpace`, and rounds the result back to
 native pixels. UIKit and GHOST both use a top-left origin on iOS, so this path
 does not inherit AppKit's Y-axis inversion. Cached pointer locations remain in

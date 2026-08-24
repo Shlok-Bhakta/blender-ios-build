@@ -8,6 +8,9 @@ native-pixel coordinate contract.
 Metal overlay textures now take their native-pixel size from the current
 `MTKView` drawable, including iPad windowed scenes and external-display-ready
 geometry, while offscreen contexts use a neutral 1 by 1 backing.
+Blender client bounds and input scale now follow that drawable instead of
+`UIScreen.scale`. The Metal view also tracks the scene window bounds, which
+removes the uniform gray bands seen with a different phone display mode.
 Metal presentation now coalesces Blender's swap requests and submits at most
 one drawable per MetalKit delegate frame without global drawable tracking.
 Apple Pencil state now starts on contact, follows only its tracked touch, and
@@ -67,7 +70,9 @@ and packages as one universal unsigned IPA for device families 1 and 2.
 - The final five-minute EEVEE soak reports zero application-owned leak roots
   and zero leak growth on both simulator form factors. iPhone latter-half RSS
   growth is 1.1 MiB; iPad is 11.1 MiB with visible reclamation cycles.
-- All 112 tests under `build_files/ios/tests` pass.
+- The compact iPhone 17e, iPhone 17 Pro Max, and iPad mini fill their native
+  viewports and pass real EEVEE plus 20-second rendered-viewport gates.
+- All 117 tests under `build_files/ios/tests` pass.
 
 ## Evidence
 
@@ -115,6 +120,10 @@ and packages as one universal unsigned IPA for device families 1 and 2.
   `/Volumes/BlenderBuild/blender-ios/artifacts/20260823-input-polish/maestro-accepted/2026-08-23_023337/Blender iPad touch and keyboard polish/startRecording/blender-ios-input-polish.mp4`
 - Touch/keyboard recording review permalink:
   `https://planista.shloklab.us/3QgY6Vs3aDKVsYZp`
+- Native display-scale review captures:
+  `https://planista.shloklab.us/xQ3prujjcIdTioO4` (iPhone 17e),
+  `https://planista.shloklab.us/77zJkHOn30wiwmm0` (iPhone 17 Pro Max), and
+  `https://planista.shloklab.us/sEXJuT6gY0MB76zL` (iPad mini)
 - Touch/keyboard unsigned IPA:
   `/Volumes/BlenderBuild/blender-ios/artifacts/20260823-input-polish/DevBlender-ios-touch-keyboard-unsigned.ipa`
 - Touch/keyboard IPA SHA-256:

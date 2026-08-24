@@ -1662,7 +1662,8 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   _view.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
   _view.autoResizeDrawable = YES;
   _view.contentMode = UIViewContentModeScaleToFill;
-  _view.contentScaleFactor = _screen.scale;
+  /* MetalKit derives its drawable in native pixels. Do not force UIScreen.scale here:
+   * Display Zoom can make the logical and native backing scales differ. */
   /* Set the refresh rate to the screen's maximum. There may be some value in capping
    * this value to preserve battery life (60fps seems to work well). */
   _view.preferredFramesPerSecond = _screen.maximumFramesPerSecond;
@@ -1745,6 +1746,9 @@ GHOST_WindowIOS::GHOST_WindowIOS(GHOST_SystemIOS *system_ios,
     uiview_controller_.modalPresentationStyle = UIModalPresentationPageSheet;
   }
   rootWindow.rootViewController = uiview_controller_;
+  metal_view_.autoresizingMask = UIViewAutoresizingFlexibleWidth |
+                                 UIViewAutoresizingFlexibleHeight;
+  metal_view_.frame = rootWindow.bounds;
 
   /* Create UIView */
   GHOST_ASSERT(width > 0 && height > 0, "invalid wh");
@@ -1925,7 +1929,7 @@ void GHOST_WindowIOS::getWindowBounds(GHOST_Rect &bounds) const
   GHOST_ASSERT(getValid(), "GHOST_WindowIOS::getWindowBounds(): window invalid");
 
   CGRect window_rect = rootWindow.frame;
-  CGFloat scale = rootWindow.windowScene.screen.scale;
+  const CGFloat scale = getWindowScaleFactor();
 
   bounds.b_ = CGRectGetMaxY(window_rect) * scale;
   bounds.l_ = CGRectGetMinX(window_rect) * scale;
@@ -1937,12 +1941,11 @@ void GHOST_WindowIOS::getClientBounds(GHOST_Rect &bounds) const
 {
   GHOST_ASSERT(getValid(), "GHOST_WindowIOS::getWindowBounds(): window invalid");
 
-  CGRect client_rect = rootWindow.bounds;
-  CGFloat scale = rootWindow.windowScene.screen.scale;
+  const CGSize drawable_size = metal_view_.drawableSize;
 
-  bounds.b_ = CGRectGetHeight(client_rect) * scale;
+  bounds.b_ = std::lround(drawable_size.height);
   bounds.l_ = 0;
-  bounds.r_ = CGRectGetWidth(client_rect) * scale;
+  bounds.r_ = std::lround(drawable_size.width);
   bounds.t_ = 0;
 }
 
@@ -2168,7 +2171,7 @@ const GHOST_TabletData GHOST_WindowIOS::getTabletData()
 /* This is the size of the window pre-scaled */
 CGSize GHOST_WindowIOS::getLogicalWindowSize()
 {
-  return metal_view_.frame.size;
+  return metal_view_.bounds.size;
 }
 
 /* This is the size of the window post-scaled */
@@ -2179,8 +2182,15 @@ CGSize GHOST_WindowIOS::getNativeWindowSize()
 
 float GHOST_WindowIOS::getWindowScaleFactor() const
 {
-  UIWindowScene *window_scene = rootWindow.windowScene;
-  return window_scene != nil ? window_scene.screen.scale : metal_view_.contentScaleFactor;
+  const CGSize logical_size = metal_view_.bounds.size;
+  const CGSize drawable_size = metal_view_.drawableSize;
+  if (logical_size.width > 0.0f && drawable_size.width > 0.0f) {
+    return float(drawable_size.width / logical_size.width);
+  }
+  if (logical_size.height > 0.0f && drawable_size.height > 0.0f) {
+    return float(drawable_size.height / logical_size.height);
+  }
+  return metal_view_.contentScaleFactor > 0.0f ? metal_view_.contentScaleFactor : 1.0f;
 }
 
 /* Indicate that we want this window to be the next active one. */

@@ -627,3 +627,37 @@ builds, recursive ABI/bundle/path audits, and 30-second rendered viewports on
 both simulator form factors pass. Simulator automation cannot inject multiple
 independent contacts, so gesture feel and arbitration remain an owner-signed
 physical-device gate.
+
+## ADR-0030: Make the Metal drawable the window pixel authority
+
+- Status: accepted simulator/build boundary; reported-device confirmation pending
+- Date: 2026-08-23
+
+A physical phone showed Blender uniformly reduced into the lower-left corner,
+with gray bands above and to the right. The rendered area was about 87.7 percent
+of the available size on both axes. That points to two uniform scale factors,
+not a safe-area or aspect-ratio error. The old window path multiplied logical
+UIKit bounds by `UIScreen.scale` and also forced that value onto the Metal view.
+Display Zoom can make that logical scale differ from MetalKit's native-pixel
+drawable.
+
+`MTKView.drawableSize` is now the authority for Blender client pixels. The
+point-to-pixel ratio is measured from `drawableSize / bounds`, and the Metal
+view tracks the scene window through its frame and flexible autoresizing mask.
+The code no longer forces `UIScreen.scale` onto the view. Window bounds,
+pointer input, and software-keyboard geometry all reuse the measured ratio.
+This keeps rendering and input on the same backing even after a display-mode,
+orientation, scene-size, or external-screen change.
+
+The contract follows Apple's definitions for
+[`UIScreen.scale`](https://developer.apple.com/documentation/uikit/uiscreen/scale),
+which maps points into the default device coordinate space, and
+[`MTKView.drawableSize`](https://developer.apple.com/documentation/metalkit/mtkview/drawablesize),
+whose default is the view size in native pixels. Forward ports must not replace
+the drawable measurement with a screen-global scale.
+
+All 117 iOS tests, both production builds, and recursive ABI/bundle/path audits
+pass. EEVEE render plus 20-second live rendered-viewport acceptance passes on
+iPhone 17e, iPhone 17 Pro Max, and iPad mini. Captures show Blender touching all
+four edges on the compact phone, large phone, and portrait tablet. A rerun on
+the originally reported physical phone remains the final confirmation.

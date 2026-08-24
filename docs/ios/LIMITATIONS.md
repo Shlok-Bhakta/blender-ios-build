@@ -10,6 +10,12 @@ Splash and cube viewport screenshots exist for each simulator. iPad runs as
 `UIRequiresFullScreen` no longer forces a full-screen scene; the iPad capture
 is a native iPad windowed scene. Full-screen versus windowed placement on
 iPadOS 26 is controlled by the user and operating system.
+The window path now measures native pixels from `MTKView.drawableSize` instead
+of `UIScreen.scale`, and the Metal view follows the scene window bounds. This
+fixes the uniform top/right gray bands reported on a phone using a different
+display configuration. iPhone 17e, iPhone 17 Pro Max, and iPad mini simulator
+captures fill every edge. The originally reported physical phone still needs a
+rerun with the new build, and external-display scaling remains a physical gate.
 The release smoke gate also renders the factory cube to a validated 1920 by
 1080 EEVEE PNG and holds a live rendered viewport for 30 seconds on each
 simulator. A separate rendered-viewport soak uses a 60-second warmup and five

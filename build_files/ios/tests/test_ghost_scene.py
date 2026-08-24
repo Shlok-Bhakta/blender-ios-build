@@ -47,6 +47,55 @@ class GhostSceneTests(unittest.TestCase):
         self.assertIn("const CGSize drawable_size = metal_view_.drawableSize;", source)
         self.assertIn("if (width == 0 || height == 0)", source)
 
+    def test_client_bounds_match_the_metal_drawable_pixels(self) -> None:
+        source = WINDOW_SOURCE.read_text()
+        method = source[
+            source.index("void GHOST_WindowIOS::getClientBounds") : source.index(
+                "GHOST_TSuccess GHOST_WindowIOS::setClientWidth"
+            )
+        ]
+
+        self.assertIn("const CGSize drawable_size = metal_view_.drawableSize;", method)
+        self.assertIn("bounds.r_ = std::lround(drawable_size.width);", method)
+        self.assertIn("bounds.b_ = std::lround(drawable_size.height);", method)
+        self.assertNotIn("screen.scale", method)
+
+    def test_window_bounds_use_the_actual_view_backing_scale(self) -> None:
+        source = WINDOW_SOURCE.read_text()
+        method = source[
+            source.index("void GHOST_WindowIOS::getWindowBounds") : source.index(
+                "void GHOST_WindowIOS::getClientBounds"
+            )
+        ]
+
+        self.assertIn("getWindowScaleFactor()", method)
+        self.assertNotIn("windowScene.screen.scale", method)
+
+    def test_window_scale_comes_from_the_actual_view_backing(self) -> None:
+        source = WINDOW_SOURCE.read_text()
+        method = source[
+            source.index("float GHOST_WindowIOS::getWindowScaleFactor") : source.index(
+                "void GHOST_WindowIOS::requestToActivateWindow"
+            )
+        ]
+
+        self.assertIn("metal_view_.drawableSize", method)
+        self.assertIn("metal_view_.bounds.size", method)
+        self.assertNotIn("window_scene.screen.scale", method)
+
+    def test_metal_view_does_not_force_the_logical_screen_scale(self) -> None:
+        source = WINDOW_SOURCE.read_text()
+        view_setup = source[source.index("- (void)viewDidLoad") : source.index("- (void)handleGesture:")]
+
+        self.assertNotIn("_view.contentScaleFactor = _screen.scale;", view_setup)
+
+    def test_metal_view_tracks_the_scene_window_bounds(self) -> None:
+        source = WINDOW_SOURCE.read_text()
+
+        self.assertIn("metal_view_.frame = rootWindow.bounds;", source)
+        self.assertIn("UIViewAutoresizingFlexibleWidth", source)
+        self.assertIn("UIViewAutoresizingFlexibleHeight", source)
+
     def test_offscreen_context_does_not_assume_a_device_display_size(self) -> None:
         source = CONTEXT_SOURCE.read_text()
         self.assertIn("CGRectMake(0, 0, 1, 1)", source)
