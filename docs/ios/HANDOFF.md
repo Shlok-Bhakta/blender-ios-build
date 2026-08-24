@@ -59,6 +59,15 @@ The generated dependency graph is `DEPENDENCY_DAG.json`. Its bootstrap queue is
 dependency-free and ordered for bounded `-j2` packets; do not replace it with the
 global `install` target.
 
+## Scene backing-scale boundary
+
+Treat `MTKView.drawableSize` as the only authority for Blender client pixels.
+Do not multiply UIKit bounds by `UIScreen.scale` or assign that screen-global
+value to the Metal view. Display Zoom can give the logical coordinate space and
+native Metal backing different scales. Derive input and overlay placement from
+the current drawable-to-bounds ratio, and keep the Metal view pinned to the
+scene window bounds.
+
 ## Touch and software-keyboard boundary
 
 One-finger drag is Blender left-button input only. Do not reintroduce a
