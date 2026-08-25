@@ -11,6 +11,9 @@ WORKFLOW = REPOSITORY / ".github" / "workflows" / "ios-pr-preview.yml"
 HOST_PROFILE = (
     REPOSITORY / "build_files" / "cmake" / "config" / "blender_ios_host_tools.cmake"
 )
+DEPENDENCY_DOWNLOADS = (
+    REPOSITORY / "build_files" / "build_environment" / "cmake" / "download.cmake"
+)
 
 
 class PrPreviewWorkflowTests(unittest.TestCase):
@@ -29,6 +32,14 @@ class PrPreviewWorkflowTests(unittest.TestCase):
         self.assertIn("https://projects.blender.org/blender/blender.git/info/lfs", workflow)
         self.assertIn("release/datafiles/**", workflow)
         self.assertIn("scripts/**", workflow)
+
+    def test_downloads_only_the_cached_ios_dependency_closure(self) -> None:
+        workflow = WORKFLOW.read_text()
+        downloads = DEPENDENCY_DOWNLOADS.read_text()
+        self.assertIn("-DPACKAGE_USE_UPSTREAM_SOURCES=OFF", workflow)
+        self.assertIn("-DBLENDER_DEPENDENCY_DOWNLOADS=", workflow)
+        self.assertIn("BLENDER_DEPENDENCY_DOWNLOADS", downloads)
+        self.assertIn("IN_LIST BLENDER_DEPENDENCY_DOWNLOADS", downloads)
 
     def test_publishes_exact_pr_release_contract(self) -> None:
         workflow = WORKFLOW.read_text()
