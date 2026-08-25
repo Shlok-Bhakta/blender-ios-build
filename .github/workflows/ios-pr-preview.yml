@@ -32,6 +32,7 @@ jobs:
       APP_BUILD: ${{ github.workspace }}/../blender-ios-preview/app-build
       RELEASE_DIR: ${{ github.workspace }}/../blender-ios-preview/release
       ASSET_NAME: DevBlender-test.blenderfoundation.blender.ios-unsigned.ipa
+      GIT_LFS_SKIP_SMUDGE: '1'
       GH_TOKEN: ${{ github.token }}
 
     steps:
@@ -39,7 +40,34 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-          lfs: true
+          lfs: false
+
+      - name: Hydrate required LFS files from public Blender upstream
+        shell: bash
+        run: |
+          set -euo pipefail
+          git lfs install --local
+          git remote add blender-lfs https://projects.blender.org/blender/blender.git
+          git config remote.blender-lfs.lfsurl https://projects.blender.org/blender/blender.git/info/lfs
+          git lfs pull blender-lfs \
+            --include="assets/**,release/datafiles/**,release/ios/**,scripts/**" \
+            --exclude=""
+          python3 - <<'PY'
+          from pathlib import Path
+
+          roots = (Path("assets"), Path("release/datafiles"), Path("release/ios"), Path("scripts"))
+          pointers = []
+          for root in roots:
+              if not root.exists():
+                  continue
+              for path in root.rglob("*"):
+                  if path.is_file():
+                      with path.open("rb") as handle:
+                          if handle.read(42) == b"version https://git-lfs.github.com/spec/v1":
+                              pointers.append(str(path))
+          if pointers:
+              raise SystemExit(f"unhydrated LFS pointer: {pointers[0]}")
+          PY
 
       - name: Select the public runner toolchain
         run: |
@@ -161,6 +189,7 @@ jobs:
         run: |
           set -euo pipefail
           git submodule update --init --depth 1 lib/macos_arm64
+          git -C lib/macos_arm64 lfs pull
           cmake \
             -S . \
             -B "$HOST_BUILD" \

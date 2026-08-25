@@ -22,6 +22,14 @@ class PrPreviewWorkflowTests(unittest.TestCase):
         self.assertIn("dependency-cache-key", workflow)
         self.assertIn("host-tool-cache-key", workflow)
 
+    def test_hydrates_required_lfs_files_from_public_blender_upstream(self) -> None:
+        workflow = WORKFLOW.read_text()
+        self.assertIn("lfs: false", workflow)
+        self.assertNotIn("lfs: true", workflow)
+        self.assertIn("https://projects.blender.org/blender/blender.git/info/lfs", workflow)
+        self.assertIn("release/datafiles/**", workflow)
+        self.assertIn("scripts/**", workflow)
+
     def test_publishes_exact_pr_release_contract(self) -> None:
         workflow = WORKFLOW.read_text()
         self.assertIn("gh release delete", workflow)
