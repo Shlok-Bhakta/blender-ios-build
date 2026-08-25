@@ -1,0 +1,25 @@
+appId: org.blenderfoundation.blender.ios
+name: Blender iPad direct object drag
+---
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 15000
+- tapOn:
+    point: 50%,66%
+- waitForAnimationToEnd:
+    timeout: 15000
+- tapOn:
+    point: 41%,42%
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: blender-direct-drag-before
+- startRecording: blender-ios-direct-object-drag
+- swipe:
+    start: 41%,42%
+    end: 58%,35%
+    duration: 1400
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: blender-direct-drag-after
+- stopRecording

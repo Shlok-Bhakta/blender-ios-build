@@ -669,3 +669,27 @@ generators rebuilt from the merged revision. After refreshing `makesdna`,
 Release simulator and arm64 iPhoneOS install builds pass. The 23 changed LFS
 assets are fetched from the Blender upstream server before publishing the
 stack layer.
+
+## ADR-0033: Reuse Blender selection passthrough for direct viewport dragging
+
+- Status: accepted proof of concept; hardware gesture acceptance pending
+- Date: 2026-08-24
+
+Direct object dragging is an iOS-only addition to the primary Tweak and Select
+Box tool keymaps in the 3D View window region. Both use Blender's existing
+selection passthrough sequence: a press over the current selection passes
+through to the normal `transform.translate` click-drag binding, while a click
+still selects and an unhandled drag can continue to box select. No transform
+math, object hit-testing, window-manager event handling, or non-3D-editor
+keymap changes are introduced.
+
+Gizmos retain event priority because this patch only contributes tool keymap
+items after Blender's existing gizmo event handling. The behavior is opt-in
+through the generated iOS key configuration and is disabled for other
+platforms, right-click selection, and fallback tool maps.
+
+All 117 iOS contract tests and both Release install builds pass. A Maestro run
+on the iPad Pro simulator selected the default cube and dragged it from zero to
+approximately `(0.61, 3.45, 1.67)` with Blender's Move operator. Independent
+two- and three-finger injection, transform gizmos, and custom gizmos remain
+physical-device acceptance checks.

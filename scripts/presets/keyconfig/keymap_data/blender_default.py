@@ -40,6 +40,7 @@ class Params:
         # - Click selects only the item at the cursor position.
         # See: #97032.
         "use_tweak_select_passthrough",
+        "use_v3d_tweak_drag_translate",
         "use_mouse_emulate_3_button",
 
         # User preferences:
@@ -107,6 +108,7 @@ class Params:
             legacy=False,
             select_mouse='RIGHT',
             use_mouse_emulate_3_button=False,
+            use_v3d_tweak_drag_translate=False,
 
             # User preferences.
             spacebar_action='TOOL',
@@ -202,6 +204,7 @@ class Params:
         self.use_file_single_click = use_file_single_click
 
         self.use_tweak_select_passthrough = not legacy
+        self.use_v3d_tweak_drag_translate = use_v3d_tweak_drag_translate
 
         self.use_fallback_tool = use_fallback_tool
 
@@ -7470,6 +7473,19 @@ def km_node_editor_tool_add_reroute(params):
 # ------------------------------------------------------------------------------
 # Tool System (3D View, Generic)
 
+def _template_items_v3d_drag_translate(params, *, fallback):
+    if (
+            fallback or
+            params.select_mouse != 'LEFTMOUSE' or
+            not params.use_v3d_tweak_drag_translate
+    ):
+        return []
+    return [
+        ("transform.translate", {"type": 'LEFTMOUSE', "value": 'CLICK_DRAG'},
+         {"properties": [("release_confirm", True)]}),
+    ]
+
+
 def km_3d_view_tool_cursor(params):
     return (
         "3D View Tool: Cursor",
@@ -7511,6 +7527,7 @@ def km_3d_view_tool_select(params, *, fallback):
             )),
             # Instance weight/vertex selection actions here, see code-comment for details.
             *([] if (params.select_mouse == 'RIGHTMOUSE') else _template_view3d_paint_mask_select_loop(params)),
+            *_template_items_v3d_drag_translate(params, fallback=fallback),
         ]},
     )
 
@@ -7520,6 +7537,13 @@ def km_3d_view_tool_select_box(params, *, fallback):
         _fallback_id("3D View Tool: Select Box", fallback),
         {"space_type": 'VIEW_3D', "region_type": 'WINDOW'},
         {"items": [
+            *([] if (
+                fallback or
+                params.select_mouse != 'LEFTMOUSE' or
+                not params.use_v3d_tweak_drag_translate
+            ) else _template_items_tool_select(
+                params, "view3d.select", "view3d.cursor3d", fallback=False)),
+            *_template_items_v3d_drag_translate(params, fallback=fallback),
             *([] if (fallback and not params.use_fallback_tool) else _template_items_tool_select_actions(
                 "view3d.select_box",
                 # Don't use `tool_maybe_tweak_event`, see comment for this slot.
