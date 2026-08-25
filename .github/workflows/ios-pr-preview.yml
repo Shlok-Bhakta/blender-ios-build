@@ -22,15 +22,15 @@ jobs:
     timeout-minutes: 360
     env:
       XCODE_PATH: /Applications/Xcode_26.3.app/Contents/Developer
-      CI_ROOT: ${{ github.workspace }}/../blender-ios-preview
-      DEPS_BUILD: ${{ github.workspace }}/../blender-ios-preview/deps-build
-      DEPS_INSTALL: ${{ github.workspace }}/../blender-ios-preview/deps-install
-      DEPS_DOWNLOADS: ${{ github.workspace }}/../blender-ios-preview/downloads
-      DEPS_PACKAGES: ${{ github.workspace }}/../blender-ios-preview/packages
-      HOST_BUILD: ${{ github.workspace }}/../blender-ios-preview/host-build
-      HOST_INSTALL: ${{ github.workspace }}/../blender-ios-preview/host-install
-      APP_BUILD: ${{ github.workspace }}/../blender-ios-preview/app-build
-      RELEASE_DIR: ${{ github.workspace }}/../blender-ios-preview/release
+      CI_ROOT: ${{ github.workspace }}/.ios-preview
+      DEPS_BUILD: ${{ github.workspace }}/.ios-preview/deps-build
+      DEPS_INSTALL: ${{ github.workspace }}/.ios-preview/deps-install
+      DEPS_DOWNLOADS: ${{ github.workspace }}/.ios-preview/downloads
+      DEPS_PACKAGES: ${{ github.workspace }}/.ios-preview/packages
+      HOST_BUILD: ${{ github.workspace }}/.ios-preview/host-build
+      HOST_INSTALL: ${{ github.workspace }}/.ios-preview/host-install
+      APP_BUILD: ${{ github.workspace }}/.ios-preview/app-build
+      RELEASE_DIR: ${{ github.workspace }}/.ios-preview/release
       ASSET_NAME: DevBlender-test.blenderfoundation.blender.ios-unsigned.ipa
       GIT_LFS_SKIP_SMUDGE: '1'
       GH_TOKEN: ${{ github.token }}

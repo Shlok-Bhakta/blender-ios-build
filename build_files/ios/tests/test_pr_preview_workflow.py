@@ -24,6 +24,7 @@ class PrPreviewWorkflowTests(unittest.TestCase):
         self.assertIn("actions/cache", workflow)
         self.assertIn("dependency-cache-key", workflow)
         self.assertIn("host-tool-cache-key", workflow)
+        self.assertNotIn("github.workspace }}/../", workflow)
 
     def test_hydrates_required_lfs_files_from_public_blender_upstream(self) -> None:
         workflow = WORKFLOW.read_text()
