@@ -190,8 +190,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git submodule update --init --depth 1 lib/macos_arm64
-          git -C lib/macos_arm64 lfs pull
+          git -c submodule.lib/macos_arm64.update=checkout \
+            submodule update --init --depth 1 lib/macos_arm64
+          test "$(git -C lib/macos_arm64 rev-parse --show-toplevel)" = "$(pwd)/lib/macos_arm64"
+          git -C lib/macos_arm64 lfs pull origin
           cmake \
             -S . \
             -B "$HOST_BUILD" \

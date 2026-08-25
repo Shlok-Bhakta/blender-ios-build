@@ -65,6 +65,10 @@ class PrPreviewWorkflowTests(unittest.TestCase):
             self.assertIn(f"set({feature}", profile)
             self.assertIn("ON CACHE BOOL", profile)
 
+    def test_host_library_checkout_overrides_the_disabled_submodule_policy(self) -> None:
+        workflow = WORKFLOW.read_text()
+        self.assertIn("submodule.lib/macos_arm64.update=checkout", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
