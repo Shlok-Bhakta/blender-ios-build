@@ -85,15 +85,13 @@ keeps pressure and tilt bounded even if UIKit reports an unusable force range.
 The simulator cannot synthesize physical Pencil pressure or tilt, so real
 Pencil contact, motion, simultaneous finger input, cancellation, hover, and
 double-tap remain owner-signed iPad acceptance gates.
-Direct touch keeps one-finger selection and tool drags. Two-finger movement pans
-while pinch zooms, and both gestures may run at the same time. Three-finger drag
-orbits through Blender's standard trackpad navigation path. Finger twist is
-ignored because the iOS backend does not register a rotation recognizer.
-One-finger drag no longer emits the scroll event that caused a brief viewport
-rotation before selection, and a one-finger double tap opens the right-click
-menu at the first tap location. The installed Simulator/Maestro stack cannot
-synthesize multiple concurrent contacts, so final gesture arbitration and feel
-remain a physical iPhone/iPad gate.
+Direct touch keeps one-finger selection and tool drags, two-finger orbit, and
+pinch zoom; three-finger drag pans the viewport through Blender's standard
+trackpad navigation path. One-finger drag no longer emits the scroll event that
+caused a brief viewport rotation before selection, and a one-finger double tap
+opens the right-click menu at the first tap location. The installed
+Simulator/Maestro stack cannot synthesize three concurrent contacts, so final
+gesture arbitration and feel remain a physical iPhone/iPad gate.
 Multi-scene Blender sessions, physical rotation and resize acceptance,
 safe-area transitions, external-display moves, physical memory-pressure
 handling, and broader document workflows still require device hardening.

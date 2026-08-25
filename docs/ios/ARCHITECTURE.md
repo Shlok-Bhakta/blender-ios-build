@@ -131,16 +131,13 @@ viewport operators through GHOST's existing trackpad events. A one-finger tap
 or drag is exclusively left-button input for selection and tools; it never
 emits a trackpad-scroll event. The press is anchored at the initial touch and
 later motion updates only the cursor, preventing a fast selection drag from
-briefly rotating the viewport. Two-finger drag carries its finger count through
-GHOST so the window manager selects Blender's existing Shift+Trackpad Pan
-mapping without changing persistent keyboard state. Pinch remains trackpad
-zoom and UIKit accepts it alongside two-finger pan in either recognizer callback
-order. Three-finger drag stays unmodified and selects Blender's orbit mapping.
-The iOS backend registers no rotation recognizer, so twisting two fingers cannot
-roll the view. A direct one-finger double tap emits a balanced right click at
-the first tap's cached position. The normal single tap waits for the double-tap
-recognizer to fail so both actions cannot fire. Every recognizer is detached and
-released with its GHOST window.
+briefly rotating the viewport. Two-finger drag keeps Blender's orbit behavior,
+pinch remains trackpad zoom, and three-finger drag carries its finger count
+through GHOST so the window manager selects the default Shift+Trackpad Pan
+mapping without changing persistent keyboard state. A direct one-finger double
+tap emits a balanced right click at the first tap's cached position. The normal
+single tap waits for the double-tap recognizer to fail so both actions cannot
+fire. Every recognizer is detached and released with its GHOST window.
 
 ## Metal ownership and memory soak
 
