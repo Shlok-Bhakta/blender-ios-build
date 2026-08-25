@@ -651,3 +651,21 @@ navigation or display-scale branches underneath. All 115 iOS contract tests
 pass, and the Release simulator and arm64 iPhoneOS products compile, link, and
 install. Public Simulator input cannot inject independent multi-touch contacts,
 so final gesture feel remains a physical-device gate.
+
+## ADR-0032: Track Blender 5.2 maintenance in a separate stack layer
+
+- Status: accepted source/build boundary
+- Date: 2026-08-24
+
+The iOS port now merges `upstream/blender-v5.2-release` at `9e2066aef7e` in a
+new branch above the touch-navigation restore. This preserves every existing
+iOS stack boundary while bringing in the 160 upstream commits after the
+`v5.2.0` baseline, including Blender 5.2.1. The merge required no source
+conflict resolution.
+
+The maintenance changes alter Blender DNA, so both iOS targets must use host
+generators rebuilt from the merged revision. After refreshing `makesdna`,
+`makesrna`, `datatoc`, and `shader_tool`, all 115 iOS contract tests and both
+Release simulator and arm64 iPhoneOS install builds pass. The 23 changed LFS
+assets are fetched from the Blender upstream server before publishing the
+stack layer.
