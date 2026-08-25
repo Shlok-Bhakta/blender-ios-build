@@ -22,15 +22,15 @@ jobs:
     timeout-minutes: 360
     env:
       XCODE_PATH: /Applications/Xcode_26.3.app/Contents/Developer
-      CI_ROOT: ${{ runner.temp }}/blender-ios-preview
-      DEPS_BUILD: ${{ runner.temp }}/blender-ios-preview/deps-build
-      DEPS_INSTALL: ${{ runner.temp }}/blender-ios-preview/deps-install
-      DEPS_DOWNLOADS: ${{ runner.temp }}/blender-ios-preview/downloads
-      DEPS_PACKAGES: ${{ runner.temp }}/blender-ios-preview/packages
-      HOST_BUILD: ${{ runner.temp }}/blender-ios-preview/host-build
-      HOST_INSTALL: ${{ runner.temp }}/blender-ios-preview/host-install
-      APP_BUILD: ${{ runner.temp }}/blender-ios-preview/app-build
-      RELEASE_DIR: ${{ runner.temp }}/blender-ios-preview/release
+      CI_ROOT: ${{ github.workspace }}/../blender-ios-preview
+      DEPS_BUILD: ${{ github.workspace }}/../blender-ios-preview/deps-build
+      DEPS_INSTALL: ${{ github.workspace }}/../blender-ios-preview/deps-install
+      DEPS_DOWNLOADS: ${{ github.workspace }}/../blender-ios-preview/downloads
+      DEPS_PACKAGES: ${{ github.workspace }}/../blender-ios-preview/packages
+      HOST_BUILD: ${{ github.workspace }}/../blender-ios-preview/host-build
+      HOST_INSTALL: ${{ github.workspace }}/../blender-ios-preview/host-install
+      APP_BUILD: ${{ github.workspace }}/../blender-ios-preview/app-build
+      RELEASE_DIR: ${{ github.workspace }}/../blender-ios-preview/release
       ASSET_NAME: DevBlender-test.blenderfoundation.blender.ios-unsigned.ipa
       GH_TOKEN: ${{ github.token }}
 
@@ -86,8 +86,10 @@ jobs:
               | cut -d' ' -f1
           )"
           library_revision="$(git rev-parse HEAD:lib/macos_arm64)"
-          echo "dependency-cache-key=ios-device-deps-v1-${xcode_key}-${dependency_key}" >> "$GITHUB_OUTPUT"
-          echo "host-tool-cache-key=ios-host-tools-v1-${xcode_key}-${library_revision}-${host_key}" >> "$GITHUB_OUTPUT"
+          {
+            echo "dependency-cache-key=ios-device-deps-v1-${xcode_key}-${dependency_key}"
+            echo "host-tool-cache-key=ios-host-tools-v1-${xcode_key}-${library_revision}-${host_key}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Restore iOS dependency prefix
         id: dependency-cache
