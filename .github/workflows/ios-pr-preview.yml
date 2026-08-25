@@ -1,0 +1,289 @@
+name: iOS PR preview
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ios-pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  build-package-publish:
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.head_ref, 'story/')
+    runs-on: macos-15
+    timeout-minutes: 360
+    env:
+      XCODE_PATH: /Applications/Xcode_26.3.app/Contents/Developer
+      CI_ROOT: ${{ runner.temp }}/blender-ios-preview
+      DEPS_BUILD: ${{ runner.temp }}/blender-ios-preview/deps-build
+      DEPS_INSTALL: ${{ runner.temp }}/blender-ios-preview/deps-install
+      DEPS_DOWNLOADS: ${{ runner.temp }}/blender-ios-preview/downloads
+      DEPS_PACKAGES: ${{ runner.temp }}/blender-ios-preview/packages
+      HOST_BUILD: ${{ runner.temp }}/blender-ios-preview/host-build
+      HOST_INSTALL: ${{ runner.temp }}/blender-ios-preview/host-install
+      APP_BUILD: ${{ runner.temp }}/blender-ios-preview/app-build
+      RELEASE_DIR: ${{ runner.temp }}/blender-ios-preview/release
+      ASSET_NAME: DevBlender-test.blenderfoundation.blender.ios-unsigned.ipa
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Check out PR source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          lfs: true
+
+      - name: Select the public runner toolchain
+        run: |
+          sudo xcode-select --switch "$XCODE_PATH"
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Select Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Install dependency build tools
+        run: |
+          brew install autoconf automake bison dos2unix flex libtool meson ninja pkgconf yasm
+          echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix flex)/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix libtool)/libexec/gnubin" >> "$GITHUB_PATH"
+
+      - name: Compute content-addressed cache keys
+        id: cache-keys
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcode_key="$(xcodebuild -version | shasum -a 256 | cut -d' ' -f1)"
+          dependency_key="$(
+            git ls-files build_files/build_environment build_files/ios/package_python_frameworks.py \
+              | LC_ALL=C sort \
+              | xargs shasum -a 256 \
+              | shasum -a 256 \
+              | cut -d' ' -f1
+          )"
+          host_key="$(
+            git ls-files \
+              build_files/cmake/host_tool_features.cmake \
+              build_files/cmake/config/blender_ios_host_tools.cmake \
+              source/blender/datatoc \
+              source/blender/gpu/shader_tool \
+              source/blender/makesdna \
+              source/blender/makesrna \
+              | LC_ALL=C sort \
+              | xargs shasum -a 256 \
+              | shasum -a 256 \
+              | cut -d' ' -f1
+          )"
+          library_revision="$(git rev-parse HEAD:lib/macos_arm64)"
+          echo "dependency-cache-key=ios-device-deps-v1-${xcode_key}-${dependency_key}" >> "$GITHUB_OUTPUT"
+          echo "host-tool-cache-key=ios-host-tools-v1-${xcode_key}-${library_revision}-${host_key}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore iOS dependency prefix
+        id: dependency-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: ${{ env.DEPS_INSTALL }}
+          key: ${{ steps.cache-keys.outputs.dependency-cache-key }}
+
+      - name: Restore revision-matched native tools
+        id: host-tool-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: ${{ env.HOST_INSTALL }}
+          key: ${{ steps.cache-keys.outputs.host-tool-cache-key }}
+
+      - name: Build and harvest iOS dependencies on cache miss
+        if: steps.dependency-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$DEPS_BUILD" "$DEPS_INSTALL" "$DEPS_DOWNLOADS" "$DEPS_PACKAGES"
+          sdk_path="$(xcrun --sdk iphoneos --show-sdk-path)"
+          build_python="$(command -v python3.13)"
+          cmake \
+            -S build_files/build_environment \
+            -B "$DEPS_BUILD" \
+            -G Ninja \
+            -DAPPLE_TARGET_DEVICE=ios \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT="$sdk_path" \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=18.0 \
+            -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+            -DBLENDER_IOS_BUILD_PYTHON="$build_python" \
+            -DDOWNLOAD_DIR="$DEPS_DOWNLOADS" \
+            -DPACKAGE_DIR="$DEPS_PACKAGES" \
+            -DHARVEST_TARGET="$DEPS_INSTALL" \
+            -DMAKE_THREADS=3
+          cmake --build "$DEPS_BUILD" --parallel 3 --target \
+            external_eigen \
+            external_freetype \
+            external_numpy \
+            external_openimageio \
+            external_tbb \
+            external_zstandard
+
+      - name: Audit cached dependency prefix
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "$DEPS_INSTALL/python/Python.framework/Python"
+          test -f "$DEPS_INSTALL/python/lib/python3.13/site-packages/numpy/_core/include/numpy/arrayobject.h"
+          test -f "$DEPS_INSTALL/python/lib/python3.13/site-packages/zstandard/backend_c.cpython-313-iphoneos.so"
+          test -f "$DEPS_INSTALL/openimageio/lib/cmake/OpenImageIO/OpenImageIOConfig.cmake"
+          test -f "$DEPS_INSTALL/opencolorio/lib/cmake/OpenColorIO/OpenColorIOConfig.cmake"
+          test -f "$DEPS_INSTALL/tbb/lib/cmake/TBB/TBBConfig.cmake"
+          python3 build_files/ios/audit.py abi "$DEPS_INSTALL" --target ios-device --arch arm64
+
+      - name: Save iOS dependency prefix
+        if: steps.dependency-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ env.DEPS_INSTALL }}
+          key: ${{ steps.cache-keys.outputs.dependency-cache-key }}
+
+      - name: Build revision-matched native tools on cache miss
+        if: steps.host-tool-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git submodule update --init --depth 1 lib/macos_arm64
+          cmake \
+            -S . \
+            -B "$HOST_BUILD" \
+            -G Ninja \
+            -C build_files/cmake/config/blender_ios_host_tools.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_ARCHITECTURES=arm64
+          cmake --build "$HOST_BUILD" --parallel 3 --target \
+            makesdna makesrna datatoc shader_tool
+          mkdir -p "$HOST_INSTALL"
+          cp "$HOST_BUILD/bin/makesdna" "$HOST_INSTALL/makesdna"
+          cp "$HOST_BUILD/bin/makesrna" "$HOST_INSTALL/makesrna"
+          cp "$HOST_BUILD/bin/makesrna.features" "$HOST_INSTALL/makesrna.features"
+          cp "$HOST_BUILD/bin/datatoc" "$HOST_INSTALL/datatoc"
+          cp "$HOST_BUILD/bin/shader_tool" "$HOST_INSTALL/shader_tool"
+
+      - name: Audit revision-matched native tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          for tool in makesdna makesrna datatoc shader_tool; do
+            test -x "$HOST_INSTALL/$tool"
+          done
+          test -f "$HOST_INSTALL/makesrna.features"
+          file "$HOST_INSTALL/makesdna" | grep -q 'arm64'
+
+      - name: Save revision-matched native tools
+        if: steps.host-tool-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ env.HOST_INSTALL }}
+          key: ${{ steps.cache-keys.outputs.host-tool-cache-key }}
+
+      - name: Configure and build unsigned device app
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk_path="$(xcrun --sdk iphoneos --show-sdk-path)"
+          cmake \
+            -S . \
+            -B "$APP_BUILD" \
+            -G Ninja \
+            -C build_files/cmake/config/blender_ios_device.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT="$sdk_path" \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=18.0 \
+            -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+            -DIOS_HOST_TOOLS_DIR="$HOST_INSTALL" \
+            -DLIBDIR="$DEPS_INSTALL"
+          cmake --build "$APP_BUILD" --parallel 3 --target install
+
+      - name: Package and gate DevBlender IPA
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RELEASE_DIR"
+          ipa="$RELEASE_DIR/$ASSET_NAME"
+          python3 build_files/ios/package_sideload_ipa.py \
+            "$APP_BUILD/bin/Blender.app" \
+            "$ipa" \
+            --staging-root "$RELEASE_DIR/staging"
+          sha256="$(shasum -a 256 "$ipa" | cut -d' ' -f1)"
+          framework_count="$(find "$APP_BUILD/bin/Blender.app/Frameworks" -mindepth 1 -maxdepth 1 -type d -name '*.framework' | wc -l | tr -d ' ')"
+          loose_count="$(find "$APP_BUILD/bin/Blender.app" -type f \( -name '*.so' -o -name '*.a' \) | wc -l | tr -d ' ')"
+          test "$framework_count" = 74
+          test "$loose_count" = 0
+          unzip -t "$ipa"
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Publish prerelease and comment on the PR
+        shell: bash
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          IPA_SHA256: ${{ steps.package.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          current_sha="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)"
+          if [[ "$current_sha" != "$PR_SHA" ]]; then
+            echo "PR advanced to $current_sha; a newer run will publish its preview."
+            exit 0
+          fi
+          previous_pr="$(
+            gh pr list --repo "$GITHUB_REPOSITORY" --state all --head "$BASE_REF" \
+              --json number --jq '.[0].number'
+          )"
+          test -n "$previous_pr"
+          short_sha="${PR_SHA:0:12}"
+          summary="${PR_TITLE#*: }"
+          tag="pr-$PR_NUMBER"
+          ipa_url="https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/$ASSET_NAME"
+          install_url="$(IPA_URL="$ipa_url" python3 -c 'import os; from urllib.parse import quote; print("https://marginally-better-apps.github.io/Autoloader/?url=" + quote(os.environ["IPA_URL"], safe=""))')"
+          release_body="$RELEASE_DIR/release-body.md"
+          comment_body="$RELEASE_DIR/comment-body.md"
+          printf '%s\n\n' "Autoloader preview for https://github.com/$GITHUB_REPOSITORY/pull/$PR_NUMBER" > "$release_body"
+          printf '%s\n\n' "Unsigned universal iPhone+iPad IPA from \`$short_sha\` ($summary, stacked on #$previous_pr). Autoloader signs this on-device." >> "$release_body"
+          printf '%s\n' \
+            '- App name: DevBlender' \
+            '- Bundle identifier: `test.blenderfoundation.blender.ios`' \
+            '- Layout: `Payload/Blender.app`' \
+            "- SHA-256: \`$IPA_SHA256\`" \
+            '' \
+            "Install: $install_url" >> "$release_body"
+          printf '%s\n\n' "PR $PR_NUMBER Autoloader/Feather build from \`$short_sha\` ($summary, stacked on #$previous_pr). Hosted on the \`$tag\` GitHub release, not Planista." > "$comment_body"
+          printf '%s\n' \
+            "- Install (Safari): $install_url" \
+            "- Direct IPA: $ipa_url" \
+            "- SHA-256: \`$IPA_SHA256\`" \
+            '- Identity: DevBlender / `test.blenderfoundation.blender.ios`' \
+            '' \
+            'Autoloader signs on-device, then Settings → Installation.' >> "$comment_body"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag
+          fi
+          gh release create "$tag" "$RELEASE_DIR/$ASSET_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$PR_SHA" \
+            --title "PR #$PR_NUMBER unsigned IPA" \
+            --notes-file "$release_body" \
+            --prerelease
+          content_type="$(curl --fail --silent --show-error --location --head --output /dev/null --write-out '%{content_type}' "$ipa_url")"
+          test "$content_type" = application/octet-stream
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$comment_body"
