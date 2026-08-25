@@ -634,3 +634,20 @@ pass. EEVEE render plus 20-second live rendered-viewport acceptance passes on
 iPhone 17e, iPhone 17 Pro Max, and iPad mini. Captures show Blender touching all
 four edges on the compact phone, large phone, and portrait tablet. A rerun on
 the originally reported physical phone remains the final confirmation.
+
+## ADR-0031: Restore two-finger orbit and three-finger pan
+
+- Status: accepted source/build boundary; hardware acceptance pending
+- Date: 2026-08-24
+
+The two-finger pan and three-finger orbit experiment affected touch behavior
+throughout the application. Direct touch now returns to the original mapping:
+one finger emits ordinary left-button input, two-finger scroll keeps Blender's
+orbit binding, and the iOS event bridge adds Shift only to three-finger scroll
+to select Blender's existing pan binding. Pinch remains zoom.
+
+This is a forward revert on top of the PR stack. It does not rewrite the
+navigation or display-scale branches underneath. All 115 iOS contract tests
+pass, and the Release simulator and arm64 iPhoneOS products compile, link, and
+install. Public Simulator input cannot inject independent multi-touch contacts,
+so final gesture feel remains a physical-device gate.
