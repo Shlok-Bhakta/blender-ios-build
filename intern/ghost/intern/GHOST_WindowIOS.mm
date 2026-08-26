@@ -366,12 +366,13 @@ static UserInputEvent::EventTypes pointerButtonEvent(const UIEventButtonMask but
   NSString *original_text;
   bool onscreen_keyboard_active;
   std::string text_field_string;
+  CGRect blender_text_field_frame;
 
   /* Toolbar */
   bool toolbar_enabled;
   UIToolbar *toolbar;
   UIBarButtonItem *toolbar_tip_item;
-  UIBarButtonItem *toolbar_live_text_item;
+  UIBarButtonItem *toolbar_flexible_space_item;
   UIBarButtonItem *toolbar_done_editing_item;
   UIBarButtonItem *toolbar_cancel_editing_item;
 
@@ -411,6 +412,8 @@ static UserInputEvent::EventTypes pointerButtonEvent(const UIEventButtonMask but
 - (GHOST_TSuccess)hideOnscreenKeyboard;
 - (const char *)getLastKeyboardString;
 - (void)applyKeyboardSelection:(const GHOST_KeyboardProperties &)keyboard_properties;
+- (void)generateKeyboardReturnEvent;
+- (void)generateKeyboardCompletionEvent:(GHOST_TKey)key;
 - (void)invalidateInput;
 - (void)generateHardwareKeyEvents:(NSSet<UIPress *> *)presses type:(GHOST_TEventType)event_type;
 - (void)generateButtonEvent:(GHOST_TButton)button down:(bool)is_down;
@@ -584,6 +587,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   original_text = nil;
   onscreen_keyboard_active = false;
   text_field_string.clear();
+  blender_text_field_frame = CGRectZero;
   current_pencil_touch = nil;
   tablet_data = GHOST_TABLET_DATA_NONE;
   toolbar_enabled = true;
@@ -669,12 +673,12 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
     toolbar.items = nil;
   }
   [toolbar_tip_item release];
-  [toolbar_live_text_item release];
+  [toolbar_flexible_space_item release];
   [toolbar_done_editing_item release];
   [toolbar_cancel_editing_item release];
   [toolbar release];
   toolbar_tip_item = nil;
-  toolbar_live_text_item = nil;
+  toolbar_flexible_space_item = nil;
   toolbar_done_editing_item = nil;
   toolbar_cancel_editing_item = nil;
   toolbar = nil;
@@ -1461,28 +1465,23 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 
 - (void)initToolbar
 {
-  /* This gets the current view size */
   UIView *ui_view = window->getView();
   CGSize frame_size = [ui_view sizeThatFits:CGSizeMake(0.0f, 0.0f)];
-  /* Create a toolbar the width of the screen. */
   toolbar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, frame_size.width, 44)];
   toolbar.barStyle = UIBarStyleDefault;
   toolbar.translucent = true;
-  /* IOS_FIXME - Despite following Apple guidelines this toolbar still
-   * appears to apparently violate the view constraints. It displays fine
-   * but generates a lot of warning output to the console. */
   toolbar.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+  toolbar.accessibilityIdentifier = @"blender_text_entry_toolbar";
   [toolbar sizeToFit];
 
   toolbar_tip_item = [[UIBarButtonItem alloc] initWithTitle:@""
                                                       style:UIBarButtonItemStylePlain
                                                      target:nil
                                                      action:nil];
-
-  toolbar_live_text_item = [[UIBarButtonItem alloc] initWithTitle:@""
-                                                            style:UIBarButtonItemStylePlain
-                                                           target:nil
-                                                           action:nil];
+  toolbar_flexible_space_item = [[UIBarButtonItem alloc]
+      initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
+                           target:nil
+                           action:nil];
 
   toolbar_done_editing_item = [[UIBarButtonItem alloc]
       initWithBarButtonSystemItem:UIBarButtonSystemItemDone
@@ -1494,24 +1493,24 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
                            target:self
                            action:@selector(handleCancelButton)];
 
-  /* Prevents editing of tip and live text fields. */
   toolbar_tip_item.enabled = NO;
-  toolbar_live_text_item.enabled = NO;
-  toolbar_live_text_item.tintColor = UIColor.blackColor;
-
-  /* Set the live text to a fixed width. */
-  /* IOS_FIXME - should this be set dynamically? Need to move out of init if so. */
-  toolbar_live_text_item.width = 150.0f;
+  toolbar_cancel_editing_item.accessibilityIdentifier = @"blender_text_entry_cancel";
+  toolbar_done_editing_item.accessibilityIdentifier = @"blender_text_entry_done";
 
   toolbar.items = @[
+    toolbar_cancel_editing_item,
+    toolbar_flexible_space_item,
     toolbar_tip_item,
-    toolbar_live_text_item,
-    toolbar_done_editing_item,
-    toolbar_cancel_editing_item
+    toolbar_done_editing_item
   ];
 }
 
 - (void)generateKeyboardReturnEvent
+{
+  [self generateKeyboardCompletionEvent:GHOST_kKeyEnter];
+}
+
+- (void)generateKeyboardCompletionEvent:(GHOST_TKey)key
 {
   /*
    Only push the event back if the keyboard is active otherwise we may generate new
@@ -1524,9 +1523,9 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
      */
     const uint64_t event_time = system->getMilliSeconds();
     system->pushEvent(std::make_unique<GHOST_EventKey>(
-        event_time, GHOST_kEventKeyDown, window, GHOST_kKeyEnter, false, nullptr));
+        event_time, GHOST_kEventKeyDown, window, key, false, nullptr));
     system->pushEvent(std::make_unique<GHOST_EventKey>(
-        event_time, GHOST_kEventKeyUp, window, GHOST_kKeyEnter, false, nullptr));
+        event_time, GHOST_kEventKeyUp, window, key, false, nullptr));
     system->notifyExternalEventProcessed();
   }
   else {
@@ -1546,13 +1545,6 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 {
   @synchronized(self) {
 
-    /* Update the text in the tool bar as the edits arrive. */
-    if (toolbar_live_text_item) {
-      toolbar_live_text_item.title = sender.text;
-      /* Force toolbar to update */
-      [toolbar setNeedsLayout];
-      [toolbar layoutIfNeeded];
-    }
     IOS_INPUT_LOG(@"Keyboard Edit change detected %@", text_field.text);
     const char *utf8 = [sender.text UTF8String];
     text_field_string = utf8 != nullptr ? utf8 : "";
@@ -1589,9 +1581,9 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 - (void)handleCancelButton
 {
   IOS_INPUT_LOG(@"Keyboard Cancel button press detected %@", text_field.text);
-  /* Restore the original text and return */
+  /* Let Blender cancel its own edit state instead of committing a replacement value. */
   text_field.text = original_text;
-  [self generateKeyboardReturnEvent];
+  [self generateKeyboardCompletionEvent:GHOST_kKeyEsc];
 }
 
 /*
@@ -1607,6 +1599,13 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
     text_field.contentScaleFactor = window->getWindowScaleFactor();
     text_field.returnKeyType = UIReturnKeyDone;
     text_field.enablesReturnKeyAutomatically = NO;
+    text_field.accessibilityLabel = @"Blender text entry";
+    text_field.accessibilityIdentifier = @"blender_text_entry";
+    text_field.borderStyle = UITextBorderStyleRoundedRect;
+    text_field.clearButtonMode = UITextFieldViewModeWhileEditing;
+    text_field.adjustsFontSizeToFitWidth = YES;
+    text_field.minimumFontSize = 14.0f;
+    text_field.hidden = YES;
 
     if (toolbar_enabled) {
       [self initToolbar];
@@ -1680,8 +1679,13 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
                                           displayY:&displayRect.size.height
                                              flipY:false];
 
-  /* Where to display the text on-screen. */
+  /* Keep Blender's exact field bounds, but expose a full touch target while editing. */
+  blender_text_field_frame = displayRect;
+  const CGFloat touch_height = std::max<CGFloat>(displayRect.size.height, 44.0f);
+  displayRect.origin.y -= (touch_height - displayRect.size.height) * 0.5f;
+  displayRect.size.height = touch_height;
   text_field.frame = displayRect;
+  text_field.hidden = NO;
 
   /* Initialise text with existing string. */
   text_field.text = keyboard_properties.text_string ?
@@ -1706,7 +1710,9 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   text_field.smartQuotesType = UITextSmartQuotesTypeNo;
 
   /* Set font size. */
-  float fontSize = keyboard_properties.font_size / window->getWindowScaleFactor();
+  float fontSize = std::max<CGFloat>(keyboard_properties.font_size /
+                                        window->getWindowScaleFactor(),
+                                    17.0f);
   text_field.font = [UIFont systemFontOfSize:fontSize];
 
   /* Set font color. */
@@ -1714,10 +1720,14 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
                                          green:keyboard_properties.font_color[1]
                                           blue:keyboard_properties.font_color[2]
                                          alpha:keyboard_properties.font_color[3]];
+  const float text_luminance = 0.2126f * keyboard_properties.font_color[0] +
+                               0.7152f * keyboard_properties.font_color[1] +
+                               0.0722f * keyboard_properties.font_color[2];
+  text_field.backgroundColor = [UIColor colorWithWhite:text_luminance > 0.5f ? 0.12f : 0.95f
+                                                   alpha:1.0f];
 
   /* Setup the tool bar if it's enabled. */
   if (toolbar_enabled) {
-    toolbar_live_text_item.title = text_field.text;
     toolbar_tip_item.title = keyboard_properties.tip_text ?
                                  [NSString stringWithCString:keyboard_properties.tip_text
                                                     encoding:NSUTF8StringEncoding] :
@@ -1776,6 +1786,8 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
       text_field.userInteractionEnabled = YES;
       if (![text_field becomeFirstResponder]) {
         text_field.userInteractionEnabled = NO;
+        text_field.frame = blender_text_field_frame;
+        text_field.hidden = YES;
         return GHOST_kFailure;
       }
       onscreen_keyboard_active = true;
@@ -1823,6 +1835,8 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 
       /* Delete the text field copy of the string */
       text_field.text = nil;
+      text_field.frame = blender_text_field_frame;
+      text_field.hidden = YES;
     }
   }
   IOS_INPUT_LOG(@"Text field value was %s", text_field_string.c_str());
