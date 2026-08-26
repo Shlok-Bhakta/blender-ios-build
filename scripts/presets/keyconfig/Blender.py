@@ -343,7 +343,6 @@ def load():
         blender_default.Params(
             select_mouse=kc_prefs.select_mouse,
             use_mouse_emulate_3_button=use_mouse_emulate_3_button,
-            use_v3d_tweak_drag_translate=(platform == "ios"),
             spacebar_action=kc_prefs.spacebar_action,
             use_key_activate_tools=(kc_prefs.tool_key_mode == 'TOOL'),
             use_region_toggle_pie=kc_prefs.use_region_toggle_pie,
