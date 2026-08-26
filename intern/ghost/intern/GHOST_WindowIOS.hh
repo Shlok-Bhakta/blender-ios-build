@@ -55,7 +55,7 @@ class GHOST_WindowIOS : public GHOST_Window {
                   GHOST_TWindowState state,
                   GHOST_TDrawingContextType type,
                   const GHOST_ContextParams &context_params,
-                  bool /*is_dialog*/,
+                  bool is_dialog,
                   GHOST_WindowIOS *parent_window);
 
   /**
@@ -237,6 +237,11 @@ class GHOST_WindowIOS : public GHOST_Window {
   GHOST_SystemIOS *getSystem() const
   {
     return system_ios_;
+  }
+
+  bool hasParentWindow() const
+  {
+    return parent_window_ != nullptr;
   }
 
   /* Active window controls. We can only present on active windows.  */
