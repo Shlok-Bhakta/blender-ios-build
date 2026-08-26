@@ -42,6 +42,19 @@ class PrPreviewWorkflowTests(unittest.TestCase):
         self.assertIn("BLENDER_DEPENDENCY_DOWNLOADS", downloads)
         self.assertIn("IN_LIST BLENDER_DEPENDENCY_DOWNLOADS", downloads)
 
+    def test_dependency_cache_preserves_every_static_link_input(self) -> None:
+        workflow = WORKFLOW.read_text()
+
+        self.assertIn("dependency-cache-key=ios-device-deps-v3-", workflow)
+        for archive in (
+            "${{ env.DEPS_BUILD }}/Release/png/lib/libpng.a",
+            "${{ env.DEPS_BUILD }}/Release/zlib/lib/libz.a",
+        ):
+            self.assertGreaterEqual(workflow.count(archive), 2)
+        self.assertIn('test -s "$DEPS_INSTALL/opencolorio/lib/libpystring.a"', workflow)
+        self.assertIn('test -s "$DEPS_BUILD/Release/png/lib/libpng.a"', workflow)
+        self.assertIn('test -s "$DEPS_BUILD/Release/zlib/lib/libz.a"', workflow)
+
     def test_publishes_exact_pr_release_contract(self) -> None:
         workflow = WORKFLOW.read_text()
         self.assertIn("gh release delete", workflow)
