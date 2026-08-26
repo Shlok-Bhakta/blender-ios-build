@@ -54,9 +54,14 @@ typedef struct UserInputEvent {
     CURSOR_MOVE,
     PAN_GESTURE_TWO_FINGERS,
     PAN_GESTURE_THREE_FINGERS,
+    POINTER_SCROLL,
     PINCH_GESTURE,
     LEFT_BUTTON_DOWN,
     LEFT_BUTTON_UP,
+    MIDDLE_BUTTON_DOWN,
+    MIDDLE_BUTTON_UP,
+    RIGHT_BUTTON_DOWN,
+    RIGHT_BUTTON_UP,
     RIGHT_BUTTON_CLICK,
   };
   EventTypes event_list[10];
@@ -90,12 +95,22 @@ typedef struct UserInputEvent {
         return @"PAN2F";
       case PAN_GESTURE_THREE_FINGERS:
         return @"PAN3F";
+      case POINTER_SCROLL:
+        return @"SCROLL";
       case PINCH_GESTURE:
         return @"PINCH";
       case LEFT_BUTTON_DOWN:
         return @"LB-DOWN";
       case LEFT_BUTTON_UP:
         return @"LB-UP";
+      case MIDDLE_BUTTON_DOWN:
+        return @"MB-DOWN";
+      case MIDDLE_BUTTON_UP:
+        return @"MB-UP";
+      case RIGHT_BUTTON_DOWN:
+        return @"RB-DOWN";
+      case RIGHT_BUTTON_UP:
+        return @"RB-UP";
       case RIGHT_BUTTON_CLICK:
         return @"RB-CLICK";
     }
@@ -104,6 +119,18 @@ typedef struct UserInputEvent {
   }
 
 } UserInputEvent;
+
+static UserInputEvent::EventTypes pointerButtonEvent(const UIEventButtonMask button_mask,
+                                                     const bool is_down)
+{
+  if (button_mask & UIEventButtonMaskForButtonNumber(3)) {
+    return is_down ? UserInputEvent::MIDDLE_BUTTON_DOWN : UserInputEvent::MIDDLE_BUTTON_UP;
+  }
+  if (button_mask & UIEventButtonMaskSecondary) {
+    return is_down ? UserInputEvent::RIGHT_BUTTON_DOWN : UserInputEvent::RIGHT_BUTTON_UP;
+  }
+  return is_down ? UserInputEvent::LEFT_BUTTON_DOWN : UserInputEvent::LEFT_BUTTON_UP;
+}
 
 /* GHOSTUITapGesture interface for capturing taps. */
 @interface GHOSTUITapGestureRecognizer : UITapGestureRecognizer
@@ -157,6 +184,7 @@ typedef struct UserInputEvent {
   CGPoint cached_translation;
   CGPoint initial_touch_point;
   BOOL has_initial_touch_point;
+  UIEventButtonMask initial_button_mask;
 }
 - (CGPoint)getScaledTouchPoint:(GHOST_WindowIOS *)window;
 - (CGPoint)getScaledInitialTouchPoint:(GHOST_WindowIOS *)window;
@@ -164,6 +192,7 @@ typedef struct UserInputEvent {
 
 - (void)setCachedTranslation:(CGPoint)translation;
 - (CGPoint)getCachedTranslation;
+- (UIEventButtonMask)getInitialButtonMask;
 @end
 
 @implementation GHOSTUIPanGestureRecognizer
@@ -176,6 +205,7 @@ typedef struct UserInputEvent {
 
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
+  initial_button_mask = event.buttonMask;
   if (self.minimumNumberOfTouches == 1 && self.maximumNumberOfTouches == 1) {
     UITouch *touch = [touches anyObject];
     initial_touch_point = [touch locationInView:self.view];
@@ -215,10 +245,19 @@ typedef struct UserInputEvent {
 {
   return cached_translation;
 }
+
+- (UIEventButtonMask)getInitialButtonMask
+{
+  return initial_button_mask;
+}
 @end
 
 @interface GHOSTUIHoverGestureRecognizer : UIHoverGestureRecognizer
+{
+  UITouchType hover_touch_type;
+}
 - (CGPoint)getScaledTouchPoint:(GHOST_WindowIOS *)window;
+- (UITouchType)getTouchType;
 @end
 
 @implementation GHOSTUIHoverGestureRecognizer
@@ -227,6 +266,18 @@ typedef struct UserInputEvent {
 {
   CGPoint touch_point = [self locationInView:window->getView()];
   return window->scalePointToWindow(touch_point);
+}
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
+{
+  UITouch *touch = [touches anyObject];
+  hover_touch_type = touch != nil ? touch.type : UITouchTypeIndirectPointer;
+  [super touchesBegan:touches withEvent:event];
+}
+
+- (UITouchType)getTouchType
+{
+  return hover_touch_type;
 }
 @end
 
@@ -290,12 +341,15 @@ typedef struct UserInputEvent {
 
   GHOSTUITapGestureRecognizer *tap_gesture_recognizer;
   GHOSTUITapGestureRecognizer *double_tap_gesture_recognizer;
+  GHOSTUITapGestureRecognizer *mouse_secondary_tap_recognizer;
+  GHOSTUITapGestureRecognizer *mouse_middle_tap_recognizer;
   GHOSTUITapGestureRecognizer *tap2f_gesture_recognizer;
   GHOSTUITapGestureRecognizer *tap3f_gesture_recognizer;
   GHOSTUITapGestureRecognizer *tap4f_gesture_recognizer;
   GHOSTUIPanGestureRecognizer *pan_gesture_recognizer;
   GHOSTUIPanGestureRecognizer *pan2f_gesture_recognizer;
   GHOSTUIPanGestureRecognizer *pan3f_gesture_recognizer;
+  GHOSTUIPanGestureRecognizer *scroll_gesture_recognizer;
   GHOSTUIPinchGestureRecognizer *zoom_gesture_recognizer;
   GHOSTUIHoverGestureRecognizer *hover_gesture_recognizer;
   UIPencilInteraction *pencil_interaction;
@@ -341,9 +395,11 @@ typedef struct UserInputEvent {
         (UIGestureRecognizer *)otherGestureRecognizer;
 - (void)handleTap:(GHOSTUITapGestureRecognizer *)sender;
 - (void)handleDoubleTap:(GHOSTUITapGestureRecognizer *)sender;
+- (void)handleMouseButtonTap:(GHOSTUITapGestureRecognizer *)sender;
 - (void)handlePan:(GHOSTUIPanGestureRecognizer *)sender;
 - (void)handlePan2f:(GHOSTUIPanGestureRecognizer *)sender;
 - (void)handlePan3f:(GHOSTUIPanGestureRecognizer *)sender;
+- (void)handlePointerScroll:(GHOSTUIPanGestureRecognizer *)sender;
 - (void)handleZoom:(GHOSTUIPinchGestureRecognizer *)sender;
 - (void)updateTabletDataFromTouch:(UITouch *)touch;
 - (void)resetTabletData;
@@ -357,6 +413,7 @@ typedef struct UserInputEvent {
 - (void)applyKeyboardSelection:(const GHOST_KeyboardProperties &)keyboard_properties;
 - (void)invalidateInput;
 - (void)generateHardwareKeyEvents:(NSSet<UIPress *> *)presses type:(GHOST_TEventType)event_type;
+- (void)generateButtonEvent:(GHOST_TButton)button down:(bool)is_down;
 @end
 
 static GHOST_TKey convertKeyboardHIDUsage(const UIKeyboardHIDUsage usage)
@@ -561,24 +618,30 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 
   [self releaseGestureRecognizer:tap_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:double_tap_gesture_recognizer fromView:input_view];
+  [self releaseGestureRecognizer:mouse_secondary_tap_recognizer fromView:input_view];
+  [self releaseGestureRecognizer:mouse_middle_tap_recognizer fromView:input_view];
   [self releaseGestureRecognizer:tap2f_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:tap3f_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:tap4f_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:pan_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:pan2f_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:pan3f_gesture_recognizer fromView:input_view];
+  [self releaseGestureRecognizer:scroll_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:zoom_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:hover_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:edge_swipe_left fromView:input_view];
   [self releaseGestureRecognizer:edge_swipe_right fromView:input_view];
   tap_gesture_recognizer = nil;
   double_tap_gesture_recognizer = nil;
+  mouse_secondary_tap_recognizer = nil;
+  mouse_middle_tap_recognizer = nil;
   tap2f_gesture_recognizer = nil;
   tap3f_gesture_recognizer = nil;
   tap4f_gesture_recognizer = nil;
   pan_gesture_recognizer = nil;
   pan2f_gesture_recognizer = nil;
   pan3f_gesture_recognizer = nil;
+  scroll_gesture_recognizer = nil;
   zoom_gesture_recognizer = nil;
   hover_gesture_recognizer = nil;
   edge_swipe_left = nil;
@@ -667,6 +730,35 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   [super dealloc];
 }
 
+- (BOOL)canBecomeFirstResponder
+{
+  return YES;
+}
+
+- (NSArray<UIKeyCommand *> *)keyCommands
+{
+  if (window == nullptr || !window->hasParentWindow()) {
+    return @[];
+  }
+
+  UIKeyCommand *close_command = [UIKeyCommand keyCommandWithInput:@"w"
+                                                    modifierFlags:UIKeyModifierCommand
+                                                           action:@selector(handleCloseWindow)];
+  close_command.discoverabilityTitle = @"Close Window";
+  return @[ close_command ];
+}
+
+- (void)generateButtonEvent:(GHOST_TButton)button down:(bool)is_down
+{
+  system->updateButtonState(button, is_down);
+  system->pushEvent(std::make_unique<GHOST_EventButton>(system->getMilliSeconds(),
+                                                        is_down ? GHOST_kEventButtonDown :
+                                                                  GHOST_kEventButtonUp,
+                                                        window,
+                                                        button,
+                                                        tablet_data));
+}
+
 - (void)generateHardwareKeyEvents:(NSSet<UIPress *> *)presses
                               type:(GHOST_TEventType)event_type
 {
@@ -739,6 +831,25 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   [tap_gesture_recognizer requireGestureRecognizerToFail:double_tap_gesture_recognizer];
   [window->getView() addGestureRecognizer:double_tap_gesture_recognizer];
 
+  /* Preserve native mouse buttons instead of translating every pointer click to left-click. */
+  mouse_secondary_tap_recognizer = [[GHOSTUITapGestureRecognizer alloc]
+      initWithTarget:self
+              action:@selector(handleMouseButtonTap:)];
+  mouse_secondary_tap_recognizer.delegate = self;
+  mouse_secondary_tap_recognizer.cancelsTouchesInView = false;
+  mouse_secondary_tap_recognizer.allowedTouchTypes = @[@(UITouchTypeIndirectPointer)];
+  mouse_secondary_tap_recognizer.buttonMaskRequired = UIEventButtonMaskSecondary;
+  [window->getView() addGestureRecognizer:mouse_secondary_tap_recognizer];
+
+  mouse_middle_tap_recognizer = [[GHOSTUITapGestureRecognizer alloc]
+      initWithTarget:self
+              action:@selector(handleMouseButtonTap:)];
+  mouse_middle_tap_recognizer.delegate = self;
+  mouse_middle_tap_recognizer.cancelsTouchesInView = false;
+  mouse_middle_tap_recognizer.allowedTouchTypes = @[@(UITouchTypeIndirectPointer)];
+  mouse_middle_tap_recognizer.buttonMaskRequired = UIEventButtonMaskForButtonNumber(3);
+  [window->getView() addGestureRecognizer:mouse_middle_tap_recognizer];
+
   /* Two-finger tap gesture recognizer. */
   tap2f_gesture_recognizer = [[GHOSTUITapGestureRecognizer alloc]
       initWithTarget:self
@@ -805,6 +916,16 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   pan3f_gesture_recognizer.minimumNumberOfTouches = 3;
   pan3f_gesture_recognizer.maximumNumberOfTouches = 3;
   [window->getView() addGestureRecognizer:pan3f_gesture_recognizer];
+
+  /* Mouse wheels and trackpads arrive as UIKit scroll-type pan gestures. */
+  scroll_gesture_recognizer = [[GHOSTUIPanGestureRecognizer alloc]
+      initWithTarget:self
+              action:@selector(handlePointerScroll:)];
+  scroll_gesture_recognizer.delegate = self;
+  scroll_gesture_recognizer.cancelsTouchesInView = false;
+  scroll_gesture_recognizer.allowedTouchTypes = @[@(UITouchTypeIndirectPointer)];
+  scroll_gesture_recognizer.allowedScrollTypesMask = UIScrollTypeMaskAll;
+  [window->getView() addGestureRecognizer:scroll_gesture_recognizer];
 
   /* Pinch/Zoom gesture recognizer. */
   zoom_gesture_recognizer = [[GHOSTUIPinchGestureRecognizer alloc]
@@ -891,21 +1012,33 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
                                                                   true,
                                                                   3));
           break;
+        case UserInputEvent::EventTypes::POINTER_SCROLL:
+          system->pushEvent(std::make_unique<GHOST_EventTrackpad>(system->getMilliSeconds(),
+                                                                  window,
+                                                                  GHOST_kTrackpadEventScroll,
+                                                                  event_info.location.x,
+                                                                  event_info.location.y,
+                                                                  event_info.translation.x,
+                                                                  event_info.translation.y,
+                                                                  true));
+          break;
         case UserInputEvent::EventTypes::LEFT_BUTTON_DOWN:
-          system->updateButtonState(GHOST_kButtonMaskLeft, true);
-          system->pushEvent(std::make_unique<GHOST_EventButton>(system->getMilliSeconds(),
-                                                                GHOST_kEventButtonDown,
-                                                                window,
-                                                                GHOST_kButtonMaskLeft,
-                                                                tablet_data));
+          [self generateButtonEvent:GHOST_kButtonMaskLeft down:true];
           break;
         case UserInputEvent::EventTypes::LEFT_BUTTON_UP:
-          system->updateButtonState(GHOST_kButtonMaskLeft, false);
-          system->pushEvent(std::make_unique<GHOST_EventButton>(system->getMilliSeconds(),
-                                                                GHOST_kEventButtonUp,
-                                                                window,
-                                                                GHOST_kButtonMaskLeft,
-                                                                tablet_data));
+          [self generateButtonEvent:GHOST_kButtonMaskLeft down:false];
+          break;
+        case UserInputEvent::EventTypes::MIDDLE_BUTTON_DOWN:
+          [self generateButtonEvent:GHOST_kButtonMaskMiddle down:true];
+          break;
+        case UserInputEvent::EventTypes::MIDDLE_BUTTON_UP:
+          [self generateButtonEvent:GHOST_kButtonMaskMiddle down:false];
+          break;
+        case UserInputEvent::EventTypes::RIGHT_BUTTON_DOWN:
+          [self generateButtonEvent:GHOST_kButtonMaskRight down:true];
+          break;
+        case UserInputEvent::EventTypes::RIGHT_BUTTON_UP:
+          [self generateButtonEvent:GHOST_kButtonMaskRight down:false];
           break;
         case UserInputEvent::EventTypes::PINCH_GESTURE:
           system->pushEvent(std::make_unique<GHOST_EventTrackpad>(system->getMilliSeconds(),
@@ -920,18 +1053,8 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
           break;
         case UserInputEvent::EventTypes::RIGHT_BUTTON_CLICK:
           /* Simulate clicking with the right mouse button. */
-          system->updateButtonState(GHOST_kButtonMaskRight, true);
-          system->pushEvent(std::make_unique<GHOST_EventButton>(system->getMilliSeconds(),
-                                                                GHOST_kEventButtonDown,
-                                                                window,
-                                                                GHOST_kButtonMaskRight,
-                                                                tablet_data));
-          system->updateButtonState(GHOST_kButtonMaskRight, false);
-          system->pushEvent(std::make_unique<GHOST_EventButton>(system->getMilliSeconds(),
-                                                                GHOST_kEventButtonUp,
-                                                                window,
-                                                                GHOST_kButtonMaskRight,
-                                                                tablet_data));
+          [self generateButtonEvent:GHOST_kButtonMaskRight down:true];
+          [self generateButtonEvent:GHOST_kButtonMaskRight down:false];
           break;
         default:
           GHOST_ASSERT(FALSE, "GHOST_SystemIOS::generateUserInputEvents unsupported event type");
@@ -1056,6 +1179,20 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   [sender resetFirstTapPoint];
 }
 
+- (void)handleMouseButtonTap:(GHOSTUITapGestureRecognizer *)sender
+{
+  if (sender.state != UIGestureRecognizerStateEnded) {
+    return;
+  }
+
+  CGPoint touch_point = [sender getScaledTouchPoint:window];
+  UserInputEvent event_info(&touch_point, nullptr, nullptr);
+  event_info.add_event(UserInputEvent::EventTypes::CURSOR_MOVE);
+  event_info.add_event(pointerButtonEvent(sender.buttonMaskRequired, true));
+  event_info.add_event(pointerButtonEvent(sender.buttonMaskRequired, false));
+  [self generateUserInputEvents:event_info];
+}
+
 - (void)handleTap2F:(GHOSTUITapGestureRecognizer *)sender
 {
   if (sender.state != UIGestureRecognizerStateEnded) {
@@ -1113,7 +1250,9 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
     if (sender.state == UIGestureRecognizerStateBegan) {
       event_info.location = [sender getScaledInitialTouchPoint:window];
       event_info.add_event(UserInputEvent::EventTypes::CURSOR_MOVE);
-      event_info.add_event(UserInputEvent::EventTypes::LEFT_BUTTON_DOWN);
+      UIEventButtonMask button_mask = [sender getInitialButtonMask];
+      event_info.add_event(button_mask == 0 ? UserInputEvent::EventTypes::LEFT_BUTTON_DOWN :
+                                              pointerButtonEvent(button_mask, true));
     }
 
     /* Update cursor position on change */
@@ -1127,7 +1266,9 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
       sender.state == UIGestureRecognizerStateCancelled ||
       sender.state == UIGestureRecognizerStateFailed)
   {
-    event_info.add_event(UserInputEvent::EventTypes::LEFT_BUTTON_UP);
+    UIEventButtonMask button_mask = [sender getInitialButtonMask];
+    event_info.add_event(button_mask == 0 ? UserInputEvent::EventTypes::LEFT_BUTTON_UP :
+                                            pointerButtonEvent(button_mask, false));
   }
   [self generateUserInputEvents:event_info];
 }
@@ -1187,6 +1328,30 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   }
 }
 
+- (void)handlePointerScroll:(GHOSTUIPanGestureRecognizer *)sender
+{
+  if (sender.state == UIGestureRecognizerStateBegan ||
+      sender.state == UIGestureRecognizerStateChanged)
+  {
+    CGPoint translation = [sender getScaledTranslation:window];
+    CGPoint relative_translation = [sender getRelativeTranslation:translation];
+    [sender setCachedTranslation:translation];
+
+    if (!CGPointEqualToPoint(relative_translation, CGPointZero)) {
+      CGPoint pointer_location = [sender getScaledTouchPoint:window];
+      UserInputEvent event_info(&pointer_location, &relative_translation, nullptr);
+      event_info.add_event(UserInputEvent::EventTypes::POINTER_SCROLL);
+      [self generateUserInputEvents:event_info];
+    }
+  }
+  else if (sender.state == UIGestureRecognizerStateEnded ||
+           sender.state == UIGestureRecognizerStateCancelled ||
+           sender.state == UIGestureRecognizerStateFailed)
+  {
+    [sender setCachedTranslation:CGPointZero];
+  }
+}
+
 - (void)handleEdgeSwipe:(UIScreenEdgePanGestureRecognizer *)gesture
 {
   if (gesture.state != UIGestureRecognizerStateEnded) {
@@ -1218,9 +1383,13 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   if (sender.state == UIGestureRecognizerStateBegan ||
       sender.state == UIGestureRecognizerStateChanged)
   {
-    /* Tablet needs to be set to stylus mode because we need
-     * wmTabletData.is_motion_absolute set to true. */
-    tablet_data.Active = GHOST_kTabletModeStylus;
+    if ([sender getTouchType] == UITouchTypePencil) {
+      /* Pencil hover needs absolute tablet motion; pointer hover must remain a mouse. */
+      tablet_data.Active = GHOST_kTabletModeStylus;
+    }
+    else {
+      tablet_data = GHOST_TABLET_DATA_NONE;
+    }
     CGPoint hover_point = [sender getScaledTouchPoint:window];
     /* Add cursor move event. */
     UserInputEvent event_info(&hover_point, nullptr, nullptr);
@@ -1632,6 +1801,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 
       /* Shut down the keyboard. */
       [text_field resignFirstResponder];
+      [self becomeFirstResponder];
       /*
        IOS_FIXME - Note: This may cause the console to display the warning message:
        "-[UIApplication _touchesEvent] will no longer work as expected. Please stop using it."
@@ -2288,6 +2458,7 @@ bool GHOST_WindowIOS::makeKeyWindow()
 
   /* Make window primary visible window. */
   [rootWindow makeKeyAndVisible];
+  [rootWindow becomeFirstResponder];
   /* Enable the drawInMTKView() calls for this window. */
   metal_view_.paused = NO;
 
