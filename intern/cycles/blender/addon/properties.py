@@ -27,6 +27,34 @@ from math import pi
 from . import engine
 from . import camera
 
+
+def _should_use_metal_on_ios(system_name, available_devices):
+    if system_name != "iOS":
+        return False
+    return any(len(device) > 1 and device[1] == "METAL" for device in available_devices)
+
+
+def _use_metal_by_default():
+    import platform
+
+    system_name = platform.system()
+    if system_name != "iOS":
+        return False
+
+    try:
+        import _cycles
+
+        available_devices = _cycles.available_devices("METAL")
+    except Exception:
+        # Device discovery must never prevent Cycles from loading. CPU remains
+        # the safe fallback if the runtime cannot enumerate Metal devices.
+        return False
+
+    return _should_use_metal_on_ios(system_name, available_devices)
+
+
+IOS_USE_METAL_BY_DEFAULT = _use_metal_by_default()
+
 enum_devices = (
     ('CPU', "CPU", "Use CPU for rendering"),
     ('GPU', "GPU Compute",
@@ -388,7 +416,7 @@ class CyclesRenderSettings(bpy.types.PropertyGroup):
         name="Device",
         description="Device to use for rendering",
         items=enum_devices,
-        default='CPU',
+        default='GPU' if IOS_USE_METAL_BY_DEFAULT else 'CPU',
         update=update_render_passes,
     )
     shading_system: BoolProperty(
@@ -1629,6 +1657,8 @@ class CyclesPreferences(bpy.types.AddonPreferences):
     @staticmethod
     def default_device():
         import platform
+        if IOS_USE_METAL_BY_DEFAULT:
+            return 5
         # Default to selecting the Metal compute device on Apple Silicon GPUs
         # (drivers are tightly integrated with macOS so pose no stability risk)
         if (platform.system() == 'Darwin') and (platform.machine() == 'arm64'):
