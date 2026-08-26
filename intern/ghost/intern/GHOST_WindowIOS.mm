@@ -320,9 +320,16 @@ typedef struct UserInputEvent {
   UIBarButtonItem *toolbar_live_text_item;
   UIBarButtonItem *toolbar_done_editing_item;
   UIBarButtonItem *toolbar_cancel_editing_item;
+
+  /* Native controls for Blender child windows. */
+  UIButton *close_window_button;
 }
 
 - (void)setSystemAndWindowIOS:(GHOST_SystemIOS *)sysCocoa windowIOS:(GHOST_WindowIOS *)winCocoa;
+
+/* Window controls. */
+- (void)registerWindowControls;
+- (void)handleCloseWindow;
 
 /* Blender event generation. */
 - (void)generateUserInputEvents:(const UserInputEvent &)event_info;
@@ -524,6 +531,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   tablet_data = GHOST_TABLET_DATA_NONE;
   toolbar_enabled = true;
   toolbar = nil;
+  close_window_button = nil;
 }
 
 - (void)releaseGestureRecognizer:(UIGestureRecognizer *)recognizer fromView:(UIView *)view
@@ -541,6 +549,15 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   UIView *input_view = window != nullptr ? window->getView() : nil;
   /* Resigning the text field synchronously calls its edit-end target. */
   onscreen_keyboard_active = false;
+
+  if (close_window_button != nil) {
+    [close_window_button removeTarget:self
+                               action:@selector(handleCloseWindow)
+                     forControlEvents:UIControlEventTouchUpInside];
+    [close_window_button removeFromSuperview];
+    [close_window_button release];
+    close_window_button = nil;
+  }
 
   [self releaseGestureRecognizer:tap_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:double_tap_gesture_recognizer fromView:input_view];
@@ -603,6 +620,45 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   tablet_data = GHOST_TABLET_DATA_NONE;
   system = nullptr;
   window = nullptr;
+}
+
+- (void)registerWindowControls
+{
+  if (window == nullptr || !window->hasParentWindow()) {
+    return;
+  }
+
+  UIView *input_view = window->getView();
+  close_window_button = [[UIButton buttonWithType:UIButtonTypeSystem] retain];
+  close_window_button.translatesAutoresizingMaskIntoConstraints = NO;
+  close_window_button.accessibilityLabel = @"Close window";
+  close_window_button.accessibilityIdentifier = @"blender_child_window_close";
+  close_window_button.tintColor = UIColor.whiteColor;
+  close_window_button.backgroundColor = [UIColor colorWithWhite:0.0f alpha:0.65f];
+  close_window_button.layer.cornerRadius = 22.0f;
+  [close_window_button setImage:[UIImage systemImageNamed:@"xmark"]
+                       forState:UIControlStateNormal];
+  [close_window_button addTarget:self
+                          action:@selector(handleCloseWindow)
+                forControlEvents:UIControlEventTouchUpInside];
+  [input_view addSubview:close_window_button];
+
+  UILayoutGuide *safe_area = input_view.safeAreaLayoutGuide;
+  [NSLayoutConstraint activateConstraints:@[
+    [close_window_button.widthAnchor constraintEqualToConstant:44.0f],
+    [close_window_button.heightAnchor constraintEqualToConstant:44.0f],
+    [close_window_button.topAnchor constraintEqualToAnchor:safe_area.topAnchor constant:8.0f],
+    [close_window_button.trailingAnchor constraintEqualToAnchor:safe_area.trailingAnchor
+                                                        constant:-8.0f],
+  ]];
+}
+
+- (void)handleCloseWindow
+{
+  if (system == nullptr || window == nullptr || !window->hasParentWindow()) {
+    return;
+  }
+  system->handleWindowEvent(GHOST_kEventWindowClose, window);
 }
 
 - (void)dealloc
@@ -1697,9 +1753,11 @@ GHOST_WindowIOS::GHOST_WindowIOS(GHOST_SystemIOS *system_ios,
                                  GHOST_TWindowState state,
                                  GHOST_TDrawingContextType type,
                                  const GHOST_ContextParams &context_params,
-                                 bool /*is_dialog*/,
+                                 bool is_dialog,
                                  GHOST_WindowIOS *parent_window)
-    : GHOST_Window(width, height, state, context_params, false), metal_view_(nil)
+    : GHOST_Window(width, height, state, context_params, false),
+      metal_view_(nil),
+      is_dialog_(is_dialog)
 {
   /* Fill the device screen. Page-sheet + alert-level windows otherwise float as a
    * card over SpringBoard on iPad (native idiom, but not a full-screen iPad app). */
@@ -1772,6 +1830,7 @@ GHOST_WindowIOS::GHOST_WindowIOS(GHOST_SystemIOS *system_ios,
 
   /* Gesture recognizers. */
   [ghost_rootWindow registerGestureRecognizers];
+  [ghost_rootWindow registerWindowControls];
 
   /* Deactive the parent (if it exists) and activate this one. */
   if (parent_window_) {
