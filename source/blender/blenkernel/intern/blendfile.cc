@@ -1523,6 +1523,11 @@ UserDef *BKE_blendfile_userdef_from_defaults()
   userdef->versionfile = BLENDER_FILE_VERSION;
   userdef->subversionfile = BLENDER_FILE_SUBVERSION;
 
+#ifdef WITH_APPLE_CROSSPLATFORM
+  /* Keep controls readable and touch targets usable on iPhone and iPad. */
+  userdef->ui_scale = 1.65f;
+#endif
+
   /* Add-ons. */
   {
     const char *addons[] = {
