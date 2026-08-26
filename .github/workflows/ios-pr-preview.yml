@@ -17,7 +17,7 @@ jobs:
     if: >-
       github.event.pull_request.draft == false &&
       github.event.pull_request.head.repo.full_name == github.repository &&
-      startsWith(github.head_ref, 'story/')
+      (startsWith(github.head_ref, 'story/') || startsWith(github.head_ref, 'feat/'))
     runs-on: macos-15
     timeout-minutes: 360
     env:
