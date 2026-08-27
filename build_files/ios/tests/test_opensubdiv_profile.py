@@ -21,6 +21,13 @@ class OpenSubdivProfileTests(unittest.TestCase):
                     profile,
                 )
 
+    def test_native_generator_tools_match_the_opensubdiv_feature(self) -> None:
+        profile = (CONFIG_DIRECTORY / "blender_ios_host_tools.cmake").read_text()
+        self.assertIn(
+            'set(WITH_OPENSUBDIV           ON CACHE BOOL "" FORCE)',
+            profile,
+        )
+
     def test_preview_builds_and_audits_the_opensubdiv_dependency(self) -> None:
         workflow = WORKFLOW.read_text()
         self.assertIn(";OPENSUBDIV;", workflow)
