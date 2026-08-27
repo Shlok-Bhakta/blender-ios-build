@@ -14,6 +14,9 @@ HOST_PROFILE = (
 DEPENDENCY_DOWNLOADS = (
     REPOSITORY / "build_files" / "build_environment" / "cmake" / "download.cmake"
 )
+OPENCOLORIO_RECIPE = (
+    REPOSITORY / "build_files" / "build_environment" / "cmake" / "opencolorio.cmake"
+)
 
 
 class PrPreviewWorkflowTests(unittest.TestCase):
@@ -54,6 +57,13 @@ class PrPreviewWorkflowTests(unittest.TestCase):
         self.assertIn('test -s "$DEPS_INSTALL/opencolorio/lib/libpystring.a"', workflow)
         self.assertIn('test -s "$DEPS_BUILD/Release/png/lib/libpng.a"', workflow)
         self.assertIn('test -s "$DEPS_BUILD/Release/zlib/lib/libz.a"', workflow)
+
+    def test_opencolorio_finishes_static_library_copies_before_harvesting(self) -> None:
+        recipe = OPENCOLORIO_RECIPE.read_text()
+        harvest_step = recipe.split(
+            "ExternalProject_Add_Step(external_opencolorio harvest_ios", 1
+        )[1]
+        self.assertIn("DEPENDEES after_install", harvest_step)
 
     def test_publishes_exact_pr_release_contract(self) -> None:
         workflow = WORKFLOW.read_text()
