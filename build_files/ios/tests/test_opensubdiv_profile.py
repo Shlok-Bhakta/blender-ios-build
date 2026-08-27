@@ -19,6 +19,8 @@ GPU_EVAL_OUTPUT = (
     / "evaluator"
     / "eval_output_gpu.h"
 )
+GPU_COMPUTE_EVALUATOR = GPU_EVAL_OUTPUT.with_name("gpu_compute_evaluator.cc")
+OPENSUBDIV_CMAKE = GPU_EVAL_OUTPUT.parents[2] / "CMakeLists.txt"
 WORKFLOW = REPOSITORY / ".github" / "workflows" / "ios-pr-preview.yml"
 
 
@@ -51,6 +53,12 @@ class OpenSubdivProfileTests(unittest.TestCase):
         header = GPU_EVAL_OUTPUT.read_text()
         self.assertNotIn("opensubdiv/osd/glPatchTable.h", header)
         self.assertNotIn("opensubdiv/osd/glVertexBuffer.h", header)
+
+    def test_gpu_compute_evaluator_uses_backend_neutral_gpu_api(self) -> None:
+        source = GPU_COMPUTE_EVALUATOR.read_text()
+        cmake = OPENSUBDIV_CMAKE.read_text()
+        self.assertNotIn("epoxy/gl.h", source)
+        self.assertNotIn("bf::dependencies::epoxy", cmake)
 
     def test_preview_builds_and_audits_the_opensubdiv_dependency(self) -> None:
         workflow = WORKFLOW.read_text()

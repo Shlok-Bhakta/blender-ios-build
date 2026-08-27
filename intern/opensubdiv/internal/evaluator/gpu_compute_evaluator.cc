@@ -2,8 +2,6 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later */
 
-#include <epoxy/gl.h>
-
 #include "gpu_compute_evaluator.h"
 
 #include <opensubdiv/far/error.h>
