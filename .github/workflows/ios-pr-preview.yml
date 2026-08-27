@@ -115,7 +115,7 @@ jobs:
           )"
           library_revision="$(git rev-parse HEAD:lib/macos_arm64)"
           {
-          echo "dependency-cache-key=ios-device-deps-v3-${xcode_key}-${dependency_key}"
+          echo "dependency-cache-key=ios-device-deps-v4-${xcode_key}-${dependency_key}"
             echo "host-tool-cache-key=ios-host-tools-v1-${xcode_key}-${library_revision}-${host_key}"
           } >> "$GITHUB_OUTPUT"
 
@@ -125,7 +125,7 @@ jobs:
         with:
           path: |
             ${{ env.DEPS_INSTALL }}
-            ${{ env.DEPS_BUILD }}/Release/png/lib/libpng.a
+            ${{ env.DEPS_BUILD }}/Release/png/lib
             ${{ env.DEPS_BUILD }}/Release/zlib/lib/libz.a
           key: ${{ steps.cache-keys.outputs.dependency-cache-key }}
 
@@ -190,7 +190,7 @@ jobs:
         with:
           path: |
             ${{ env.DEPS_INSTALL }}
-            ${{ env.DEPS_BUILD }}/Release/png/lib/libpng.a
+            ${{ env.DEPS_BUILD }}/Release/png/lib
             ${{ env.DEPS_BUILD }}/Release/zlib/lib/libz.a
           key: ${{ steps.cache-keys.outputs.dependency-cache-key }}
 

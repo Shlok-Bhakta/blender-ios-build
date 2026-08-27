@@ -48,9 +48,9 @@ class PrPreviewWorkflowTests(unittest.TestCase):
     def test_dependency_cache_preserves_every_static_link_input(self) -> None:
         workflow = WORKFLOW.read_text()
 
-        self.assertIn("dependency-cache-key=ios-device-deps-v3-", workflow)
+        self.assertIn("dependency-cache-key=ios-device-deps-v4-", workflow)
         for archive in (
-            "${{ env.DEPS_BUILD }}/Release/png/lib/libpng.a",
+            "${{ env.DEPS_BUILD }}/Release/png/lib",
             "${{ env.DEPS_BUILD }}/Release/zlib/lib/libz.a",
         ):
             self.assertGreaterEqual(workflow.count(archive), 2)
