@@ -949,6 +949,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   tap4f_gesture_recognizer.cancelsTouchesInView = false;
   tap4f_gesture_recognizer.delaysTouchesBegan = YES;
   tap4f_gesture_recognizer.numberOfTouchesRequired = 4;
+  tap4f_gesture_recognizer.allowedTouchTypes = @[@(UITouchTypeDirect)];
   [window->getView() addGestureRecognizer:tap4f_gesture_recognizer];
 
   /* Pan gesture recognizer - static UI. */
@@ -1320,13 +1321,8 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
     return;
   }
 
-  CGPoint touch_point = [sender locationInView:window->getView()];
-  CGFloat scale = [window->getView() contentScaleFactor];
-  touch_point.x *= scale;
-  touch_point.y *= scale;
-
-  system->pushEvent(
-      std::make_unique<GHOST_Event>(system->getMilliSeconds(), GHOST_kEventFourFingerTap, window));
+  [self generateKeyEvent:GHOST_kKeyF3 down:true utf8:nullptr];
+  [self generateKeyEvent:GHOST_kKeyF3 down:false utf8:nullptr];
 }
 
 - (void)handlePan:(GHOSTUIPanGestureRecognizer *)sender
