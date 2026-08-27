@@ -104,6 +104,7 @@ jobs:
             git ls-files \
               build_files/cmake/host_tool_features.cmake \
               build_files/cmake/config/blender_ios_host_tools.cmake \
+              build_files/ios/bundle_host_tool_runtime.py \
               source/blender/datatoc \
               source/blender/gpu/shader_tool \
               source/blender/makesdna \
@@ -116,7 +117,7 @@ jobs:
           library_revision="$(git rev-parse HEAD:lib/macos_arm64)"
           {
           echo "dependency-cache-key=ios-device-deps-v4-${xcode_key}-${dependency_key}"
-            echo "host-tool-cache-key=ios-host-tools-v1-${xcode_key}-${library_revision}-${host_key}"
+            echo "host-tool-cache-key=ios-host-tools-v2-${xcode_key}-${library_revision}-${host_key}"
           } >> "$GITHUB_OUTPUT"
 
       - name: Restore iOS dependency prefix
@@ -218,6 +219,13 @@ jobs:
           cp "$HOST_BUILD/bin/makesrna.features" "$HOST_INSTALL/makesrna.features"
           cp "$HOST_BUILD/bin/datatoc" "$HOST_INSTALL/datatoc"
           cp "$HOST_BUILD/bin/shader_tool" "$HOST_INSTALL/shader_tool"
+          python3 build_files/ios/bundle_host_tool_runtime.py \
+            --library-root lib/macos_arm64 \
+            --destination "$HOST_INSTALL/lib" \
+            "$HOST_INSTALL/makesdna" \
+            "$HOST_INSTALL/makesrna" \
+            "$HOST_INSTALL/datatoc" \
+            "$HOST_INSTALL/shader_tool"
 
       - name: Audit revision-matched native tools
         shell: bash
@@ -227,6 +235,7 @@ jobs:
             test -x "$HOST_INSTALL/$tool"
           done
           test -f "$HOST_INSTALL/makesrna.features"
+          test -n "$(find "$HOST_INSTALL/lib" -maxdepth 1 -type f -name '*.dylib' -print -quit)"
           file "$HOST_INSTALL/makesdna" | grep -q 'arm64'
 
       - name: Save revision-matched native tools
@@ -240,6 +249,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          export DYLD_LIBRARY_PATH="$HOST_INSTALL/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
           sdk_path="$(xcrun --sdk iphoneos --show-sdk-path)"
           cmake \
             -S . \

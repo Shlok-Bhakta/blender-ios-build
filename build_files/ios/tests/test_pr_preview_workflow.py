@@ -27,6 +27,7 @@ class PrPreviewWorkflowTests(unittest.TestCase):
         self.assertIn("actions/cache", workflow)
         self.assertIn("dependency-cache-key", workflow)
         self.assertIn("host-tool-cache-key", workflow)
+        self.assertIn("host-tool-cache-key=ios-host-tools-v2-", workflow)
         self.assertNotIn("github.workspace }}/../", workflow)
 
     def test_hydrates_required_lfs_files_from_public_blender_upstream(self) -> None:
@@ -88,6 +89,13 @@ class PrPreviewWorkflowTests(unittest.TestCase):
         for feature in ("WITH_CYCLES", "WITH_METAL_BACKEND", "WITH_PYTHON", "WITH_TBB"):
             self.assertIn(f"set({feature}", profile)
             self.assertIn("ON CACHE BOOL", profile)
+
+    def test_host_tool_cache_includes_the_recursive_dylib_closure(self) -> None:
+        workflow = WORKFLOW.read_text()
+        self.assertIn("build_files/ios/bundle_host_tool_runtime.py", workflow)
+        self.assertIn('--destination "$HOST_INSTALL/lib"', workflow)
+        self.assertIn('find "$HOST_INSTALL/lib"', workflow)
+        self.assertIn('export DYLD_LIBRARY_PATH="$HOST_INSTALL/lib', workflow)
 
     def test_host_library_checkout_overrides_the_disabled_submodule_policy(self) -> None:
         workflow = WORKFLOW.read_text()
