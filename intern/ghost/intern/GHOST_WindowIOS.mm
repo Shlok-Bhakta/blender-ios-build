@@ -344,6 +344,7 @@ static UserInputEvent::EventTypes pointerButtonEvent(const UIEventButtonMask but
   GHOSTUITapGestureRecognizer *mouse_secondary_tap_recognizer;
   GHOSTUITapGestureRecognizer *mouse_middle_tap_recognizer;
   GHOSTUITapGestureRecognizer *tap2f_gesture_recognizer;
+  GHOSTUITapGestureRecognizer *double_tap2f_gesture_recognizer;
   GHOSTUITapGestureRecognizer *tap3f_gesture_recognizer;
   GHOSTUITapGestureRecognizer *tap4f_gesture_recognizer;
   GHOSTUIPanGestureRecognizer *pan_gesture_recognizer;
@@ -396,6 +397,7 @@ static UserInputEvent::EventTypes pointerButtonEvent(const UIEventButtonMask but
         (UIGestureRecognizer *)otherGestureRecognizer;
 - (void)handleTap:(GHOSTUITapGestureRecognizer *)sender;
 - (void)handleDoubleTap:(GHOSTUITapGestureRecognizer *)sender;
+- (void)handleDoubleTap2F:(GHOSTUITapGestureRecognizer *)sender;
 - (void)handleMouseButtonTap:(GHOSTUITapGestureRecognizer *)sender;
 - (void)handlePan:(GHOSTUIPanGestureRecognizer *)sender;
 - (void)handlePan2f:(GHOSTUIPanGestureRecognizer *)sender;
@@ -415,6 +417,8 @@ static UserInputEvent::EventTypes pointerButtonEvent(const UIEventButtonMask but
 - (void)generateKeyboardReturnEvent;
 - (void)generateKeyboardCompletionEvent:(GHOST_TKey)key;
 - (void)invalidateInput;
+- (void)generateKeyEvent:(GHOST_TKey)key down:(bool)is_down utf8:(const char *)utf8;
+- (void)generateUndoRedoShortcut:(bool)redo;
 - (void)generateHardwareKeyEvents:(NSSet<UIPress *> *)presses type:(GHOST_TEventType)event_type;
 - (void)generateButtonEvent:(GHOST_TButton)button down:(bool)is_down;
 @end
@@ -625,6 +629,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   [self releaseGestureRecognizer:mouse_secondary_tap_recognizer fromView:input_view];
   [self releaseGestureRecognizer:mouse_middle_tap_recognizer fromView:input_view];
   [self releaseGestureRecognizer:tap2f_gesture_recognizer fromView:input_view];
+  [self releaseGestureRecognizer:double_tap2f_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:tap3f_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:tap4f_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:pan_gesture_recognizer fromView:input_view];
@@ -640,6 +645,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   mouse_secondary_tap_recognizer = nil;
   mouse_middle_tap_recognizer = nil;
   tap2f_gesture_recognizer = nil;
+  double_tap2f_gesture_recognizer = nil;
   tap3f_gesture_recognizer = nil;
   tap4f_gesture_recognizer = nil;
   pan_gesture_recognizer = nil;
@@ -763,6 +769,39 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
                                                         tablet_data));
 }
 
+- (void)generateKeyEvent:(GHOST_TKey)key down:(bool)is_down utf8:(const char *)utf8
+{
+  GHOST_TModifierKey modifier;
+  if (modifierForKey(key, modifier)) {
+    system->updateModifierState(modifier, is_down);
+  }
+
+  system->pushEvent(std::make_unique<GHOST_EventKey>(system->getMilliSeconds(),
+                                                      is_down ? GHOST_kEventKeyDown :
+                                                                GHOST_kEventKeyUp,
+                                                      window,
+                                                      key,
+                                                      false,
+                                                      is_down ? utf8 : nullptr));
+  system->notifyExternalEventProcessed();
+}
+
+- (void)generateUndoRedoShortcut:(bool)redo
+{
+  @synchronized(self) {
+    [self generateKeyEvent:GHOST_kKeyLeftControl down:true utf8:nullptr];
+    if (redo) {
+      [self generateKeyEvent:GHOST_kKeyLeftShift down:true utf8:nullptr];
+    }
+    [self generateKeyEvent:GHOST_kKeyZ down:true utf8:"z"];
+    [self generateKeyEvent:GHOST_kKeyZ down:false utf8:nullptr];
+    if (redo) {
+      [self generateKeyEvent:GHOST_kKeyLeftShift down:false utf8:nullptr];
+    }
+    [self generateKeyEvent:GHOST_kKeyLeftControl down:false utf8:nullptr];
+  }
+}
+
 - (void)generateHardwareKeyEvents:(NSSet<UIPress *> *)presses
                               type:(GHOST_TEventType)event_type
 {
@@ -774,19 +813,12 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 
     const GHOST_TKey key = convertKeyboardHIDUsage(ui_key.keyCode);
     const bool is_down = event_type == GHOST_kEventKeyDown;
-    GHOST_TModifierKey modifier;
-    if (modifierForKey(key, modifier)) {
-      system->updateModifierState(modifier, is_down);
-    }
-
     char utf8[6] = {};
     if (is_down && ui_key.characters.length != 0) {
       NSData *encoded = [ui_key.characters dataUsingEncoding:NSUTF8StringEncoding];
       memcpy(utf8, encoded.bytes, std::min<NSUInteger>(encoded.length, sizeof(utf8) - 1));
     }
-    system->pushEvent(std::make_unique<GHOST_EventKey>(
-        system->getMilliSeconds(), event_type, window, key, false, utf8));
-    system->notifyExternalEventProcessed();
+    [self generateKeyEvent:key down:is_down utf8:utf8];
   }
 }
 
@@ -861,8 +893,24 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   tap2f_gesture_recognizer.delegate = self;
   tap2f_gesture_recognizer.cancelsTouchesInView = false;
   tap2f_gesture_recognizer.delaysTouchesBegan = YES;
+  tap2f_gesture_recognizer.numberOfTapsRequired = 1;
   tap2f_gesture_recognizer.numberOfTouchesRequired = 2;
+  tap2f_gesture_recognizer.allowedTouchTypes = @[@(UITouchTypeDirect)];
+
+  double_tap2f_gesture_recognizer = [[GHOSTUITapGestureRecognizer alloc]
+      initWithTarget:self
+              action:@selector(handleDoubleTap2F:)];
+  double_tap2f_gesture_recognizer.delegate = self;
+  double_tap2f_gesture_recognizer.cancelsTouchesInView = false;
+  double_tap2f_gesture_recognizer.delaysTouchesBegan = YES;
+  double_tap2f_gesture_recognizer.numberOfTapsRequired = 2;
+  double_tap2f_gesture_recognizer.numberOfTouchesRequired = 2;
+  double_tap2f_gesture_recognizer.allowedTouchTypes = @[@(UITouchTypeDirect)];
+
+  [tap2f_gesture_recognizer
+      requireGestureRecognizerToFail:double_tap2f_gesture_recognizer];
   [window->getView() addGestureRecognizer:tap2f_gesture_recognizer];
+  [window->getView() addGestureRecognizer:double_tap2f_gesture_recognizer];
 
   /* Three-finger tap gesture recognizer. */
   tap3f_gesture_recognizer = [[GHOSTUITapGestureRecognizer alloc]
@@ -1203,13 +1251,16 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
     return;
   }
 
-  CGPoint touch_point = [sender locationInView:window->getView()];
-  CGFloat scale = [window->getView() contentScaleFactor];
-  touch_point.x *= scale;
-  touch_point.y *= scale;
+  [self generateUndoRedoShortcut:false];
+}
 
-  system->pushEvent(
-      std::make_unique<GHOST_Event>(system->getMilliSeconds(), GHOST_kEventTwoFingerTap, window));
+- (void)handleDoubleTap2F:(GHOSTUITapGestureRecognizer *)sender
+{
+  if (sender.state != UIGestureRecognizerStateEnded) {
+    return;
+  }
+
+  [self generateUndoRedoShortcut:true];
 }
 
 - (void)handleTap3F:(GHOSTUITapGestureRecognizer *)sender
