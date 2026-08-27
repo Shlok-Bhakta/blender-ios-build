@@ -11,6 +11,14 @@ CONFIG_DIRECTORY = REPOSITORY / "build_files" / "cmake" / "config"
 APPLE_PLATFORM = (
     REPOSITORY / "build_files" / "cmake" / "platform" / "platform_apple.cmake"
 )
+GPU_EVAL_OUTPUT = (
+    REPOSITORY
+    / "intern"
+    / "opensubdiv"
+    / "internal"
+    / "evaluator"
+    / "eval_output_gpu.h"
+)
 WORKFLOW = REPOSITORY / ".github" / "workflows" / "ios-pr-preview.yml"
 
 
@@ -38,6 +46,11 @@ class OpenSubdivProfileTests(unittest.TestCase):
         )[1].split("  return()", 1)[0]
         self.assertIn('set(OPENSUBDIV_ROOT_DIR "${LIBDIR}/opensubdiv")', ios_branch)
         self.assertIn("find_package(OpenSubdiv REQUIRED)", ios_branch)
+
+    def test_gpu_eval_output_does_not_require_opengl_adapter_headers(self) -> None:
+        header = GPU_EVAL_OUTPUT.read_text()
+        self.assertNotIn("opensubdiv/osd/glPatchTable.h", header)
+        self.assertNotIn("opensubdiv/osd/glVertexBuffer.h", header)
 
     def test_preview_builds_and_audits_the_opensubdiv_dependency(self) -> None:
         workflow = WORKFLOW.read_text()
