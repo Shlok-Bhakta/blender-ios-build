@@ -368,12 +368,14 @@ static UserInputEvent::EventTypes pointerButtonEvent(const UIEventButtonMask but
   NSString *original_text;
   bool onscreen_keyboard_active;
   std::string text_field_string;
-  CGRect blender_text_field_frame;
 
   /* Toolbar */
   bool toolbar_enabled;
   UIToolbar *toolbar;
-  UIBarButtonItem *toolbar_tip_item;
+  UILabel *toolbar_tip_label;
+  UILabel *toolbar_value_label;
+  UIStackView *toolbar_text_stack;
+  UIBarButtonItem *toolbar_text_item;
   UIBarButtonItem *toolbar_flexible_space_item;
   UIBarButtonItem *toolbar_done_editing_item;
   UIBarButtonItem *toolbar_cancel_editing_item;
@@ -593,7 +595,6 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   original_text = nil;
   onscreen_keyboard_active = false;
   text_field_string.clear();
-  blender_text_field_frame = CGRectZero;
   current_pencil_touch = nil;
   tablet_data = GHOST_TABLET_DATA_NONE;
   toolbar_enabled = true;
@@ -682,12 +683,18 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   if (toolbar != nil) {
     toolbar.items = nil;
   }
-  [toolbar_tip_item release];
+  [toolbar_text_item release];
+  [toolbar_text_stack release];
+  [toolbar_tip_label release];
+  [toolbar_value_label release];
   [toolbar_flexible_space_item release];
   [toolbar_done_editing_item release];
   [toolbar_cancel_editing_item release];
   [toolbar release];
-  toolbar_tip_item = nil;
+  toolbar_text_item = nil;
+  toolbar_text_stack = nil;
+  toolbar_tip_label = nil;
+  toolbar_value_label = nil;
   toolbar_flexible_space_item = nil;
   toolbar_done_editing_item = nil;
   toolbar_cancel_editing_item = nil;
@@ -1549,7 +1556,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 - (void)initToolbar
 {
   UIView *ui_view = window->getView();
-  CGSize frame_size = [ui_view sizeThatFits:CGSizeMake(0.0f, 0.0f)];
+  CGSize frame_size = ui_view.bounds.size;
   toolbar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, frame_size.width, 44)];
   toolbar.barStyle = UIBarStyleDefault;
   toolbar.translucent = true;
@@ -1557,10 +1564,39 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   toolbar.accessibilityIdentifier = @"blender_text_entry_toolbar";
   [toolbar sizeToFit];
 
-  toolbar_tip_item = [[UIBarButtonItem alloc] initWithTitle:@""
-                                                      style:UIBarButtonItemStylePlain
-                                                     target:nil
-                                                     action:nil];
+  toolbar_tip_label = [[UILabel alloc] init];
+  toolbar_tip_label.font = [UIFont preferredFontForTextStyle:UIFontTextStyleCaption2];
+  toolbar_tip_label.textColor = UIColor.secondaryLabelColor;
+  toolbar_tip_label.textAlignment = NSTextAlignmentCenter;
+  toolbar_tip_label.numberOfLines = 1;
+  toolbar_tip_label.lineBreakMode = NSLineBreakByTruncatingTail;
+  toolbar_tip_label.accessibilityIdentifier = @"blender_text_entry_description";
+
+  toolbar_value_label = [[UILabel alloc] init];
+  toolbar_value_label.font = [UIFont monospacedDigitSystemFontOfSize:18.0f
+                                                              weight:UIFontWeightSemibold];
+  toolbar_value_label.textColor = UIColor.labelColor;
+  toolbar_value_label.textAlignment = NSTextAlignmentCenter;
+  toolbar_value_label.numberOfLines = 1;
+  toolbar_value_label.adjustsFontSizeToFitWidth = YES;
+  toolbar_value_label.minimumScaleFactor = 0.65f;
+  toolbar_value_label.accessibilityIdentifier = @"blender_text_entry_value";
+
+  toolbar_text_stack = [[UIStackView alloc]
+      initWithArrangedSubviews:@[ toolbar_tip_label, toolbar_value_label ]];
+  toolbar_text_stack.axis = UILayoutConstraintAxisVertical;
+  toolbar_text_stack.alignment = UIStackViewAlignmentFill;
+  toolbar_text_stack.distribution = UIStackViewDistributionFill;
+  toolbar_text_stack.spacing = -2.0f;
+  toolbar_text_stack.translatesAutoresizingMaskIntoConstraints = NO;
+  const CGFloat available_width = std::max<CGFloat>(120.0f, frame_size.width - 190.0f);
+  [NSLayoutConstraint activateConstraints:@[
+    [toolbar_text_stack.widthAnchor
+        constraintEqualToConstant:std::min<CGFloat>(available_width, 520.0f)],
+    [toolbar_text_stack.heightAnchor constraintEqualToConstant:40.0f],
+  ]];
+  toolbar_text_item = [[UIBarButtonItem alloc] initWithCustomView:toolbar_text_stack];
+
   toolbar_flexible_space_item = [[UIBarButtonItem alloc]
       initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
                            target:nil
@@ -1576,14 +1612,13 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
                            target:self
                            action:@selector(handleCancelButton)];
 
-  toolbar_tip_item.enabled = NO;
   toolbar_cancel_editing_item.accessibilityIdentifier = @"blender_text_entry_cancel";
   toolbar_done_editing_item.accessibilityIdentifier = @"blender_text_entry_done";
 
   toolbar.items = @[
     toolbar_cancel_editing_item,
     toolbar_flexible_space_item,
-    toolbar_tip_item,
+    toolbar_text_item,
     toolbar_done_editing_item
   ];
 }
@@ -1631,6 +1666,8 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
     IOS_INPUT_LOG(@"Keyboard Edit change detected %@", text_field.text);
     const char *utf8 = [sender.text UTF8String];
     text_field_string = utf8 != nullptr ? utf8 : "";
+    toolbar_value_label.text = sender.text;
+    toolbar_value_label.accessibilityValue = sender.text;
   }
 }
 
@@ -1684,10 +1721,12 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
     text_field.enablesReturnKeyAutomatically = NO;
     text_field.accessibilityLabel = @"Blender text entry";
     text_field.accessibilityIdentifier = @"blender_text_entry";
-    text_field.borderStyle = UITextBorderStyleRoundedRect;
-    text_field.clearButtonMode = UITextFieldViewModeWhileEditing;
-    text_field.adjustsFontSizeToFitWidth = YES;
-    text_field.minimumFontSize = 14.0f;
+    text_field.borderStyle = UITextBorderStyleNone;
+    text_field.clearButtonMode = UITextFieldViewModeNever;
+    text_field.frame = CGRectMake(0.0f, 0.0f, 1.0f, 1.0f);
+    text_field.backgroundColor = UIColor.clearColor;
+    text_field.textColor = UIColor.clearColor;
+    text_field.tintColor = UIColor.clearColor;
     text_field.hidden = YES;
 
     if (toolbar_enabled) {
@@ -1719,23 +1758,6 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   }
 }
 
-- (void)convertWindowCoordToDisplayCoordWithWindow:(int)windowX
-                                           windowY:(int)windowY
-                                          displayX:(double *)displayX
-                                          displayY:(double *)displayY
-                                             flipY:(BOOL)flipY
-{
-  float pixelScale = window->getWindowScaleFactor();
-  CGSize logicalWindowSize = window->getLogicalWindowSize();
-
-  *displayX = (double)windowX / pixelScale;
-  *displayY = (double)windowY / pixelScale;
-
-  if (flipY) {
-    *displayY = logicalWindowSize.height - *displayY;
-  }
-}
-
 - (UITextField *)getUITextField
 {
   return text_field;
@@ -1748,26 +1770,10 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
     [self initUITextField];
   }
 
-  /* Convert the text box coords to display coords */
-  CGRect displayRect;
-  [self convertWindowCoordToDisplayCoordWithWindow:keyboard_properties.text_box_origin[0]
-                                           windowY:keyboard_properties.text_box_origin[1]
-                                          displayX:&displayRect.origin.x
-                                          displayY:&displayRect.origin.y
-                                             flipY:true];
-
-  [self convertWindowCoordToDisplayCoordWithWindow:keyboard_properties.text_box_size[0]
-                                           windowY:keyboard_properties.text_box_size[1]
-                                          displayX:&displayRect.size.width
-                                          displayY:&displayRect.size.height
-                                             flipY:false];
-
-  /* Keep Blender's exact field bounds, but expose a full touch target while editing. */
-  blender_text_field_frame = displayRect;
-  const CGFloat touch_height = std::max<CGFloat>(displayRect.size.height, 44.0f);
-  displayRect.origin.y -= (touch_height - displayRect.size.height) * 0.5f;
-  displayRect.size.height = touch_height;
-  text_field.frame = displayRect;
+  /* The native field only owns the responder and keyboard. Keeping its one-point
+   * frame at the window edge prevents it from covering a Blender control or being
+   * pushed under the software keyboard; the accessory bar presents the live value. */
+  text_field.frame = CGRectMake(0.0f, 0.0f, 1.0f, 1.0f);
   text_field.hidden = NO;
 
   /* Initialise text with existing string. */
@@ -1777,6 +1783,8 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   /* Keep the cancel value alive for the full edit session. */
   [original_text release];
   original_text = [text_field.text copy];
+  toolbar_value_label.text = text_field.text;
+  toolbar_value_label.accessibilityValue = text_field.text;
 
   /* Numeric Blender fields also accept expressions, units and drivers. Keep the full keyboard
    * available for every field until a Blender-specific expression keyboard exists. */
@@ -1792,29 +1800,14 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   text_field.smartDashesType = UITextSmartDashesTypeNo;
   text_field.smartQuotesType = UITextSmartQuotesTypeNo;
 
-  /* Set font size. */
-  float fontSize = std::max<CGFloat>(keyboard_properties.font_size /
-                                        window->getWindowScaleFactor(),
-                                    17.0f);
-  text_field.font = [UIFont systemFontOfSize:fontSize];
-
-  /* Set font color. */
-  text_field.textColor = [UIColor colorWithRed:keyboard_properties.font_color[0]
-                                         green:keyboard_properties.font_color[1]
-                                          blue:keyboard_properties.font_color[2]
-                                         alpha:keyboard_properties.font_color[3]];
-  const float text_luminance = 0.2126f * keyboard_properties.font_color[0] +
-                               0.7152f * keyboard_properties.font_color[1] +
-                               0.0722f * keyboard_properties.font_color[2];
-  text_field.backgroundColor = [UIColor colorWithWhite:text_luminance > 0.5f ? 0.12f : 0.95f
-                                                   alpha:1.0f];
-
   /* Setup the tool bar if it's enabled. */
   if (toolbar_enabled) {
-    toolbar_tip_item.title = keyboard_properties.tip_text ?
-                                 [NSString stringWithCString:keyboard_properties.tip_text
-                                                    encoding:NSUTF8StringEncoding] :
-                                 @"";
+    NSString *tip = keyboard_properties.tip_text ?
+                        [NSString stringWithCString:keyboard_properties.tip_text
+                                           encoding:NSUTF8StringEncoding] :
+                        @"";
+    toolbar_tip_label.text = tip.length != 0 ? tip : @"Value";
+    toolbar_tip_label.accessibilityLabel = tip;
   }
 }
 
@@ -1869,7 +1862,6 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
       text_field.userInteractionEnabled = YES;
       if (![text_field becomeFirstResponder]) {
         text_field.userInteractionEnabled = NO;
-        text_field.frame = blender_text_field_frame;
         text_field.hidden = YES;
         return GHOST_kFailure;
       }
@@ -1918,7 +1910,8 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 
       /* Delete the text field copy of the string */
       text_field.text = nil;
-      text_field.frame = blender_text_field_frame;
+      toolbar_tip_label.text = @"";
+      toolbar_value_label.text = @"";
       text_field.hidden = YES;
     }
   }

@@ -27,14 +27,34 @@ class GhostTextEntryPolishTests(unittest.TestCase):
         done_position = items.index("toolbar_done_editing_item")
         self.assertLess(cancel_position, flexible_position)
         self.assertLess(flexible_position, done_position)
-        self.assertNotIn("toolbar_live_text_item", toolbar)
+        self.assertIn("toolbar_text_item", toolbar)
+        self.assertIn("toolbar_value_label", toolbar)
 
-    def test_native_text_field_is_accessible_and_touch_sized(self) -> None:
+    def test_native_text_responder_does_not_cover_the_blender_field(self) -> None:
         self.assertIn('accessibilityIdentifier = @"blender_text_entry"', self.source)
-        self.assertIn("std::max<CGFloat>(displayRect.size.height, 44.0f)", self.source)
-        self.assertIn("17.0f", self.source)
-        self.assertIn("text_luminance", self.source)
-        self.assertIn("clearButtonMode = UITextFieldViewModeWhileEditing", self.source)
+        self.assertIn(
+            "text_field.frame = CGRectMake(0.0f, 0.0f, 1.0f, 1.0f);",
+            self.source,
+        )
+        self.assertIn("text_field.backgroundColor = UIColor.clearColor;", self.source)
+        self.assertNotIn("text_field.frame = displayRect;", self.source)
+
+    def test_accessory_prioritizes_the_live_value_and_truncates_the_tip(self) -> None:
+        toolbar = self.source[
+            self.source.rindex("- (void)initToolbar") : self.source.rindex(
+                "- (void)generateKeyboardReturnEvent"
+            )
+        ]
+        change_handler = self.source[
+            self.source.rindex("- (void)handleKeyboardEditChange:") : self.source.rindex(
+                "- (void)handleKeyboardEditBegin:"
+            )
+        ]
+
+        self.assertIn("NSLineBreakByTruncatingTail", toolbar)
+        self.assertIn("monospacedDigitSystemFontOfSize", toolbar)
+        self.assertIn('accessibilityIdentifier = @"blender_text_entry_value"', toolbar)
+        self.assertIn("toolbar_value_label.text = sender.text", change_handler)
 
     def test_cancel_uses_blenders_escape_semantics(self) -> None:
         handler = self.source[
@@ -46,9 +66,9 @@ class GhostTextEntryPolishTests(unittest.TestCase):
         self.assertIn("GHOST_kKeyEsc", handler)
         self.assertNotIn("generateKeyboardReturnEvent", handler)
 
-    def test_text_field_restores_the_original_blender_frame_after_editing(self) -> None:
-        self.assertIn("CGRect blender_text_field_frame;", self.source)
-        self.assertIn("text_field.frame = blender_text_field_frame;", self.source)
+    def test_text_field_never_tracks_the_blender_widget_frame(self) -> None:
+        self.assertNotIn("CGRect blender_text_field_frame;", self.source)
+        self.assertNotIn("text_field.frame = blender_text_field_frame;", self.source)
 
 
 if __name__ == "__main__":
