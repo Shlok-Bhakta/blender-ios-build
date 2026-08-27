@@ -198,6 +198,8 @@ if(WITH_APPLE_CROSSPLATFORM)
     COMMAND ${CMAKE_COMMAND} -E copy_directory
       ${LIBDIR}/opencolorio/share
       ${HARVEST_TARGET}/opencolorio/share
-    DEPENDEES install
+    # The iOS harvest copies this directory, including the static dependency
+    # archives added above. Do not let both steps mutate/copy it concurrently.
+    DEPENDEES after_install
   )
 endif()

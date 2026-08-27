@@ -14,6 +14,9 @@ HOST_PROFILE = (
 DEPENDENCY_DOWNLOADS = (
     REPOSITORY / "build_files" / "build_environment" / "cmake" / "download.cmake"
 )
+OPENCOLORIO_RECIPE = (
+    REPOSITORY / "build_files" / "build_environment" / "cmake" / "opencolorio.cmake"
+)
 
 
 class PrPreviewWorkflowTests(unittest.TestCase):
@@ -24,6 +27,7 @@ class PrPreviewWorkflowTests(unittest.TestCase):
         self.assertIn("actions/cache", workflow)
         self.assertIn("dependency-cache-key", workflow)
         self.assertIn("host-tool-cache-key", workflow)
+        self.assertIn("host-tool-cache-key=ios-host-tools-v2-", workflow)
         self.assertNotIn("github.workspace }}/../", workflow)
 
     def test_hydrates_required_lfs_files_from_public_blender_upstream(self) -> None:
@@ -41,6 +45,26 @@ class PrPreviewWorkflowTests(unittest.TestCase):
         self.assertIn("-DBLENDER_DEPENDENCY_DOWNLOADS=", workflow)
         self.assertIn("BLENDER_DEPENDENCY_DOWNLOADS", downloads)
         self.assertIn("IN_LIST BLENDER_DEPENDENCY_DOWNLOADS", downloads)
+
+    def test_dependency_cache_preserves_every_static_link_input(self) -> None:
+        workflow = WORKFLOW.read_text()
+
+        self.assertIn("dependency-cache-key=ios-device-deps-v4-", workflow)
+        for archive in (
+            "${{ env.DEPS_BUILD }}/Release/png/lib",
+            "${{ env.DEPS_BUILD }}/Release/zlib/lib/libz.a",
+        ):
+            self.assertGreaterEqual(workflow.count(archive), 2)
+        self.assertIn('test -s "$DEPS_INSTALL/opencolorio/lib/libpystring.a"', workflow)
+        self.assertIn('test -s "$DEPS_BUILD/Release/png/lib/libpng.a"', workflow)
+        self.assertIn('test -s "$DEPS_BUILD/Release/zlib/lib/libz.a"', workflow)
+
+    def test_opencolorio_finishes_static_library_copies_before_harvesting(self) -> None:
+        recipe = OPENCOLORIO_RECIPE.read_text()
+        harvest_step = recipe.split(
+            "ExternalProject_Add_Step(external_opencolorio harvest_ios", 1
+        )[1]
+        self.assertIn("DEPENDEES after_install", harvest_step)
 
     def test_publishes_exact_pr_release_contract(self) -> None:
         workflow = WORKFLOW.read_text()
@@ -65,6 +89,13 @@ class PrPreviewWorkflowTests(unittest.TestCase):
         for feature in ("WITH_CYCLES", "WITH_METAL_BACKEND", "WITH_PYTHON", "WITH_TBB"):
             self.assertIn(f"set({feature}", profile)
             self.assertIn("ON CACHE BOOL", profile)
+
+    def test_host_tool_cache_includes_the_recursive_dylib_closure(self) -> None:
+        workflow = WORKFLOW.read_text()
+        self.assertIn("build_files/ios/bundle_host_tool_runtime.py", workflow)
+        self.assertIn('--destination "$HOST_INSTALL/lib"', workflow)
+        self.assertIn('find "$HOST_INSTALL/lib"', workflow)
+        self.assertIn('export DYLD_LIBRARY_PATH="$HOST_INSTALL/lib', workflow)
 
     def test_host_library_checkout_overrides_the_disabled_submodule_policy(self) -> None:
         workflow = WORKFLOW.read_text()
