@@ -8,6 +8,9 @@ import unittest
 
 REPOSITORY = Path(__file__).resolve().parents[3]
 CONFIG_DIRECTORY = REPOSITORY / "build_files" / "cmake" / "config"
+APPLE_PLATFORM = (
+    REPOSITORY / "build_files" / "cmake" / "platform" / "platform_apple.cmake"
+)
 WORKFLOW = REPOSITORY / ".github" / "workflows" / "ios-pr-preview.yml"
 
 
@@ -27,6 +30,14 @@ class OpenSubdivProfileTests(unittest.TestCase):
             'set(WITH_OPENSUBDIV           ON CACHE BOOL "" FORCE)',
             profile,
         )
+
+    def test_ios_platform_resolves_opensubdiv_from_dependency_sysroot(self) -> None:
+        platform = APPLE_PLATFORM.read_text()
+        ios_branch = platform.split(
+            "if(WITH_APPLE_CROSSPLATFORM)", 1
+        )[1].split("  return()", 1)[0]
+        self.assertIn('set(OPENSUBDIV_ROOT_DIR "${LIBDIR}/opensubdiv")', ios_branch)
+        self.assertIn("find_package(OpenSubdiv REQUIRED)", ios_branch)
 
     def test_preview_builds_and_audits_the_opensubdiv_dependency(self) -> None:
         workflow = WORKFLOW.read_text()
