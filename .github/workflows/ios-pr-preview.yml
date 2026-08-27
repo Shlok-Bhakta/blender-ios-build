@@ -178,18 +178,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -f "$DEPS_INSTALL/python/Python.framework/Python"
-          test -f "$DEPS_INSTALL/python/lib/python3.13/site-packages/numpy/_core/include/numpy/arrayobject.h"
-          test -f "$DEPS_INSTALL/python/lib/python3.13/site-packages/zstandard/backend_c.cpython-313-iphoneos.so"
-          test -f "$DEPS_INSTALL/openimageio/lib/cmake/OpenImageIO/OpenImageIOConfig.cmake"
-          test -f "$DEPS_INSTALL/opencolorio/lib/cmake/OpenColorIO/OpenColorIOConfig.cmake"
-          test -f "$DEPS_INSTALL/opensubdiv/include/opensubdiv/version.h"
-          test -f "$DEPS_INSTALL/tbb/lib/cmake/TBB/TBBConfig.cmake"
-          test -s "$DEPS_INSTALL/opencolorio/lib/libpystring.a"
-          test -s "$DEPS_INSTALL/opensubdiv/lib/libosdCPU.a"
-          test -s "$DEPS_INSTALL/opensubdiv/lib/libosdGPU.a"
-          test -s "$DEPS_BUILD/Release/png/lib/libpng.a"
-          test -s "$DEPS_BUILD/Release/zlib/lib/libz.a"
+          test -f "$DEPS_INSTALL/python/Python.framework/Python" || { echo "::error::Missing cached file: $DEPS_INSTALL/python/Python.framework/Python"; exit 1; }
+          test -f "$DEPS_INSTALL/python/lib/python3.13/site-packages/numpy/_core/include/numpy/arrayobject.h" || { echo "::error::Missing cached file: $DEPS_INSTALL/python/lib/python3.13/site-packages/numpy/_core/include/numpy/arrayobject.h"; exit 1; }
+          test -f "$DEPS_INSTALL/python/lib/python3.13/site-packages/zstandard/backend_c.cpython-313-iphoneos.so" || { echo "::error::Missing cached file: $DEPS_INSTALL/python/lib/python3.13/site-packages/zstandard/backend_c.cpython-313-iphoneos.so"; exit 1; }
+          test -f "$DEPS_INSTALL/openimageio/lib/cmake/OpenImageIO/OpenImageIOConfig.cmake" || { echo "::error::Missing cached file: $DEPS_INSTALL/openimageio/lib/cmake/OpenImageIO/OpenImageIOConfig.cmake"; exit 1; }
+          test -f "$DEPS_INSTALL/opencolorio/lib/cmake/OpenColorIO/OpenColorIOConfig.cmake" || { echo "::error::Missing cached file: $DEPS_INSTALL/opencolorio/lib/cmake/OpenColorIO/OpenColorIOConfig.cmake"; exit 1; }
+          test -f "$DEPS_INSTALL/opensubdiv/include/opensubdiv/version.h" || { echo "::error::Missing cached file: $DEPS_INSTALL/opensubdiv/include/opensubdiv/version.h"; exit 1; }
+          test -f "$DEPS_INSTALL/tbb/lib/cmake/TBB/TBBConfig.cmake" || { echo "::error::Missing cached file: $DEPS_INSTALL/tbb/lib/cmake/TBB/TBBConfig.cmake"; exit 1; }
+          test -s "$DEPS_INSTALL/opencolorio/lib/libpystring.a" || { echo "::error::Missing or empty cached file: $DEPS_INSTALL/opencolorio/lib/libpystring.a"; exit 1; }
+          test -s "$DEPS_INSTALL/opensubdiv/lib/libosdCPU.a" || { echo "::error::Missing or empty cached file: $DEPS_INSTALL/opensubdiv/lib/libosdCPU.a"; exit 1; }
+          test -s "$DEPS_INSTALL/opensubdiv/lib/libosdGPU.a" || { echo "::error::Missing or empty cached file: $DEPS_INSTALL/opensubdiv/lib/libosdGPU.a"; exit 1; }
+          test -s "$DEPS_BUILD/Release/png/lib/libpng.a" || { echo "::error::Missing or empty cached file: $DEPS_BUILD/Release/png/lib/libpng.a"; exit 1; }
+          test -s "$DEPS_BUILD/Release/zlib/lib/libz.a" || { echo "::error::Missing or empty cached file: $DEPS_BUILD/Release/zlib/lib/libz.a"; exit 1; }
           python3 build_files/ios/audit.py abi "$DEPS_INSTALL" --target ios-device --arch arm64
 
       - name: Save iOS dependency prefix

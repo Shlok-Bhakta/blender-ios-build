@@ -41,6 +41,8 @@ class OpenSubdivProfileTests(unittest.TestCase):
             'test -f "$DEPS_INSTALL/opensubdiv/include/opensubdiv/version.h"',
             workflow,
         )
+        self.assertIn("::error::Missing cached file:", workflow)
+        self.assertIn("::error::Missing or empty cached file:", workflow)
 
 
 if __name__ == "__main__":
