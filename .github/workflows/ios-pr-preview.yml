@@ -94,7 +94,10 @@ jobs:
           set -euo pipefail
           xcode_key="$(xcodebuild -version | shasum -a 256 | cut -d' ' -f1)"
           dependency_key="$(
-            git ls-files build_files/build_environment build_files/ios/package_python_frameworks.py \
+            git ls-files \
+              build_files/build_environment \
+              build_files/cmake/config/blender_ios_device.cmake \
+              build_files/ios/package_python_frameworks.py \
               | LC_ALL=C sort \
               | xargs shasum -a 256 \
               | shasum -a 256 \
@@ -157,7 +160,7 @@ jobs:
             -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
             -DBLENDER_IOS_BUILD_PYTHON="$build_python" \
             -DPACKAGE_USE_UPSTREAM_SOURCES=OFF \
-            "-DBLENDER_DEPENDENCY_DOWNLOADS=ZLIB;PNG;JPEG;OPENEXR;FREETYPE;OPENCOLORIO;MINIZIPNG;OPENIMAGEIO;TIFF;PYTHON;TBB;ZSTANDARD;NUMPY;OPENJPEG;WEBP;YAMLCPP;EXPAT;PUGIXML;BZIP2;FFI;LZMA;SSL;SQLITE;ZSTD;BROTLI;FMT;ROBINMAP;IMATH;PYSTRING;DEFLATE;OPENJPH;EIGEN" \
+            "-DBLENDER_DEPENDENCY_DOWNLOADS=ZLIB;PNG;JPEG;OPENEXR;OPENSUBDIV;FREETYPE;OPENCOLORIO;MINIZIPNG;OPENIMAGEIO;TIFF;PYTHON;TBB;ZSTANDARD;NUMPY;OPENJPEG;WEBP;YAMLCPP;EXPAT;PUGIXML;BZIP2;FFI;LZMA;SSL;SQLITE;ZSTD;BROTLI;FMT;ROBINMAP;IMATH;PYSTRING;DEFLATE;OPENJPH;EIGEN" \
             -DDOWNLOAD_DIR="$DEPS_DOWNLOADS" \
             -DPACKAGE_DIR="$DEPS_PACKAGES" \
             -DHARVEST_TARGET="$DEPS_INSTALL" \
@@ -167,6 +170,7 @@ jobs:
             external_freetype \
             external_numpy \
             external_openimageio \
+            external_opensubdiv \
             external_tbb \
             external_zstandard
 
@@ -179,8 +183,11 @@ jobs:
           test -f "$DEPS_INSTALL/python/lib/python3.13/site-packages/zstandard/backend_c.cpython-313-iphoneos.so"
           test -f "$DEPS_INSTALL/openimageio/lib/cmake/OpenImageIO/OpenImageIOConfig.cmake"
           test -f "$DEPS_INSTALL/opencolorio/lib/cmake/OpenColorIO/OpenColorIOConfig.cmake"
+          test -f "$DEPS_INSTALL/opensubdiv/include/opensubdiv/version.h"
           test -f "$DEPS_INSTALL/tbb/lib/cmake/TBB/TBBConfig.cmake"
           test -s "$DEPS_INSTALL/opencolorio/lib/libpystring.a"
+          test -s "$DEPS_INSTALL/opensubdiv/lib/libosdCPU.a"
+          test -s "$DEPS_INSTALL/opensubdiv/lib/libosdGPU.a"
           test -s "$DEPS_BUILD/Release/png/lib/libpng.a"
           test -s "$DEPS_BUILD/Release/zlib/lib/libz.a"
           python3 build_files/ios/audit.py abi "$DEPS_INSTALL" --target ios-device --arch arm64
