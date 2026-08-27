@@ -14,6 +14,10 @@ set(WITH_PYTHON_INSTALL ON CACHE BOOL "" FORCE)
 set(WITH_PYTHON_INSTALL_NUMPY     ON CACHE BOOL "" FORCE)
 set(WITH_PYTHON_INSTALL_ZSTANDARD ON CACHE BOOL "" FORCE)
 
+# Required by the Subdivision Surface and Multiresolution modifiers. The iOS
+# dependency sysroot provides the portable CPU evaluator and Metal support.
+set(WITH_OPENSUBDIV ON CACHE BOOL "" FORCE)
+
 # Keep the portable CPU renderer as the fallback while compiling the native
 # Metal device. TBB is static in the iOS dependency sysroot.
 set(WITH_TBB                 ON  CACHE BOOL "" FORCE)

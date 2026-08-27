@@ -72,7 +72,6 @@ if(WITH_OPENSUBDIV)
 
   list(APPEND LIB
     bf::dependencies::optional::opensubdiv
-    bf::dependencies::epoxy
   )
 
   if(WITH_METAL_BACKEND)

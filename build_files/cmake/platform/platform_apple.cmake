@@ -153,6 +153,11 @@ if(WITH_APPLE_CROSSPLATFORM)
   set(ZSTD_ROOT_DIR "${LIBDIR}/zstd")
   find_package(Zstd REQUIRED)
 
+  if(WITH_OPENSUBDIV)
+    set(OPENSUBDIV_ROOT_DIR "${LIBDIR}/opensubdiv")
+    find_package(OpenSubdiv REQUIRED)
+  endif()
+
   if(WITH_TBB)
     set(TBB_DIR "${LIBDIR}/tbb/lib/cmake/TBB")
     find_package(TBB 2021.13.0 REQUIRED CONFIG)
