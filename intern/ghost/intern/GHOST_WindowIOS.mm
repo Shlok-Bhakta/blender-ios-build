@@ -156,7 +156,7 @@ static UserInputEvent::EventTypes pointerButtonEvent(const UIEventButtonMask but
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
   UITouch *touch = [touches anyObject];
-  if (self.numberOfTapsRequired == 2 && touch.tapCount == 1) {
+  if (self.numberOfTapsRequired > 1 && touch.tapCount == 1) {
     first_tap_point = [touch locationInView:self.view];
     has_first_tap_point = YES;
   }
@@ -341,6 +341,7 @@ static UserInputEvent::EventTypes pointerButtonEvent(const UIEventButtonMask but
 
   GHOSTUITapGestureRecognizer *tap_gesture_recognizer;
   GHOSTUITapGestureRecognizer *double_tap_gesture_recognizer;
+  GHOSTUITapGestureRecognizer *triple_tap_gesture_recognizer;
   GHOSTUITapGestureRecognizer *mouse_secondary_tap_recognizer;
   GHOSTUITapGestureRecognizer *mouse_middle_tap_recognizer;
   GHOSTUITapGestureRecognizer *tap2f_gesture_recognizer;
@@ -397,6 +398,7 @@ static UserInputEvent::EventTypes pointerButtonEvent(const UIEventButtonMask but
         (UIGestureRecognizer *)otherGestureRecognizer;
 - (void)handleTap:(GHOSTUITapGestureRecognizer *)sender;
 - (void)handleDoubleTap:(GHOSTUITapGestureRecognizer *)sender;
+- (void)handleTripleTap:(GHOSTUITapGestureRecognizer *)sender;
 - (void)handleDoubleTap2F:(GHOSTUITapGestureRecognizer *)sender;
 - (void)handleMouseButtonTap:(GHOSTUITapGestureRecognizer *)sender;
 - (void)handlePan:(GHOSTUIPanGestureRecognizer *)sender;
@@ -626,6 +628,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 
   [self releaseGestureRecognizer:tap_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:double_tap_gesture_recognizer fromView:input_view];
+  [self releaseGestureRecognizer:triple_tap_gesture_recognizer fromView:input_view];
   [self releaseGestureRecognizer:mouse_secondary_tap_recognizer fromView:input_view];
   [self releaseGestureRecognizer:mouse_middle_tap_recognizer fromView:input_view];
   [self releaseGestureRecognizer:tap2f_gesture_recognizer fromView:input_view];
@@ -642,6 +645,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   [self releaseGestureRecognizer:edge_swipe_right fromView:input_view];
   tap_gesture_recognizer = nil;
   double_tap_gesture_recognizer = nil;
+  triple_tap_gesture_recognizer = nil;
   mouse_secondary_tap_recognizer = nil;
   mouse_middle_tap_recognizer = nil;
   tap2f_gesture_recognizer = nil;
@@ -864,8 +868,23 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   double_tap_gesture_recognizer.numberOfTapsRequired = 2;
   double_tap_gesture_recognizer.numberOfTouchesRequired = 1;
   double_tap_gesture_recognizer.allowedTouchTypes = @[@(UITouchTypeDirect)];
-  [tap_gesture_recognizer requireGestureRecognizerToFail:double_tap_gesture_recognizer];
   [window->getView() addGestureRecognizer:double_tap_gesture_recognizer];
+
+  /* A one-finger triple-tap emulates the desktop double-click used to rename
+   * objects and edit other double-click-only controls. Keep the double-tap
+   * context click from firing while UIKit waits for the third tap. */
+  triple_tap_gesture_recognizer = [[GHOSTUITapGestureRecognizer alloc]
+      initWithTarget:self
+              action:@selector(handleTripleTap:)];
+  triple_tap_gesture_recognizer.delegate = self;
+  triple_tap_gesture_recognizer.cancelsTouchesInView = false;
+  triple_tap_gesture_recognizer.numberOfTapsRequired = 3;
+  triple_tap_gesture_recognizer.numberOfTouchesRequired = 1;
+  triple_tap_gesture_recognizer.allowedTouchTypes = @[@(UITouchTypeDirect)];
+  [double_tap_gesture_recognizer
+      requireGestureRecognizerToFail:triple_tap_gesture_recognizer];
+  [tap_gesture_recognizer requireGestureRecognizerToFail:double_tap_gesture_recognizer];
+  [window->getView() addGestureRecognizer:triple_tap_gesture_recognizer];
 
   /* Preserve native mouse buttons instead of translating every pointer click to left-click. */
   mouse_secondary_tap_recognizer = [[GHOSTUITapGestureRecognizer alloc]
@@ -1227,6 +1246,23 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   UserInputEvent event_info(&first_tap_point, nullptr, nullptr);
   event_info.add_event(UserInputEvent::EventTypes::CURSOR_MOVE);
   event_info.add_event(UserInputEvent::EventTypes::RIGHT_BUTTON_CLICK);
+  [self generateUserInputEvents:event_info];
+  [sender resetFirstTapPoint];
+}
+
+- (void)handleTripleTap:(GHOSTUITapGestureRecognizer *)sender
+{
+  if (sender.state != UIGestureRecognizerStateEnded) {
+    return;
+  }
+
+  CGPoint first_tap_point = [sender getScaledFirstTapPoint:window];
+  UserInputEvent event_info(&first_tap_point, nullptr, nullptr);
+  event_info.add_event(UserInputEvent::EventTypes::CURSOR_MOVE);
+  event_info.add_event(UserInputEvent::EventTypes::LEFT_BUTTON_DOWN);
+  event_info.add_event(UserInputEvent::EventTypes::LEFT_BUTTON_UP);
+  event_info.add_event(UserInputEvent::EventTypes::LEFT_BUTTON_DOWN);
+  event_info.add_event(UserInputEvent::EventTypes::LEFT_BUTTON_UP);
   [self generateUserInputEvents:event_info];
   [sender resetFirstTapPoint];
 }
