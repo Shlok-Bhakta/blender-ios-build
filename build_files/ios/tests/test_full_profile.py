@@ -27,6 +27,9 @@ USD_NO_GL_PATCH = (
 FFMPEG_RECIPE = (
     REPOSITORY / "build_files" / "build_environment" / "cmake" / "ffmpeg.cmake"
 )
+FLAC_RECIPE = (
+    REPOSITORY / "build_files" / "build_environment" / "cmake" / "flac.cmake"
+)
 MESHOPTIMIZER_RECIPE = (
     REPOSITORY
     / "build_files"
@@ -148,6 +151,12 @@ class FullProfileTests(unittest.TestCase):
         recipe = MESHOPTIMIZER_RECIPE.read_text()
         self.assertIn("if(IOS)", recipe)
         self.assertIn("-DMESHOPT_BUILD_SHARED_LIBS=OFF", recipe)
+
+    def test_flac_ios_build_uses_cmake_without_versioned_automake_tools(self) -> None:
+        recipe = FLAC_RECIPE.read_text()
+        self.assertIn("NOT WIN32 AND NOT WITH_APPLE_CROSSPLATFORM", recipe)
+        self.assertIn("-DOGG_LIBRARY=${LIBDIR}/ogg/lib/libogg.a", recipe)
+        self.assertIn("flac_no_ios_microbench.diff", recipe)
 
     def test_localization_uses_a_native_msgfmt_during_cross_compile(self) -> None:
         platform = APPLE_PLATFORM.read_text()
