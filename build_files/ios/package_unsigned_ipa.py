@@ -86,7 +86,8 @@ def embedded_binary_findings(bundle: Path, main_executable: Path) -> list[Findin
             findings.append(
                 Finding(
                     "IPA-MACHO-LOCATION",
-                    "embedded Mach-O binaries must be contained in Blender.app/Frameworks",
+                    f"embedded Mach-O binary must be contained in "
+                    f"Blender.app/Frameworks: {binary}",
                     str(binary),
                 )
             )

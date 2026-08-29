@@ -541,6 +541,22 @@ if(WITH_PYTHON)
     )
   endif()
 
+  if(WITH_APPLE_CROSSPLATFORM)
+    # iOS permits embedded executable code only under the application
+    # Frameworks directory. The glTF loader falls back to this standard app
+    # location when a bridge is not bundled beside the add-on.
+    install(CODE "
+      execute_process(
+        COMMAND \"${PYTHON_EXECUTABLE}\"
+          \"${CMAKE_SOURCE_DIR}/build_files/ios/package_gltf_bridges.py\"
+          --app-bundle \"\${CMAKE_INSTALL_PREFIX}/Blender.app\"
+          --addon-directory
+            \"\${CMAKE_INSTALL_PREFIX}/${GLTF_BRIDGE_INSTALL_DIR}\"
+        COMMAND_ERROR_IS_FATAL ANY
+      )
+    ")
+  endif()
+
   unset(GLTF_BRIDGE_INSTALL_DIR)
 
 endif()

@@ -64,7 +64,6 @@ set(SRC
   intern/usd_capi_import.cc
   intern/usd_colorspace_utils.cc
   intern/usd_hierarchy_iterator.cc
-  intern/usd_hook.cc
   intern/usd_instancing_utils.cc
   intern/usd_light_convert.cc
   intern/usd_mesh_utils.cc
@@ -162,6 +161,15 @@ set(SRC
   intern/usd_skel_convert.hh
   intern/usd_skel_root_utils.hh
 )
+
+# OpenUSD's Python hook bridge requires its Boost.Python extension bindings.
+# Those bindings cannot be packaged as loadable modules in an iOS app, while
+# native USD import/export remains fully usable without them.
+if(WITH_APPLE_CROSSPLATFORM)
+  list(APPEND SRC intern/usd_hook_stub.cc)
+else()
+  list(APPEND SRC intern/usd_hook.cc)
+endif()
 
 if(WITH_HYDRA)
   list(APPEND SRC

@@ -49,15 +49,16 @@ class PrPreviewWorkflowTests(unittest.TestCase):
     def test_dependency_cache_preserves_every_static_link_input(self) -> None:
         workflow = WORKFLOW.read_text()
 
-        self.assertIn("dependency-cache-key=ios-device-deps-v4-", workflow)
-        for archive in (
-            "${{ env.DEPS_BUILD }}/Release/png/lib",
-            "${{ env.DEPS_BUILD }}/Release/zlib/lib/libz.a",
-        ):
-            self.assertGreaterEqual(workflow.count(archive), 2)
+        self.assertIn("dependency-cache-key=ios-device-deps-v5-", workflow)
+        self.assertGreaterEqual(
+            workflow.count("${{ env.DEPS_BUILD }}/Release"),
+            2,
+        )
         self.assertIn('test -s "$DEPS_INSTALL/opencolorio/lib/libpystring.a"', workflow)
         self.assertIn('test -s "$DEPS_BUILD/Release/png/lib/libpng.a"', workflow)
         self.assertIn('test -s "$DEPS_BUILD/Release/zlib/lib/libz.a"', workflow)
+        self.assertIn('test -s "$DEPS_BUILD/Release/ffmpeg/lib/libavcodec.a"', workflow)
+        self.assertIn('test -s "$DEPS_BUILD/Release/usd/lib/libusd_m.a"', workflow)
 
     def test_opencolorio_finishes_static_library_copies_before_harvesting(self) -> None:
         recipe = OPENCOLORIO_RECIPE.read_text()
@@ -85,10 +86,18 @@ class PrPreviewWorkflowTests(unittest.TestCase):
 
     def test_host_tools_match_the_device_generator_features(self) -> None:
         profile = HOST_PROFILE.read_text()
-        self.assertIn("include(\"${CMAKE_CURRENT_LIST_DIR}/blender_lite.cmake\")", profile)
+        workflow = WORKFLOW.read_text()
+        self.assertIn("include(\"${CMAKE_CURRENT_LIST_DIR}/blender_full.cmake\")", profile)
+        self.assertIn(
+            "include(\"${CMAKE_CURRENT_LIST_DIR}/blender_ios_features.cmake\")",
+            profile,
+        )
+        self.assertNotIn("blender_lite.cmake", profile)
         for feature in ("WITH_CYCLES", "WITH_METAL_BACKEND", "WITH_PYTHON", "WITH_TBB"):
             self.assertIn(f"set({feature}", profile)
             self.assertIn("ON CACHE BOOL", profile)
+        self.assertIn("makesdna makesrna datatoc msgfmt shader_tool", workflow)
+        self.assertIn('cp "$HOST_BUILD/bin/msgfmt"', workflow)
 
     def test_host_tool_cache_includes_the_recursive_dylib_closure(self) -> None:
         workflow = WORKFLOW.read_text()

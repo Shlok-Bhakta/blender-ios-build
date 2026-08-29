@@ -13,10 +13,25 @@ set(MANIFOLD_EXTRA_ARGS
   -DMANIFOLD_TEST=OFF
   -DMANIFOLD_DOWNLOADS=OFF
   -DTBB_ROOT=${LIBDIR}/tbb/
+  -DTBB_DIR=${LIBDIR}/tbb/lib/cmake/TBB
   -DTRACY_ENABLE=OFF
   -DBUILD_SHARED_LIBS=OFF
   -DCMAKE_DEBUG_POSTFIX=_d
 )
+
+if(APPLE_TARGET_DEVICE STREQUAL "ios" OR
+   APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
+  # TBB_DIR already names the iOS build exactly. Package root rewriting would
+  # otherwise prepend the SDK path and make Manifold miss that target package.
+  list(APPEND MANIFOLD_EXTRA_ARGS
+    -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=NEVER
+    # oneTBB's config creates TBB::tbb but does not explicitly export the
+    # legacy TBB_FOUND variable expected by Manifold 3.5. Seed that bridge and
+    # prevent its pkg-config fallback from overwriting it.
+    -DTBB_FOUND=TRUE
+    -DCMAKE_DISABLE_FIND_PACKAGE_PkgConfig=TRUE
+  )
+endif()
 
 ExternalProject_Add(external_manifold
   URL file://${PACKAGE_DIR}/${MANIFOLD_FILE}

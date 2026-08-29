@@ -72,6 +72,11 @@ jobs:
       - name: Select the public runner toolchain
         run: |
           sudo xcode-select --switch "$XCODE_PATH"
+          xcodebuild -downloadComponent MetalToolchain
+          metal_toolchain="$(xcodebuild -showComponent MetalToolchain | awk -F': ' '/Toolchain Identifier/ { print $2 }')"
+          test -n "$metal_toolchain"
+          echo "TOOLCHAINS=$metal_toolchain" >> "$GITHUB_ENV"
+          TOOLCHAINS="$metal_toolchain" xcrun --sdk iphoneos metal -v
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-version
 
@@ -96,7 +101,9 @@ jobs:
           dependency_key="$(
             git ls-files \
               build_files/build_environment \
+              build_files/cmake/config/blender_full.cmake \
               build_files/cmake/config/blender_ios_device.cmake \
+              build_files/cmake/config/blender_ios_features.cmake \
               build_files/ios/package_python_frameworks.py \
               | LC_ALL=C sort \
               | xargs shasum -a 256 \
@@ -106,8 +113,11 @@ jobs:
           host_key="$(
             git ls-files \
               build_files/cmake/host_tool_features.cmake \
+              build_files/cmake/config/blender_full.cmake \
               build_files/cmake/config/blender_ios_host_tools.cmake \
+              build_files/cmake/config/blender_ios_features.cmake \
               build_files/ios/bundle_host_tool_runtime.py \
+              source/blender/blentranslation/msgfmt \
               source/blender/datatoc \
               source/blender/gpu/shader_tool \
               source/blender/makesdna \
@@ -119,7 +129,7 @@ jobs:
           )"
           library_revision="$(git rev-parse HEAD:lib/macos_arm64)"
           {
-          echo "dependency-cache-key=ios-device-deps-v4-${xcode_key}-${dependency_key}"
+          echo "dependency-cache-key=ios-device-deps-v5-${xcode_key}-${dependency_key}"
             echo "host-tool-cache-key=ios-host-tools-v2-${xcode_key}-${library_revision}-${host_key}"
           } >> "$GITHUB_OUTPUT"
 
@@ -129,8 +139,7 @@ jobs:
         with:
           path: |
             ${{ env.DEPS_INSTALL }}
-            ${{ env.DEPS_BUILD }}/Release/png/lib
-            ${{ env.DEPS_BUILD }}/Release/zlib/lib/libz.a
+            ${{ env.DEPS_BUILD }}/Release
           key: ${{ steps.cache-keys.outputs.dependency-cache-key }}
 
       - name: Restore revision-matched native tools
@@ -160,18 +169,37 @@ jobs:
             -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
             -DBLENDER_IOS_BUILD_PYTHON="$build_python" \
             -DPACKAGE_USE_UPSTREAM_SOURCES=OFF \
-            "-DBLENDER_DEPENDENCY_DOWNLOADS=ZLIB;PNG;JPEG;OPENEXR;OPENSUBDIV;FREETYPE;OPENCOLORIO;MINIZIPNG;OPENIMAGEIO;TIFF;PYTHON;TBB;ZSTANDARD;NUMPY;OPENJPEG;WEBP;YAMLCPP;EXPAT;PUGIXML;BZIP2;FFI;LZMA;SSL;SQLITE;ZSTD;BROTLI;FMT;ROBINMAP;IMATH;PYSTRING;DEFLATE;OPENJPH;EIGEN" \
+            "-DBLENDER_DEPENDENCY_DOWNLOADS=ZLIB;PNG;JPEG;OPENEXR;OPENSUBDIV;FREETYPE;OPENCOLORIO;MINIZIPNG;OPENIMAGEIO;TIFF;PYTHON;TBB;ZSTANDARD;NUMPY;OPENJPEG;WEBP;YAMLCPP;EXPAT;PUGIXML;BZIP2;FFI;LZMA;SSL;SQLITE;ZSTD;BROTLI;FMT;ROBINMAP;IMATH;PYSTRING;DEFLATE;OPENJPH;EIGEN;OPENAL;BLOSC;ALEMBIC;OIDN;OPENVDB;FFTW;SNDFILE;FLAC;OGG;VORBIS;THEORA;VPX;OPUS;LAME;FFMPEG;GMP;HARU;MANIFOLD;RUBBERBAND;MATERIALX;ABSEIL;CERES;DRACO;MESHOPTIMIZER;POTRACE;EMBREE;OPENPGL;USD" \
             -DDOWNLOAD_DIR="$DEPS_DOWNLOADS" \
             -DPACKAGE_DIR="$DEPS_PACKAGES" \
             -DHARVEST_TARGET="$DEPS_INSTALL" \
             -DMAKE_THREADS=3
           cmake --build "$DEPS_BUILD" --parallel 3 --target \
+            external_alembic \
+            external_ceres \
+            external_draco \
+            external_embree \
             external_eigen \
+            external_fftw \
+            external_ffmpeg \
             external_freetype \
+            external_gmp \
+            external_haru \
+            external_manifold \
+            external_materialx \
+            external_meshoptimizer \
             external_numpy \
+            external_openal \
+            external_openimagedenoise \
             external_openimageio \
             external_opensubdiv \
+            external_openpgl \
+            external_openvdb \
+            external_potrace \
+            external_rubberband \
+            external_sndfile \
             external_tbb \
+            external_usd \
             external_zstandard
 
       - name: Audit cached dependency prefix
@@ -190,7 +218,11 @@ jobs:
           test -s "$DEPS_INSTALL/opensubdiv/lib/libosdGPU.a" || { echo "::error::Missing or empty cached file: $DEPS_INSTALL/opensubdiv/lib/libosdGPU.a"; exit 1; }
           test -s "$DEPS_BUILD/Release/png/lib/libpng.a" || { echo "::error::Missing or empty cached file: $DEPS_BUILD/Release/png/lib/libpng.a"; exit 1; }
           test -s "$DEPS_BUILD/Release/zlib/lib/libz.a" || { echo "::error::Missing or empty cached file: $DEPS_BUILD/Release/zlib/lib/libz.a"; exit 1; }
-          python3 build_files/ios/audit.py abi "$DEPS_INSTALL" --target ios-device --arch arm64
+          test -s "$DEPS_BUILD/Release/openimagedenoise/lib/libOpenImageDenoise.a" || { echo "::error::Missing OpenImageDenoise"; exit 1; }
+          test -s "$DEPS_BUILD/Release/openvdb/lib/libopenvdb.a" || { echo "::error::Missing OpenVDB"; exit 1; }
+          test -s "$DEPS_BUILD/Release/ffmpeg/lib/libavcodec.a" || { echo "::error::Missing FFmpeg"; exit 1; }
+          test -s "$DEPS_BUILD/Release/usd/lib/libusd_m.a" || { echo "::error::Missing USD"; exit 1; }
+          python3 build_files/ios/audit.py abi "$DEPS_BUILD/Release" --target ios-device --arch arm64
 
       - name: Save iOS dependency prefix
         if: steps.dependency-cache.outputs.cache-hit != 'true'
@@ -198,8 +230,7 @@ jobs:
         with:
           path: |
             ${{ env.DEPS_INSTALL }}
-            ${{ env.DEPS_BUILD }}/Release/png/lib
-            ${{ env.DEPS_BUILD }}/Release/zlib/lib/libz.a
+            ${{ env.DEPS_BUILD }}/Release
           key: ${{ steps.cache-keys.outputs.dependency-cache-key }}
 
       - name: Build revision-matched native tools on cache miss
@@ -219,12 +250,13 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_ARCHITECTURES=arm64
           cmake --build "$HOST_BUILD" --parallel 3 --target \
-            makesdna makesrna datatoc shader_tool
+            makesdna makesrna datatoc msgfmt shader_tool
           mkdir -p "$HOST_INSTALL"
           cp "$HOST_BUILD/bin/makesdna" "$HOST_INSTALL/makesdna"
           cp "$HOST_BUILD/bin/makesrna" "$HOST_INSTALL/makesrna"
           cp "$HOST_BUILD/bin/makesrna.features" "$HOST_INSTALL/makesrna.features"
           cp "$HOST_BUILD/bin/datatoc" "$HOST_INSTALL/datatoc"
+          cp "$HOST_BUILD/bin/msgfmt" "$HOST_INSTALL/msgfmt"
           cp "$HOST_BUILD/bin/shader_tool" "$HOST_INSTALL/shader_tool"
           python3 build_files/ios/bundle_host_tool_runtime.py \
             --library-root lib/macos_arm64 \
@@ -232,13 +264,14 @@ jobs:
             "$HOST_INSTALL/makesdna" \
             "$HOST_INSTALL/makesrna" \
             "$HOST_INSTALL/datatoc" \
+            "$HOST_INSTALL/msgfmt" \
             "$HOST_INSTALL/shader_tool"
 
       - name: Audit revision-matched native tools
         shell: bash
         run: |
           set -euo pipefail
-          for tool in makesdna makesrna datatoc shader_tool; do
+          for tool in makesdna makesrna datatoc msgfmt shader_tool; do
             test -x "$HOST_INSTALL/$tool"
           done
           test -f "$HOST_INSTALL/makesrna.features"
@@ -270,8 +303,11 @@ jobs:
             -DCMAKE_OSX_DEPLOYMENT_TARGET=18.0 \
             -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
             -DIOS_HOST_TOOLS_DIR="$HOST_INSTALL" \
-            -DLIBDIR="$DEPS_INSTALL"
+            -DLIBDIR="$DEPS_BUILD/Release"
           cmake --build "$APP_BUILD" --parallel 3 --target install
+          python3 build_files/ios/audit_build_features.py \
+            "$APP_BUILD/bin/Blender.app/Blender" \
+            --require-opensubdiv
 
       - name: Package and gate DevBlender IPA
         id: package

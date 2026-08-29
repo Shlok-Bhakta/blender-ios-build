@@ -1,0 +1,48 @@
+diff --git a/pxr/imaging/plugin/hdStorm/CMakeLists.txt b/pxr/imaging/plugin/hdStorm/CMakeLists.txt
+index 67108bf..029d18a 100644
+--- a/pxr/imaging/plugin/hdStorm/CMakeLists.txt
++++ b/pxr/imaging/plugin/hdStorm/CMakeLists.txt
+@@ -1,9 +1,9 @@
+ set(PXR_PREFIX pxr/imaging)
+ set(PXR_PACKAGE hdStorm)
+ 
+-if (NOT ${PXR_BUILD_GPU_SUPPORT})
++if (NOT TARGET hdSt)
+     message(STATUS
+-        "Skipping ${PXR_PACKAGE} because PXR_BUILD_GPU_SUPPORT is OFF")
++        "Skipping ${PXR_PACKAGE} because the hdSt library is unavailable")
+     return()
+ endif()
+ 
+diff --git a/pxr/usdImaging/usdAppUtils/CMakeLists.txt b/pxr/usdImaging/usdAppUtils/CMakeLists.txt
+index 178cc63..c398dd8 100644
+--- a/pxr/usdImaging/usdAppUtils/CMakeLists.txt
++++ b/pxr/usdImaging/usdAppUtils/CMakeLists.txt
+@@ -1,9 +1,9 @@
+ set(PXR_PREFIX pxr/usdImaging)
+ set(PXR_PACKAGE usdAppUtils)
+ 
+-if (NOT ${PXR_BUILD_GPU_SUPPORT})
++if (NOT TARGET usdImagingGL)
+     message(STATUS
+-        "Skipping ${PXR_PACKAGE} because PXR_BUILD_GPU_SUPPORT is OFF")
++        "Skipping ${PXR_PACKAGE} because the usdImagingGL library is unavailable")
+     return()
+ endif()
+ 
+diff --git a/pxr/usdImaging/usdImagingGL/CMakeLists.txt b/pxr/usdImaging/usdImagingGL/CMakeLists.txt
+index 0a917ec..010f9ef 100644
+--- a/pxr/usdImaging/usdImagingGL/CMakeLists.txt
++++ b/pxr/usdImaging/usdImagingGL/CMakeLists.txt
+@@ -1,9 +1,9 @@
+ set(PXR_PREFIX pxr/usdImaging)
+ set(PXR_PACKAGE usdImagingGL)
+ 
+-if (NOT ${PXR_BUILD_GPU_SUPPORT})
++if (NOT TARGET hdx)
+     message(STATUS
+-        "Skipping ${PXR_PACKAGE} because PXR_BUILD_GPU_SUPPORT is OFF")
++        "Skipping ${PXR_PACKAGE} because the hdx library is unavailable")
+     return()
+ endif()
+ 

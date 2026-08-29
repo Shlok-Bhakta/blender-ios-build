@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 set(GMP_EXTRA_ARGS -enable-cxx)
+set(GMP_CONFIGURE_COMMAND ${CONFIGURE_COMMAND})
 
 if(WIN32)
   cmake_to_msys_path("${BUILD_DIR}/gmp/src/external_gmp/compile" compilescript_path)
@@ -54,6 +55,13 @@ if(WIN32)
 else()
   set(GMP_CONFIGURE_ENV ${CONFIGURE_ENV_NO_PERL})
   set(GMP_OPTIONS --enable-static --disable-shared )
+  if(WITH_APPLE_CROSSPLATFORM)
+    list(APPEND GMP_CONFIGURE_ENV &&
+      export "CC_FOR_BUILD=/usr/bin/env -u IPHONEOS_DEPLOYMENT_TARGET /usr/bin/cc"
+    )
+    set(GMP_CONFIGURE_COMMAND ./configure --host=aarch64-apple-darwin)
+    list(APPEND GMP_OPTIONS ABI=64)
+  endif()
 endif()
 
 if(UNIX)
@@ -85,7 +93,7 @@ ExternalProject_Add(external_gmp
 
   CONFIGURE_COMMAND ${GMP_CONFIGURE_ENV} &&
     cd ${BUILD_DIR}/gmp/src/external_gmp/ &&
-    ${CONFIGURE_COMMAND} --prefix=${LIBDIR}/gmp ${GMP_OPTIONS} ${GMP_EXTRA_ARGS}
+    ${GMP_CONFIGURE_COMMAND} --prefix=${LIBDIR}/gmp ${GMP_OPTIONS} ${GMP_EXTRA_ARGS}
 
   BUILD_COMMAND ${CONFIGURE_ENV_NO_PERL} &&
     cd ${BUILD_DIR}/gmp/src/external_gmp/ &&
@@ -97,6 +105,8 @@ ExternalProject_Add(external_gmp
 
   INSTALL_DIR ${LIBDIR}/gmp
 )
+
+unset(GMP_CONFIGURE_COMMAND)
 
 if(BUILD_MODE STREQUAL Release AND WIN32)
   ExternalProject_Add_Step(external_gmp after_install

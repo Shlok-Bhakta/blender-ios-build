@@ -22,9 +22,9 @@ function(print_found_status
   endif()
 endfunction()
 
-# Keep the first iOS configuration intentionally small. The desktop branch
-# below assumes AppKit, Carbon, Epoxy, and host SDK libraries, none of which
-# describe an iOS application.
+# Keep iOS platform wiring separate from the desktop branch below. The target
+# uses Blender's full feature profile, but its libraries must come from the
+# cross-compiled sysroot instead of AppKit, Carbon, or host SDK packages.
 if(WITH_APPLE_CROSSPLATFORM)
   if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     message(FATAL_ERROR "WITH_APPLE_CROSSPLATFORM requires CMAKE_SYSTEM_NAME=iOS")
@@ -36,7 +36,7 @@ if(WITH_APPLE_CROSSPLATFORM)
     message(FATAL_ERROR "iOS requires revision-matched native tools in IOS_HOST_TOOLS_DIR")
   endif()
 
-  foreach(_host_tool makesdna makesrna datatoc shader_tool)
+  foreach(_host_tool makesdna makesrna datatoc msgfmt shader_tool)
     if(NOT EXISTS "${IOS_HOST_TOOLS_DIR}/${_host_tool}")
       message(FATAL_ERROR "Missing iOS host tool: ${IOS_HOST_TOOLS_DIR}/${_host_tool}")
     endif()
@@ -113,6 +113,10 @@ if(WITH_APPLE_CROSSPLATFORM)
   endif()
   set(OpenJPEG_DIR "${LIBDIR}/openjpeg/lib/cmake/openjpeg-2.5")
   find_package(OpenJPEG REQUIRED CONFIG)
+  if(WITH_IMAGE_WEBP)
+    set(WEBP_ROOT_DIR "${LIBDIR}/webp")
+    find_package(WebP REQUIRED)
+  endif()
   foreach(_webp_component webp webpdemux libwebpmux sharpyuv)
     if(NOT TARGET WebP::${_webp_component})
       add_library(WebP::${_webp_component} STATIC IMPORTED)
@@ -146,6 +150,10 @@ if(WITH_APPLE_CROSSPLATFORM)
   if(TARGET pugixml AND NOT TARGET pugixml::pugixml)
     add_library(pugixml::pugixml ALIAS pugixml)
   endif()
+  if(WITH_PUGIXML)
+    set(PUGIXML_ROOT_DIR "${LIBDIR}/pugixml")
+    find_package(PugiXML REQUIRED)
+  endif()
 
   find_package(OpenImageIO REQUIRED CONFIG)
   find_package(OpenColorIO 2.0.0 REQUIRED CONFIG)
@@ -165,10 +173,153 @@ if(WITH_APPLE_CROSSPLATFORM)
     get_target_property(TBB_INCLUDE_DIRS TBB::tbb INTERFACE_INCLUDE_DIRECTORIES)
   endif()
 
+  if(WITH_ALEMBIC)
+    set(ALEMBIC_ROOT_DIR "${LIBDIR}/alembic")
+    find_package(Alembic REQUIRED)
+  endif()
+
+  if(WITH_MATERIALX)
+    set(MaterialX_DIR "${LIBDIR}/materialx/lib/cmake/MaterialX")
+    find_package(MaterialX REQUIRED CONFIG)
+  endif()
+
+  if(WITH_USD)
+    set(USD_ROOT_DIR "${LIBDIR}/usd")
+    find_package(USD REQUIRED)
+  endif()
+
+  if(WITH_CODEC_FFMPEG)
+    set(FFMPEG_ROOT_DIR "${LIBDIR}/ffmpeg")
+    set(FFMPEG_FIND_COMPONENTS
+      avcodec avdevice avfilter avformat avutil swresample swscale
+    )
+    find_package(FFmpeg REQUIRED)
+    # FFmpeg's static archives retain the codec libraries used by its iOS
+    # profile. Keep them after the FFmpeg archives in static link order.
+    list(APPEND FFMPEG_LIBRARIES
+      "${LIBDIR}/lame/lib/libmp3lame.a"
+      "${LIBDIR}/openjpeg/lib/libopenjp2.a"
+      "${LIBDIR}/opus/lib/libopus.a"
+      "${LIBDIR}/theora/lib/libtheora.a"
+      "${LIBDIR}/theora/lib/libtheoradec.a"
+      "${LIBDIR}/theora/lib/libtheoraenc.a"
+      "${LIBDIR}/vorbis/lib/libvorbis.a"
+      "${LIBDIR}/vorbis/lib/libvorbisenc.a"
+      "${LIBDIR}/vorbis/lib/libvorbisfile.a"
+      "${LIBDIR}/ogg/lib/libogg.a"
+      "${LIBDIR}/vpx/lib/libvpx.a"
+      "${LIBDIR}/zlib/lib/libz.a"
+    )
+  endif()
+
+  if(WITH_CODEC_SNDFILE)
+    set(SNDFILE_ROOT_DIR "${LIBDIR}/sndfile")
+    find_package(SndFile REQUIRED)
+    list(APPEND LIBSNDFILE_LIBRARIES
+      "${LIBDIR}/flac/lib/libFLAC.a"
+      "${LIBDIR}/ogg/lib/libogg.a"
+      "${LIBDIR}/vorbis/lib/libvorbis.a"
+      "${LIBDIR}/vorbis/lib/libvorbisenc.a"
+      "${LIBDIR}/opus/lib/libopus.a"
+    )
+  endif()
+
+  if(WITH_FFTW3)
+    set(FFTW3_ROOT_DIR "${LIBDIR}/fftw3")
+    find_package(Fftw3 REQUIRED)
+  endif()
+
+  if(WITH_OPENAL)
+    # Audaspace includes OpenAL's headers as <al.h>/<alc.h>, while OpenAL
+    # Soft installs them below include/AL on Apple platforms.
+    set(OPENAL_INCLUDE_DIR "${LIBDIR}/openal/include/AL")
+    set(OPENAL_LIBRARY "${LIBDIR}/openal/lib/libopenal.a")
+    find_package(OpenAL REQUIRED)
+  endif()
+
+  if(WITH_OPENIMAGEDENOISE)
+    set(OPENIMAGEDENOISE_ROOT_DIR "${LIBDIR}/openimagedenoise")
+    # OIDN 2.x names its static support archives `core` and `device_metal`.
+    # Pin the legacy `common` probe so it cannot resolve an unrelated host
+    # library with the same generic name.
+    set(OPENIMAGEDENOISE_COMMON_LIBRARY
+      "${LIBDIR}/openimagedenoise/lib/libOpenImageDenoise_core.a"
+      CACHE FILEPATH "" FORCE
+    )
+    find_package(OpenImageDenoise REQUIRED)
+    set(OPENIMAGEDENOISE_LIBRARIES
+      "${LIBDIR}/openimagedenoise/lib/libOpenImageDenoise.a"
+      "${LIBDIR}/openimagedenoise/lib/libOpenImageDenoise_core.a"
+      "${LIBDIR}/openimagedenoise/lib/libOpenImageDenoise_device_metal.a"
+    )
+  endif()
+
+  if(WITH_CYCLES AND WITH_CYCLES_EMBREE)
+    set(embree_DIR "${LIBDIR}/embree/lib/cmake/embree-4.4.1")
+    find_package(Embree 4.0.0 REQUIRED)
+  endif()
+  if(WITH_CYCLES AND WITH_CYCLES_PATH_GUIDING)
+    set(openpgl_DIR "${LIBDIR}/openpgl/lib/cmake/openpgl-0.7.1")
+    find_package(openpgl REQUIRED CONFIG)
+    get_target_property(OPENPGL_LIBRARIES openpgl::openpgl LOCATION)
+    get_target_property(OPENPGL_INCLUDE_DIR openpgl::openpgl INTERFACE_INCLUDE_DIRECTORIES)
+  endif()
+
+  if(WITH_OPENVDB)
+    set(OPENVDB_ROOT_DIR "${LIBDIR}/openvdb")
+    find_package(OpenVDB REQUIRED)
+    set(OPENVDB_DEFINITIONS "")
+    list(APPEND OPENVDB_LIBRARIES
+      "${LIBDIR}/blosc/lib/libblosc.a"
+      "${LIBDIR}/zlib/lib/libz.a"
+    )
+  endif()
+  if(WITH_NANOVDB)
+    set(NANOVDB_ROOT_DIR "${LIBDIR}/openvdb")
+    find_package(NanoVDB REQUIRED)
+  endif()
+
+  if(WITH_POTRACE)
+    set(POTRACE_ROOT_DIR "${LIBDIR}/potrace")
+    find_package(Potrace REQUIRED)
+  endif()
+  if(WITH_GMP)
+    set(GMP_ROOT_DIR "${LIBDIR}/gmp")
+    find_package(GMP REQUIRED)
+  endif()
+  if(WITH_HARU)
+    set(HARU_ROOT_DIR "${LIBDIR}/haru")
+    find_package(Haru REQUIRED)
+  endif()
+  if(WITH_MANIFOLD)
+    set(manifold_DIR "${LIBDIR}/manifold/lib/cmake/manifold")
+    find_package(manifold REQUIRED CONFIG)
+  endif()
+  if(WITH_RUBBERBAND)
+    set(RUBBERBAND_ROOT_DIR "${LIBDIR}/rubberband")
+    find_package(Rubberband REQUIRED)
+  endif()
+
+  if(WITH_LIBMV)
+    set(Ceres_DIR "${LIBDIR}/ceres/lib/cmake/Ceres")
+    find_package(Ceres REQUIRED CONFIG)
+  endif()
+  if(WITH_DRACO)
+    set(draco_DIR "${LIBDIR}/draco/share/cmake/draco")
+    find_package(draco REQUIRED CONFIG)
+  endif()
+  if(WITH_MESHOPTIMIZER)
+    set(meshoptimizer_DIR "${LIBDIR}/meshoptimizer/lib/cmake/meshoptimizer")
+    find_package(meshoptimizer REQUIRED CONFIG)
+  endif()
+
   string(APPEND PLATFORM_CFLAGS " -pipe -funsigned-char -fno-strict-aliasing -ffp-contract=off")
   set(PLATFORM_LINKFLAGS "\
 -fexceptions -framework Foundation -framework UIKit -framework CoreGraphics \
--framework Metal -framework MetalKit -framework QuartzCore -framework GameController"
+-framework Metal -framework MetalKit -framework QuartzCore -framework GameController \
+-framework Accelerate -framework AudioToolbox -framework CoreAudio \
+-framework VideoToolbox -framework CoreMedia -framework CoreVideo \
+-framework MetalPerformanceShaders -framework MetalPerformanceShadersGraph -liconv"
   )
   if(WITH_PYTHON)
     string(APPEND PLATFORM_LINKFLAGS " -Wl,-rpath,@executable_path/Frameworks")

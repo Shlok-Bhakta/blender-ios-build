@@ -66,7 +66,9 @@ def validate_source_bundle(bundle: Path, expected_framework_count: int) -> None:
     if executable_name:
         findings.extend(embedded_binary_findings(bundle, bundle / executable_name))
     if findings:
-        detail = "; ".join(f"{item.code}: {item.message}" for item in findings)
+        detail = "; ".join(
+            f"{item.code}: {item.message} at {item.path}" for item in findings
+        )
         raise PackagingError(f"source bundle audit failed: {detail}")
 
     loose_libraries = sorted(

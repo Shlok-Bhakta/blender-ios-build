@@ -30,13 +30,15 @@ if(WIN32)
   list(APPEND LIB bf_intern_utfconv)
 endif()
 
-add_executable(msgfmt ${SRC})
-setup_platform_linker_flags(msgfmt)
-blender_target_include_dirs(msgfmt ${INC})
-target_link_libraries(msgfmt ${LIB})
+if(NOT WITH_APPLE_CROSSPLATFORM)
+  add_executable(msgfmt ${SRC})
+  setup_platform_linker_flags(msgfmt)
+  blender_target_include_dirs(msgfmt ${INC})
+  target_link_libraries(msgfmt ${LIB})
+endif()
 
 # If using an external manifest, copy it to the output directory after building.
-if(WITH_WINDOWS_EXTERNAL_MANIFEST)
+if(WITH_WINDOWS_EXTERNAL_MANIFEST AND NOT WITH_APPLE_CROSSPLATFORM)
   add_custom_command(TARGET msgfmt POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/tests.exe.manifest  $<TARGET_FILE_DIR:msgfmt>/$<TARGET_FILE_NAME:msgfmt>.manifest
   )

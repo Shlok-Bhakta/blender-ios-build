@@ -22,6 +22,13 @@ def dll_path(lib_name, lib_display_name) -> Path | None:
         library_name = 'lib{}.dylib'.format(lib_name)
         # Bundled beside the add-on's `__init__.py`.
         base = os.path.dirname(sys.modules['io_scene_gltf2'].__file__)
+        addon_library = Path(base, library_name)
+        if not addon_library.is_file():
+            # iOS requires embedded code in Blender.app/Frameworks. Its main
+            # executable is at the bundle root, unlike macOS's Contents/MacOS.
+            app_library = Path(bpy.app.binary_path).parent / 'Frameworks' / library_name
+            if app_library.is_file():
+                return app_library
     else:
         # Linux, BSD & other UNIX-like systems.
         library_name = 'lib{}.so'.format(lib_name)
