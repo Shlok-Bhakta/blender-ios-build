@@ -37,6 +37,13 @@ MATERIALX_RECIPE = (
     / "cmake"
     / "materialx.cmake"
 )
+DRACO_IOS_PATCH = (
+    REPOSITORY
+    / "build_files"
+    / "build_environment"
+    / "patches"
+    / "draco_no_ios_tools.diff"
+)
 MESHOPTIMIZER_RECIPE = (
     REPOSITORY
     / "build_files"
@@ -173,6 +180,15 @@ class FullProfileTests(unittest.TestCase):
             recipe,
         )
         self.assertIn("if(NOT WITH_APPLE_CROSSPLATFORM)", recipe)
+
+    def test_draco_ios_omits_tools_from_build_and_install(self) -> None:
+        patch = DRACO_IOS_PATCH.read_text()
+        self.assertGreaterEqual(
+            patch.count('if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")'),
+            2,
+        )
+        self.assertIn("install(TARGETS draco_decoder", patch)
+        self.assertIn("install(TARGETS draco_encoder", patch)
 
     def test_localization_uses_a_native_msgfmt_during_cross_compile(self) -> None:
         platform = APPLE_PLATFORM.read_text()
