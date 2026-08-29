@@ -543,8 +543,8 @@ if(WITH_PYTHON)
 
   if(WITH_APPLE_CROSSPLATFORM)
     # iOS permits embedded executable code only under the application
-    # Frameworks directory. Keep the add-on's expected paths as symlinks so
-    # its cross-platform loader remains unchanged.
+    # Frameworks directory. The glTF loader falls back to this standard app
+    # location when a bridge is not bundled beside the add-on.
     install(CODE "
       execute_process(
         COMMAND \"${PYTHON_EXECUTABLE}\"

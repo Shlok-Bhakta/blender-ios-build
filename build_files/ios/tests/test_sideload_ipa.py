@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 import plistlib
 import subprocess
-import stat
 import sys
 import tempfile
 import unittest
@@ -85,27 +84,6 @@ class SideloadIpaTests(unittest.TestCase):
             self.assertEqual(plist["CFBundleName"], "DevBlender")
             self.assertEqual(plist["CFBundleDisplayName"], "DevBlender")
             self.assertEqual(plist["CFBundleExecutable"], "Blender")
-
-    def test_preserves_internal_bridge_symlink(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            source = self.make_bundle(root)
-            bridge = source / "Frameworks/libbridge.dylib"
-            bridge.write_text("fixture\n")
-            addon = source / "Assets/5.2/scripts/addons_core/io_scene_gltf2"
-            addon.mkdir(parents=True)
-            link = addon / bridge.name
-            link.symlink_to("../../../../../Frameworks/libbridge.dylib")
-            output = root / "DevBlender.ipa"
-
-            package_sideload_ipa(source, output, root / "staging")
-
-            entry = f"Payload/Blender.app/{link.relative_to(source).as_posix()}"
-            with zipfile.ZipFile(output) as archive:
-                info = archive.getinfo(entry)
-                target = archive.read(entry).decode()
-            self.assertEqual(stat.S_IFMT(info.external_attr >> 16), stat.S_IFLNK)
-            self.assertEqual(target, "../../../../../Frameworks/libbridge.dylib")
 
     def test_rejects_loose_static_or_shared_libraries(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 from pathlib import Path
 import sys
 from typing import Sequence
@@ -29,8 +28,9 @@ def package_bridges(app_bundle: Path, addon_directory: Path) -> list[Path]:
         source = addon_directory / name
         destination = frameworks / name
         if source.is_symlink():
-            if source.resolve() != destination.resolve() or not destination.is_file():
-                raise RuntimeError(f"invalid existing glTF bridge link: {source}")
+            source.unlink()
+            if not destination.is_file():
+                raise RuntimeError(f"missing relocated glTF bridge: {destination}")
             relocated.append(destination)
             continue
         if not source.is_file():
@@ -38,8 +38,6 @@ def package_bridges(app_bundle: Path, addon_directory: Path) -> list[Path]:
 
         destination.unlink(missing_ok=True)
         source.replace(destination)
-        relative_destination = os.path.relpath(destination, start=source.parent)
-        source.symlink_to(relative_destination)
         relocated.append(destination)
 
     return relocated

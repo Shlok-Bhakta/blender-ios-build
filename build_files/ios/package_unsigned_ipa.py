@@ -106,20 +106,14 @@ def archive_bundle(bundle: Path, output: Path) -> None:
             compresslevel=9,
         ) as archive:
             for path in sorted(bundle.rglob("*")):
-                if not path.is_file():
+                if not path.is_file() or path.is_symlink():
                     continue
                 relative = Path("Payload") / bundle.name / path.relative_to(bundle)
                 info = zipfile.ZipInfo(relative.as_posix(), date_time=IPA_TIMESTAMP)
                 info.compress_type = zipfile.ZIP_DEFLATED
-                if path.is_symlink():
-                    info.external_attr = (stat.S_IFLNK | 0o777) << 16
-                    archive.writestr(info, os.readlink(path), compresslevel=9)
-                else:
-                    info.external_attr = (
-                        stat.S_IFREG | stat.S_IMODE(path.stat().st_mode)
-                    ) << 16
-                    with path.open("rb") as handle:
-                        archive.writestr(info, handle.read(), compresslevel=9)
+                info.external_attr = (stat.S_IFREG | stat.S_IMODE(path.stat().st_mode)) << 16
+                with path.open("rb") as handle:
+                    archive.writestr(info, handle.read(), compresslevel=9)
         os.replace(temporary_output, output)
     finally:
         temporary_output.unlink(missing_ok=True)
