@@ -2,7 +2,36 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-if(WIN32)
+set(USD_ENABLE_PYTHON_SUPPORT ON)
+set(USD_ENABLE_OPENVDB_SUPPORT ON)
+set(USD_ENABLE_GL_SUPPORT ON)
+set(USD_ENABLE_METAL_SUPPORT OFF)
+set(USD_BUILD_OPENIMAGEIO_PLUGIN ON)
+set(USD_BUILD_SHARED_LIBS ON)
+set(USD_TBB_LIBRARY
+  ${LIBDIR}/tbb/lib/${LIBPREFIX}${TBB_LIBRARY}${SHAREDLIBEXT}
+)
+set(USD_IMATH_LIBRARY
+  ${LIBDIR}/imath/lib/${LIBPREFIX}Imath${OPENEXR_VERSION_POSTFIX}${SHAREDLIBEXT}
+)
+
+if(WITH_APPLE_CROSSPLATFORM)
+  # OpenUSD has an explicit Apple-embedded platform path. Keep its C++ and
+  # imaging APIs, including HgiMetal, while avoiding runtime-loaded desktop
+  # plugins and Python extension modules which iOS cannot load.
+  set(USD_ENABLE_PYTHON_SUPPORT OFF)
+  set(USD_ENABLE_OPENVDB_SUPPORT OFF)
+  set(USD_ENABLE_GL_SUPPORT OFF)
+  set(USD_ENABLE_METAL_SUPPORT ON)
+  set(USD_BUILD_OPENIMAGEIO_PLUGIN OFF)
+  set(USD_BUILD_SHARED_LIBS OFF)
+  set(USD_TBB_LIBRARY ${LIBDIR}/tbb/lib/libtbb.a)
+  set(USD_IMATH_LIBRARY ${LIBDIR}/imath/lib/libImath.a)
+  set(USD_PLATFORM_FLAGS
+    -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
+    -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
+  )
+elseif(WIN32)
   # OIIO and OSL are statically linked for us, but USD doesn't know
   set(USD_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DOIIO_STATIC_DEFINE /DOSL_STATIC_DEFINE")
   if(BLENDER_PLATFORM_ARM)
@@ -38,7 +67,7 @@ elseif(UNIX)
     -DPython3_ROOT_DIR=${LIBDIR}/python/
 
     -DPYTHON_INCLUDE_DIR=${LIBDIR}/python/include/python${PYTHON_SHORT_VERSION}/
-    -DPYTHON_LIBRARY=${LIBDIR}/tbb/lib/${LIBPREFIX}${TBB_LIBRARY}${SHAREDLIBEXT}
+    -DPYTHON_LIBRARY=${USD_TBB_LIBRARY}
   )
 
   if(APPLE)
@@ -60,14 +89,18 @@ string(REPLACE "." "_" USD_NAMESPACE "pxrBlender_v${USD_VERSION}")
 set(USD_EXTRA_ARGS
   ${USD_PLATFORM_FLAGS}
   -DOPENSUBDIV_ROOT_DIR=${LIBDIR}/opensubdiv
+  -DOpenSubdiv_DIR=${LIBDIR}/opensubdiv/lib/cmake/OpenSubdiv
+  -DOPENSUBDIV_INCLUDE_DIR=${LIBDIR}/opensubdiv/include
+  -DOPENSUBDIV_OSDCPU_LIBRARY=${LIBDIR}/opensubdiv/lib/libosdCPU.a
   -DOpenImageIO_ROOT=${LIBDIR}/openimageio
   -DMaterialX_ROOT=${LIBDIR}/materialx
-  -DOPENEXR_LIBRARIES=${LIBDIR}/imath/lib/${LIBPREFIX}Imath${OPENEXR_VERSION_POSTFIX}${SHAREDLIBEXT}
+  -DMaterialX_DIR=${LIBDIR}/materialx/lib/cmake/MaterialX
+  -DOPENEXR_LIBRARIES=${USD_IMATH_LIBRARY}
   -DOPENEXR_INCLUDE_DIR=${LIBDIR}/imath/include
   -DImath_DIR=${LIBDIR}/imath/lib/cmake/Imath
   -DOPENVDB_LOCATION=${LIBDIR}/openvdb
   -DPXR_SET_INTERNAL_NAMESPACE=${USD_NAMESPACE}
-  -DPXR_ENABLE_PYTHON_SUPPORT=ON
+  -DPXR_ENABLE_PYTHON_SUPPORT=${USD_ENABLE_PYTHON_SUPPORT}
   -DPXR_USE_PYTHON_3=ON
   -DPXR_BUILD_IMAGING=ON
   -DPXR_BUILD_TESTS=OFF
@@ -76,7 +109,7 @@ set(USD_EXTRA_ARGS
   -DPXR_BUILD_USDVIEW=OFF
   -DPXR_ENABLE_HDF5_SUPPORT=OFF
   -DPXR_ENABLE_MATERIALX_SUPPORT=ON
-  -DPXR_ENABLE_OPENVDB_SUPPORT=ON
+  -DPXR_ENABLE_OPENVDB_SUPPORT=${USD_ENABLE_OPENVDB_SUPPORT}
   -DPYTHON_EXECUTABLE=${PYTHON_BINARY}
   -DPython3_EXECUTABLE=${PYTHON_BINARY}
   -DPXR_BUILD_MONOLITHIC=ON
@@ -89,21 +122,23 @@ set(USD_EXTRA_ARGS
   # dependency on Linux. This would be good to eliminate for headless and Wayland
   # only builds, however is not worse than what Blender already links to for
   # official releases currently.
-  -DPXR_ENABLE_GL_SUPPORT=ON
+  -DPXR_ENABLE_GL_SUPPORT=${USD_ENABLE_GL_SUPPORT}
+  -DPXR_ENABLE_METAL_SUPPORT=${USD_ENABLE_METAL_SUPPORT}
+  -DPXR_ENABLE_VULKAN_SUPPORT=OFF
   # OIIO is used for loading image textures in Hydra Storm / Embree renderers.
-  -DPXR_BUILD_OPENIMAGEIO_PLUGIN=ON
+  -DPXR_BUILD_OPENIMAGEIO_PLUGIN=${USD_BUILD_OPENIMAGEIO_PLUGIN}
   # USD 22.03 does not support OCIO 2.x
   # Tracking ticket https://github.com/PixarAnimationStudios/USD/issues/1386
   -DPXR_BUILD_OPENCOLORIO_PLUGIN=OFF
   -DPXR_ENABLE_PTEX_SUPPORT=OFF
   -DPXR_BUILD_USD_TOOLS=OFF
   -DCMAKE_DEBUG_POSTFIX=_d
-  -DBUILD_SHARED_LIBS=ON
+  -DBUILD_SHARED_LIBS=${USD_BUILD_SHARED_LIBS}
   -DTBB_DIR=${LIBDIR}/tbb/lib/cmake/TBB
   -DTBB_INCLUDE_DIRS=${LIBDIR}/tbb/include
-  -DTBB_LIBRARIES=${LIBDIR}/tbb/lib/${LIBPREFIX}${TBB_LIBRARY}${SHAREDLIBEXT}
-  -DTBB_LIBRARIES_DEBUG=${LIBDIR}/tbb/lib/${LIBPREFIX}${TBB_LIBRARY}${SHAREDLIBEXT}
-  -DTBB_LIBRARIES_RELEASE=${LIBDIR}/tbb/lib/${LIBPREFIX}${TBB_LIBRARY}${SHAREDLIBEXT}
+  -DTBB_LIBRARIES=${USD_TBB_LIBRARY}
+  -DTBB_LIBRARIES_DEBUG=${USD_TBB_LIBRARY}
+  -DTBB_LIBRARIES_RELEASE=${USD_TBB_LIBRARY}
   -DVulkanHeaders_ROOT=${LIBDIR}/vulkan_headers
   -DVulkanLoader_ROOT=${LIBDIR}/vulkan_loader
   -DVulkanUtilityLibraries_ROOT=${LIBDIR}/vulkan_headers
@@ -118,7 +153,7 @@ if(NOT WIN32)
   list(APPEND USD_EXTRA_ARGS
     # USD wants the tbb debug lib set even when you are doing a release build
     # Otherwise it will error out during the cmake configure phase.
-    -DTBB_LIBRARIES_DEBUG=${LIBDIR}/tbb/lib/${LIBPREFIX}${TBB_LIBRARY}${SHAREDLIBEXT}
+    -DTBB_LIBRARIES_DEBUG=${USD_TBB_LIBRARY}
   )
 endif()
 
@@ -163,7 +198,10 @@ ExternalProject_Add(external_usd
      -i ${PATCH_DIR}/usd_a609a89a750f1c70f5bfd61bb418d5a09eaa6585.diff &&
     ${PATCH_CMD} -p 1 -d
       ${BUILD_DIR}/usd/src/external_usd  
-     -i ${PATCH_DIR}/usd_5744a98789c934e8810058b0f21d22f344df28b0.diff
+     -i ${PATCH_DIR}/usd_5744a98789c934e8810058b0f21d22f344df28b0.diff &&
+    ${PATCH_CMD} -p 1 -d
+      ${BUILD_DIR}/usd/src/external_usd <
+      ${PATCH_DIR}/usd_no_storm_without_gl.diff
 
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=${LIBDIR}/usd
@@ -178,17 +216,23 @@ add_dependencies(
   external_usd
   external_tbb
   external_opensubdiv
-  external_python
-  external_openimageio
   external_materialx
-  external_vulkan_loader
-  external_vulkan_headers
-  external_vulkan_memory_allocator
-  external_vulkan_utility_libraries
-  external_shaderc
-  external_spirv_reflect
-  external_openvdb
+  external_imath
 )
+if(NOT WITH_APPLE_CROSSPLATFORM)
+  add_dependencies(
+    external_usd
+    external_python
+    external_openimageio
+    external_vulkan_loader
+    external_vulkan_headers
+    external_vulkan_memory_allocator
+    external_vulkan_utility_libraries
+    external_shaderc
+    external_spirv_reflect
+    external_openvdb
+  )
+endif()
 
 # Since USD 21.11 the libraries are prefixed with "usd_",
 # i.e. "libusd_m.a" became "libusd_usd_m.a".

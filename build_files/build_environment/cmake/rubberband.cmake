@@ -8,7 +8,13 @@ if(WIN32)
   file(TO_NATIVE_PATH "${FFTW_DIR}" FFTW_DIR)
   set(RUBBERBAND_PKG_ENV PKG_CONFIG_PATH=${FFTW_DIR})
 else()
-  set(RUBBERBAND_CONFIGURE_ENV ${CONFIGURE_ENV})
+  if(WITH_APPLE_CROSSPLATFORM)
+    set(RUBBERBAND_CONFIGURE_ENV
+      unset CFLAGS CXXFLAGS LDFLAGS IPHONEOS_DEPLOYMENT_TARGET
+    )
+  else()
+    set(RUBBERBAND_CONFIGURE_ENV ${CONFIGURE_ENV})
+  endif()
   set(RUBBERBAND_PKG_ENV "PKG_CONFIG_PATH=\
 ${LIBDIR}/fftw3/lib/pkgconfig:\
 $PKG_CONFIG_PATH"
@@ -20,6 +26,13 @@ set(RUBBERBAND_EXTRA_OPTIONS
   -Ddefault_library=static
   -Dfft=fftw
 )
+set(RUBBERBAND_CROSS_OPTIONS)
+if(WITH_APPLE_CROSSPLATFORM)
+  set(RUBBERBAND_CROSS_OPTIONS
+    --cross-file ${BLENDER_IOS_MESON_CROSS_FILE}
+    --native-file ${BLENDER_IOS_MESON_NATIVE_FILE}
+  )
+endif()
 
 ExternalProject_Add(external_rubberband
   URL file://${PACKAGE_DIR}/${RUBBERBAND_FILE}
@@ -39,6 +52,7 @@ ExternalProject_Add(external_rubberband
     ${CMAKE_COMMAND} -E env ${RUBBERBAND_PKG_ENV} ${MESON} setup
       --prefix ${LIBDIR}/rubberband
       --libdir lib
+      ${RUBBERBAND_CROSS_OPTIONS}
       ${MESON_BUILD_TYPE}
       ${RUBBERBAND_EXTRA_OPTIONS}
       ${BUILD_DIR}/rubberband/src/external_rubberband-build

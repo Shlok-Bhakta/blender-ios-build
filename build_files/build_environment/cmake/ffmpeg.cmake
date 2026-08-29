@@ -18,10 +18,7 @@ set(FFMPEG_CFLAGS "\
 -I${temp_LIBDIR}/theora/include \
 -I${temp_LIBDIR}/opus/include \
 -I${temp_LIBDIR}/vpx/include \
--I${temp_LIBDIR}/x264/include \
--I${temp_LIBDIR}/zlib/include \
--I${temp_LIBDIR}/aom/include \
--I${temp_LIBDIR}/x265/include"
+-I${temp_LIBDIR}/zlib/include"
 )
 set(FFMPEG_LDFLAGS "\
 ${LIBDIR_FLAG}${temp_LIBDIR}/lame/lib \
@@ -31,11 +28,19 @@ ${LIBDIR_FLAG}${temp_LIBDIR}/vorbis/lib \
 ${LIBDIR_FLAG}${temp_LIBDIR}/theora/lib \
 ${LIBDIR_FLAG}${temp_LIBDIR}/opus/lib \
 ${LIBDIR_FLAG}${temp_LIBDIR}/vpx/lib \
+${LIBDIR_FLAG}${temp_LIBDIR}/zlib/lib"
+)
+
+if(NOT WITH_APPLE_CROSSPLATFORM)
+  string(APPEND FFMPEG_CFLAGS " \
+-I${temp_LIBDIR}/x264/include \
+-I${temp_LIBDIR}/aom/include \
+-I${temp_LIBDIR}/x265/include")
+  string(APPEND FFMPEG_LDFLAGS " \
 ${LIBDIR_FLAG}${temp_LIBDIR}/x264/lib \
 ${LIBDIR_FLAG}${temp_LIBDIR}/x265/lib \
-${LIBDIR_FLAG}${temp_LIBDIR}/zlib/lib \
-${LIBDIR_FLAG}${temp_LIBDIR}/aom/lib"
-)
+${LIBDIR_FLAG}${temp_LIBDIR}/aom/lib")
+endif()
 
 set(FFMPEG_PATCH_FILE "")
 
@@ -76,16 +81,19 @@ set(FFMPEG_ENV "")
 if(NOT WIN32)
   set(FFMPEG_ENV "PKG_CONFIG_PATH=\
 ${temp_LIBDIR}/openjpeg/lib/pkgconfig:\
-${temp_LIBDIR}/x264/lib/pkgconfig:\
 ${temp_LIBDIR}/vorbis/lib/pkgconfig:\
 ${temp_LIBDIR}/ogg/lib/pkgconfig:\
 ${temp_LIBDIR}/vpx/lib/pkgconfig:\
 ${temp_LIBDIR}/theora/lib/pkgconfig:\
 ${temp_LIBDIR}/openjpeg/lib/pkgconfig:\
-${temp_LIBDIR}/opus/lib/pkgconfig:\
-${temp_LIBDIR}/aom/lib/pkgconfig:\
-${temp_LIBDIR}/x265/lib/pkgconfig:"
+${temp_LIBDIR}/opus/lib/pkgconfig:"
   )
+  if(NOT WITH_APPLE_CROSSPLATFORM)
+    string(APPEND FFMPEG_ENV "\
+${temp_LIBDIR}/x264/lib/pkgconfig:\
+${temp_LIBDIR}/aom/lib/pkgconfig:\
+${temp_LIBDIR}/x265/lib/pkgconfig:")
+  endif()
 endif()
 
 unset(temp_LIBDIR)
@@ -135,7 +143,7 @@ else()
   set(FFMPEG_CONFIGURE_COMMAND ${CONFIGURE_ENV_NO_PERL})
 endif()
 
-if(APPLE)
+if(APPLE AND NOT WITH_APPLE_CROSSPLATFORM)
   set(FFMPEG_EXTRA_FLAGS
     ${FFMPEG_EXTRA_FLAGS}
     --target-os=darwin
@@ -145,6 +153,42 @@ elseif(UNIX)
   set(FFMPEG_EXTRA_FLAGS
     ${FFMPEG_EXTRA_FLAGS}
     --x86asmexe=${LIBDIR}/nasm/bin/nasm
+  )
+endif()
+
+if(WITH_APPLE_CROSSPLATFORM)
+  list(APPEND FFMPEG_EXTRA_FLAGS
+    --enable-cross-compile
+    --arch=arm64
+    --cc=${CMAKE_C_COMPILER}
+    --cxx=${CMAKE_CXX_COMPILER}
+    "--as=${CMAKE_C_COMPILER} -target ${BLENDER_IOS_TARGET_TRIPLE} -isysroot ${CMAKE_OSX_SYSROOT}"
+    --host-cc=${CMAKE_C_COMPILER}
+    "--host-cflags=${BLENDER_APPLE_HOST_FLAGS}"
+    "--host-ldflags=${BLENDER_APPLE_HOST_FLAGS}"
+    "--metalcc=xcrun -sdk ${BLENDER_IOS_XCRUN_SDK} metal"
+    "--metallib=xcrun -sdk ${BLENDER_IOS_XCRUN_SDK} metallib"
+    --sysroot=${CMAKE_OSX_SYSROOT}
+    --disable-programs
+  )
+  set(FFMPEG_OPTIONAL_CODEC_FLAGS
+    --disable-libx264
+    --disable-libx265
+    --disable-libaom
+  )
+  set(FFMPEG_APPLE_MEDIA_FLAGS
+    --enable-videotoolbox
+    --enable-audiotoolbox
+  )
+else()
+  set(FFMPEG_OPTIONAL_CODEC_FLAGS
+    --enable-libx264
+    --enable-libx265
+    --enable-libaom
+  )
+  set(FFMPEG_APPLE_MEDIA_FLAGS
+    --disable-videotoolbox
+    --disable-audiotoolbox
   )
 endif()
 
@@ -180,9 +224,7 @@ ExternalProject_Add(external_ffmpeg
       --enable-gpl
       --enable-libmp3lame
       --disable-librtmp
-      --enable-libx264
-      --enable-libx265
-      --enable-libaom
+      ${FFMPEG_OPTIONAL_CODEC_FLAGS}
       --disable-libopencore-amrnb
       --disable-libopencore-amrwb
       --disable-libdc1394
@@ -196,10 +238,9 @@ ExternalProject_Add(external_ffmpeg
       --disable-indev=qtkit
       --disable-sdl2
       --disable-gnutls
-      --disable-videotoolbox
+      ${FFMPEG_APPLE_MEDIA_FLAGS}
       --disable-libxcb
       --disable-xlib
-      --disable-audiotoolbox
       --disable-cuvid
       --disable-nvenc
       --disable-indev=jack
@@ -230,18 +271,23 @@ endif()
 add_dependencies(
   external_ffmpeg
   external_zlib
-  external_x264
-  external_x265
   external_opus
   external_vpx
   external_theora
   external_vorbis
   external_ogg
   external_lame
-  external_aom
   external_sndfile
   external_flac
 )
+if(NOT WITH_APPLE_CROSSPLATFORM)
+  add_dependencies(
+    external_ffmpeg
+    external_x264
+    external_x265
+    external_aom
+  )
+endif()
 if(WIN32)
   add_dependencies(
     external_ffmpeg
@@ -259,9 +305,11 @@ endif()
 if(UNIX)
   add_dependencies(
     external_ffmpeg
-    external_nasm
     external_openjpeg
   )
+  if(NOT WITH_APPLE_CROSSPLATFORM)
+    add_dependencies(external_ffmpeg external_nasm)
+  endif()
 endif()
 
 if(WIN32)

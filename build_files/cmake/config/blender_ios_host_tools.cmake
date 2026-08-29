@@ -5,7 +5,8 @@
 # Native generator tools must use the feature flags that affect generated iOS
 # source. This profile is native macOS, not an iOS cross-compilation profile.
 
-include("${CMAKE_CURRENT_LIST_DIR}/blender_lite.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/blender_full.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/blender_ios_features.cmake")
 
 set(WITH_CYCLES               ON CACHE BOOL "" FORCE)
 set(WITH_CYCLES_DEVICE_METAL  ON CACHE BOOL "" FORCE)

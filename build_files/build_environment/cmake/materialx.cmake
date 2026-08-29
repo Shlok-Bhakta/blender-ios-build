@@ -17,6 +17,16 @@ set(MATERIALX_EXTRA_ARGS
   -DPython_EXECUTABLE=${PYTHON_BINARY}
 )
 
+if(WITH_APPLE_CROSSPLATFORM)
+  # iOS app extensions cannot load loose dylibs, and Blender does not consume
+  # MaterialX's target-side Python bindings. Keep the usable C++/Metal stack.
+  list(APPEND MATERIALX_EXTRA_ARGS
+    -DMATERIALX_BUILD_PYTHON=OFF
+    -DMATERIALX_INSTALL_PYTHON=OFF
+    -DMATERIALX_BUILD_SHARED_LIBS=OFF
+  )
+endif()
+
 if(WIN32)
   if(BUILD_MODE STREQUAL Release)
     list(APPEND MATERIALX_EXTRA_ARGS -DPYTHON_MODULE_EXTENSION=.pyd)

@@ -67,6 +67,7 @@ else()
       ${LIBDIR}/zlib/lib/libz_pic.a
     # Make sure that our libraries do not pick up the shared libraries by mistake
     COMMAND sh -c "rm -f ${LIBDIR}/zlib/lib/*.so*"
+    COMMAND sh -c "rm -f ${LIBDIR}/zlib/lib/*.dylib"
     DEPENDEES install
   )
 endif()

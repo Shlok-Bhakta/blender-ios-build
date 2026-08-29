@@ -27,9 +27,11 @@ set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 if(APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
   set(BLENDER_IOS_PLATFORM "IOSSIMULATOR")
   set(BLENDER_IOS_TARGET_TRIPLE "arm64-apple-ios${CMAKE_OSX_DEPLOYMENT_TARGET}-simulator")
+  set(BLENDER_IOS_XCRUN_SDK "iphonesimulator")
 else()
   set(BLENDER_IOS_PLATFORM "IOS")
   set(BLENDER_IOS_TARGET_TRIPLE "arm64-apple-ios${CMAKE_OSX_DEPLOYMENT_TARGET}")
+  set(BLENDER_IOS_XCRUN_SDK "iphoneos")
 endif()
 
 set(_target_flags "-target ${BLENDER_IOS_TARGET_TRIPLE} -isysroot ${CMAKE_OSX_SYSROOT}")
@@ -37,6 +39,22 @@ set(PLATFORM_CFLAGS "${_target_flags} -fvisibility=hidden")
 set(PLATFORM_CXXFLAGS "${_target_flags} -std=c++20 -stdlib=libc++ -fvisibility=hidden")
 set(PLATFORM_LDFLAGS "${_target_flags} -Wl,-dead_strip")
 set(PLATFORM_BUILD_TARGET --host=arm-apple-darwin)
+
+# Cross-built projects sometimes compile small generators which must execute
+# during the build. Give those tools an explicit macOS target: the exported
+# iOS deployment target would otherwise make Clang produce an iOS executable.
+execute_process(
+  COMMAND xcrun --sdk macosx --show-sdk-path
+  OUTPUT_VARIABLE BLENDER_APPLE_HOST_SYSROOT
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  COMMAND_ERROR_IS_FATAL ANY
+)
+set(BLENDER_APPLE_HOST_TARGET_TRIPLE
+  "${CMAKE_HOST_SYSTEM_PROCESSOR}-apple-macos11.0"
+)
+set(BLENDER_APPLE_HOST_FLAGS
+  "-target ${BLENDER_APPLE_HOST_TARGET_TRIPLE} -isysroot ${BLENDER_APPLE_HOST_SYSROOT}"
+)
 
 find_program(BLENDER_IOS_MESON meson REQUIRED NO_CMAKE_FIND_ROOT_PATH)
 find_program(BLENDER_IOS_PKG_CONFIG pkg-config REQUIRED NO_CMAKE_FIND_ROOT_PATH)
@@ -75,6 +93,10 @@ file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "c_link_args = ['-target', '${BLEN
 file(APPEND "${BLENDER_IOS_MESON_CROSS_FILE}" "cpp_link_args = ['-target', '${BLENDER_IOS_TARGET_TRIPLE}', '-isysroot', '${CMAKE_OSX_SYSROOT}', '-stdlib=libc++', '-Wl,-dead_strip']\n")
 
 set(PLATFORM_CMAKE_FLAGS
+  # Some still-supported upstream dependencies declare a pre-3.5 CMake
+  # minimum. Current CMake can configure them when the compatibility floor is
+  # explicit, so apply that policy only to iOS dependency sub-builds.
+  -DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5
   -DCMAKE_SYSTEM_NAME:STRING=iOS
   -DCMAKE_SYSTEM_PROCESSOR:STRING=arm64
   -DCMAKE_OSX_ARCHITECTURES:STRING=arm64

@@ -21,6 +21,27 @@ set(SNDFILE_EXTRA_ARGS
   -DPYTHON_EXECUTABLE=${PYTHON_BINARY}
 )
 
+if(WITH_APPLE_CROSSPLATFORM)
+  # The bundled find modules re-root prefix hints into the Apple SDK. Provide
+  # exact target paths so codec support is not silently omitted on iOS.
+  list(APPEND SNDFILE_EXTRA_ARGS
+    -DOGG_INCLUDE_DIR=${LIBDIR}/ogg/include
+    -DOGG_LIBRARY=${LIBDIR}/ogg/lib/libogg.a
+    -DVorbis_Vorbis_INCLUDE_DIR=${LIBDIR}/vorbis/include
+    -DVorbis_Vorbis_LIBRARY=${LIBDIR}/vorbis/lib/libvorbis.a
+    -DVorbis_Enc_INCLUDE_DIR=${LIBDIR}/vorbis/include
+    -DVorbis_Enc_LIBRARY=${LIBDIR}/vorbis/lib/libvorbisenc.a
+    -DVorbis_File_INCLUDE_DIR=${LIBDIR}/vorbis/include
+    -DVorbis_File_LIBRARY=${LIBDIR}/vorbis/lib/libvorbisfile.a
+    -DFLAC_INCLUDE_DIR=${LIBDIR}/flac/include
+    -DFLAC_LIBRARY=${LIBDIR}/flac/lib/libFLAC.a
+    -DOPUS_INCLUDE_DIR=${LIBDIR}/opus/include
+    -DOPUS_LIBRARY=${LIBDIR}/opus/lib/libopus.a
+    -DMP3LAME_INCLUDE_DIR=${LIBDIR}/lame/include
+    -DMP3LAME_LIBRARY=${LIBDIR}/lame/lib/libmp3lame.a
+  )
+endif()
+
 if(WIN32)
   # We set FLAC__NO_DLL, otherwise we cannot statically link FLAC
   set(SNDFILE_C_FLAGS "${CMAKE_C_FLAGS} -DFLAC__NO_DLL=1")

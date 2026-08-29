@@ -1,0 +1,20 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e47a9cf..9e6a298 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1105,6 +1105,7 @@ else()
+   endif()
+ 
+   # Draco app targets.
++  if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+   draco_add_executable(
+     NAME draco_decoder
+     SOURCES "${draco_src_root}/tools/draco_decoder.cc" ${draco_io_sources}
+@@ -1145,6 +1146,7 @@ else()
+         LIB_DEPS ${draco_dependency})
+     endif()
+   endif()
++  endif()
+ 
+   draco_setup_install_target()
+   draco_setup_test_targets()

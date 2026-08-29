@@ -652,6 +652,13 @@ void Hierarchy::DownsampleEdgeGraph(std::vector<Vector3i>& FQ, std::vector<Vecto
 }
 
 int Hierarchy::FixFlipSat(int depth, int threshold) {
+#ifdef WITH_APPLE_CROSSPLATFORM
+    /* The optional aggressive SAT pass requires desktop subprocesses.
+     * Blender's embedded QuadriFlow API does not enable it. */
+    (void)depth;
+    (void)threshold;
+    return 0;
+#else
     if (system("which minisat > /dev/null 2>&1")) {
         printf("minisat not found, \"-sat\" will not be used!\n");
         return 0;
@@ -897,6 +904,7 @@ int Hierarchy::FixFlipSat(int depth, int threshold) {
 
     lprintf("[FlipH] FlipArea, Before: %d After %d\n", flip_before, flip_after);
     return flip_after;
+#endif
 }
 
 void Hierarchy::PushDownwardFlip(int depth) {
