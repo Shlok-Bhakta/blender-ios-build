@@ -30,6 +30,13 @@ FFMPEG_RECIPE = (
 FLAC_RECIPE = (
     REPOSITORY / "build_files" / "build_environment" / "cmake" / "flac.cmake"
 )
+MATERIALX_RECIPE = (
+    REPOSITORY
+    / "build_files"
+    / "build_environment"
+    / "cmake"
+    / "materialx.cmake"
+)
 MESHOPTIMIZER_RECIPE = (
     REPOSITORY
     / "build_files"
@@ -157,6 +164,15 @@ class FullProfileTests(unittest.TestCase):
         self.assertIn("NOT WIN32 AND NOT WITH_APPLE_CROSSPLATFORM", recipe)
         self.assertIn("-DOGG_LIBRARY=${LIBDIR}/ogg/lib/libogg.a", recipe)
         self.assertIn("flac_no_ios_microbench.diff", recipe)
+
+    def test_materialx_ios_omits_disabled_python_dependencies(self) -> None:
+        recipe = MATERIALX_RECIPE.read_text()
+        self.assertIn("-DMATERIALX_BUILD_PYTHON=OFF", recipe)
+        self.assertIn(
+            "add_dependencies(external_materialx external_python external_pybind11)",
+            recipe,
+        )
+        self.assertIn("if(NOT WITH_APPLE_CROSSPLATFORM)", recipe)
 
     def test_localization_uses_a_native_msgfmt_during_cross_compile(self) -> None:
         platform = APPLE_PLATFORM.read_text()

@@ -111,11 +111,13 @@ else()
   harvest(external_materialx materialx/lib/cmake/MaterialX materialx/lib/cmake/MaterialX "*.cmake")
   harvest_rpath_lib(external_materialx materialx/lib materialx/lib "*${SHAREDLIBEXT}*")
   harvest(external_materialx materialx/libraries materialx/libraries "*")
-  harvest_rpath_python(external_materialx
-    materialx/python/MaterialX
-    python/lib/python${PYTHON_SHORT_VERSION}/site-packages/MaterialX
-    "*"
-  )
+  if(NOT WITH_APPLE_CROSSPLATFORM)
+    harvest_rpath_python(external_materialx
+      materialx/python/MaterialX
+      python/lib/python${PYTHON_SHORT_VERSION}/site-packages/MaterialX
+      "*"
+    )
+  endif()
   # We do not need anything from the resources folder, but the MaterialX config
   # file will complain if the folder does not exist, so just copy the readme.md
   # files to ensure the folder will exist.
@@ -124,6 +126,8 @@ endif()
 
 add_dependencies(
   external_materialx
-  external_python
-  external_pybind11
 )
+
+if(NOT WITH_APPLE_CROSSPLATFORM)
+  add_dependencies(external_materialx external_python external_pybind11)
+endif()
