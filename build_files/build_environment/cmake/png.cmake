@@ -7,23 +7,14 @@ set(PNG_EXTRA_ARGS
   -DZLIB_INCLUDE_DIR=${LIBDIR}/zlib/include/
   -DPNG_STATIC=ON
 )
-if(WITH_APPLE_CROSSPLATFORM)
-  list(APPEND PNG_EXTRA_ARGS
-    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-    -DPNG_SHARED=OFF
-    -DPNG_TESTS=OFF
-  )
-endif()
 
 if(BLENDER_PLATFORM_ARM)
   set(PNG_EXTRA_ARGS
     ${PNG_EXTRA_ARGS}
     -DPNG_HARDWARE_OPTIMIZATIONS=ON
     -DPNG_ARM_NEON=on
+    -DCMAKE_SYSTEM_PROCESSOR="aarch64"
   )
-  if(NOT WITH_APPLE_CROSSPLATFORM)
-    list(APPEND PNG_EXTRA_ARGS -DCMAKE_SYSTEM_PROCESSOR="aarch64")
-  endif()
 endif()
 
 ExternalProject_Add(external_png
@@ -71,16 +62,4 @@ if(WIN32)
 else()
   harvest(external_png png/include png/include "*.h")
   harvest(external_png png/lib png/lib "*.a")
-endif()
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_png harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/png/include
-      ${HARVEST_TARGET}/png/include
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/png/lib
-      ${HARVEST_TARGET}/png/lib
-    DEPENDEES install
-  )
 endif()

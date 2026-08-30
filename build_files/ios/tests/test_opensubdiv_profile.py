@@ -9,7 +9,7 @@ import unittest
 REPOSITORY = Path(__file__).resolve().parents[3]
 CONFIG_DIRECTORY = REPOSITORY / "build_files" / "cmake" / "config"
 APPLE_PLATFORM = (
-    REPOSITORY / "build_files" / "cmake" / "platform" / "platform_apple.cmake"
+    REPOSITORY / "build_files" / "ios" / "cmake" / "platform_ios.cmake"
 )
 GPU_EVAL_OUTPUT = (
     REPOSITORY
@@ -43,11 +43,8 @@ class OpenSubdivProfileTests(unittest.TestCase):
 
     def test_ios_platform_resolves_opensubdiv_from_dependency_sysroot(self) -> None:
         platform = APPLE_PLATFORM.read_text()
-        ios_branch = platform.split(
-            "if(WITH_APPLE_CROSSPLATFORM)", 1
-        )[1].split("  return()", 1)[0]
-        self.assertIn('set(OPENSUBDIV_ROOT_DIR "${LIBDIR}/opensubdiv")', ios_branch)
-        self.assertIn("find_package(OpenSubdiv REQUIRED)", ios_branch)
+        self.assertIn('set(OPENSUBDIV_ROOT_DIR "${LIBDIR}/opensubdiv")', platform)
+        self.assertIn("find_package(OpenSubdiv REQUIRED)", platform)
 
     def test_gpu_eval_output_does_not_require_opengl_adapter_headers(self) -> None:
         header = GPU_EVAL_OUTPUT.read_text()

@@ -22,7 +22,7 @@ using namespace Eigen;
 
 SolverStatus RunCNF(const std::string &fin_name, int n_variable, int timeout,
                     const std::vector<std::vector<int>> &sat_clause, std::vector<int> &value) {
-#ifdef WITH_APPLE_CROSSPLATFORM
+#if defined(QUADRIFLOW_SUBPROCESS_SUPPORT) && !QUADRIFLOW_SUBPROCESS_SUPPORT
     /* The aggressive SAT pass invokes external `minisat` and `timeout`
      * executables. iOS cannot spawn processes, and Blender's embedded
      * QuadriFlow API leaves this optional pass disabled. */

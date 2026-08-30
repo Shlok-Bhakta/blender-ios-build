@@ -166,10 +166,6 @@ endif()
 
 get_blender_version()
 
-if(WITH_APPLE_CROSSPLATFORM)
-  add_definitions(-DWITH_APPLE_CROSSPLATFORM)
-endif()
-
 if(WIN32)
   add_definitions(
     # This is the app ID used for file registration, given it's used from several modules
@@ -1274,7 +1270,11 @@ endif()
 
 # Apple
 if(APPLE)
-  include(platform_apple_xcode)
+  if(BLENDER_PLATFORM_XCODE_CMAKE)
+    include("${BLENDER_PLATFORM_XCODE_CMAKE}")
+  else()
+    include(platform_apple_xcode)
+  endif()
 
   option(WITH_LEGACY_MACOS_X64_LINKER "\
 Use legacy macOS linker on x64 platform. Minutes slower, but emits fewer warnings."

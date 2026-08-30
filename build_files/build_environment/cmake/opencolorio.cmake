@@ -37,24 +37,6 @@ set(OPENCOLORIO_EXTRA_ARGS
   -Dpybind11_ROOT=${LIBDIR}/pybind11
 )
 
-if(WITH_APPLE_CROSSPLATFORM)
-  set(OCIO_PATCH
-    ${PATCH_CMD} -p 1 -N -d
-      ${BUILD_DIR}/opencolorio/src/external_opencolorio <
-      ${PATCH_DIR}/opencolorio_ios.diff
-  )
-  list(APPEND OPENCOLORIO_EXTRA_ARGS
-    -DOCIO_BUILD_PYTHON=OFF
-    -DOCIO_USE_HEADLESS=ON
-    -DOCIO_USE_SIMD=OFF
-    -DBUILD_SHARED_LIBS=OFF
-    -Dpystring_INCLUDE_DIR=${LIBDIR}/pystring/include
-    -Dpystring_LIBRARY=${LIBDIR}/pystring/lib/libpystring${LIBEXT}
-    -DImath_INCLUDE_DIR=${LIBDIR}/imath/include
-    -DImath_STATIC_LIBRARY=ON
-  )
-endif()
-
 if(APPLE)
   set(OPENCOLORIO_EXTRA_ARGS
     ${OPENCOLORIO_EXTRA_ARGS}
@@ -63,11 +45,6 @@ if(APPLE)
     # Work around issue where homebrew Imath's can be prioritized over our own dependency during linking if installed.
     -DImath_LIBRARY=${LIBDIR}/imath/lib/libImath${SHAREDLIBEXT}
   )
-  if(WITH_APPLE_CROSSPLATFORM)
-    list(APPEND OPENCOLORIO_EXTRA_ARGS
-      -DImath_LIBRARY=${LIBDIR}/imath/lib/libImath${LIBEXT}
-    )
-  endif()
 endif()
 
 if(BLENDER_PLATFORM_ARM AND NOT WIN32)
@@ -119,11 +96,9 @@ add_dependencies(
   external_pystring
   external_zlib
   external_minizipng
+  external_python
+  external_pybind11
 )
-
-if(NOT WITH_APPLE_CROSSPLATFORM)
-  add_dependencies(external_opencolorio external_python external_pybind11)
-endif()
 
 if(WIN32)
   if(BUILD_MODE STREQUAL Release)
@@ -177,29 +152,10 @@ else()
   # Cmake files first because harvest_rpath_lib edits them.
   harvest(external_opencolorio opencolorio/lib/cmake/OpenColorIO opencolorio/lib/cmake/OpenColorIO "*.cmake")
   harvest_rpath_lib(external_opencolorio opencolorio/lib opencolorio/lib "*${SHAREDLIBEXT}*")
-  if(NOT WITH_APPLE_CROSSPLATFORM)
-    harvest_rpath_python(
-      external_opencolorio
-      opencolorio/lib/python${PYTHON_SHORT_VERSION}
-      python/lib/python${PYTHON_SHORT_VERSION}
-      "*"
-    )
-  endif()
-endif()
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_opencolorio harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/opencolorio/include
-      ${HARVEST_TARGET}/opencolorio/include
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/opencolorio/lib
-      ${HARVEST_TARGET}/opencolorio/lib
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/opencolorio/share
-      ${HARVEST_TARGET}/opencolorio/share
-    # The iOS harvest copies this directory, including the static dependency
-    # archives added above. Do not let both steps mutate/copy it concurrently.
-    DEPENDEES after_install
+  harvest_rpath_python(
+    external_opencolorio
+    opencolorio/lib/python${PYTHON_SHORT_VERSION}
+    python/lib/python${PYTHON_SHORT_VERSION}
+    "*"
   )
 endif()

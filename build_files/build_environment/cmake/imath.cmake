@@ -8,10 +8,6 @@ set(IMATH_EXTRA_ARGS
   -DIMATH_LIB_SUFFIX=${OPENEXR_VERSION_BUILD_POSTFIX}
 )
 
-if(WITH_APPLE_CROSSPLATFORM)
-  list(APPEND IMATH_EXTRA_ARGS -DBUILD_SHARED_LIBS=OFF)
-endif()
-
 ExternalProject_Add(external_imath
   URL file://${PACKAGE_DIR}/${IMATH_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -45,16 +41,4 @@ else()
   harvest(external_imath imath/include imath/include "*.h")
   harvest(external_imath imath/lib/cmake/Imath imath/lib/cmake/Imath "*.cmake")
   harvest_rpath_lib(external_imath imath/lib imath/lib "*${SHAREDLIBEXT}*")
-endif()
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_imath harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/imath/include
-      ${HARVEST_TARGET}/imath/include
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/imath/lib
-      ${HARVEST_TARGET}/imath/lib
-    DEPENDEES install
-  )
 endif()

@@ -86,7 +86,7 @@ endif()
 
 # `SRC_DNA_INC` is defined in the parent directory.
 
-if(NOT WITH_APPLE_CROSSPLATFORM)
+if(NOT TARGET makesdna)
   add_c_and_cxx_flags_custom_test(makesdna)
 
   add_executable(makesdna ${SRC} ${SRC_DNA_INC})

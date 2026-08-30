@@ -47,7 +47,7 @@ if(WITH_GPU_SHADER_ASSERT)
   add_definitions(-DWITH_GPU_SHADER_ASSERT)
 endif()
 
-if(NOT WITH_APPLE_CROSSPLATFORM)
+if(NOT TARGET shader_tool)
   # `SRC_DNA_INC` is defined in the parent directory.
   add_executable(shader_tool ${SRC})
   optimize_debug_target(shader_tool)

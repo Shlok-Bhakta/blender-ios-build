@@ -678,7 +678,8 @@ GHOST_TSuccess GHOST_SystemIOS::getButtons(GHOST_Buttons &buttons) const
 }
 GHOST_TCapabilityFlag GHOST_SystemIOS::getCapabilities() const
 {
-  return GHOST_TCapabilityFlag(GHOST_kCapabilityGPUReadFrontBuffer);
+  return GHOST_TCapabilityFlag(GHOST_kCapabilityGPUReadFrontBuffer |
+                               GHOST_kCapabilityOnScreenKeyboard);
 }
 
 #pragma mark Event handlers
@@ -843,22 +844,6 @@ const char *GHOST_SystemIOS::getKeyboardInput(GHOST_IWindow *window)
   GHOST_WindowIOS *windowIOS = (GHOST_WindowIOS *)window;
 
   return windowIOS->getLastKeyboardString();
-}
-
-GHOST_TSuccess GHOST_SystemIOS::startSecurityScopedFileAccess(const char *filepath)
-{
-  NSURL *url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:filepath]];
-  BOOL success = [url startAccessingSecurityScopedResource];
-
-  return success ? GHOST_kSuccess : GHOST_kFailure;
-}
-
-GHOST_TSuccess GHOST_SystemIOS::stopSecurityScopedFileAccess(const char *filepath)
-{
-  NSURL *url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:filepath]];
-  [url stopAccessingSecurityScopedResource];
-
-  return GHOST_kSuccess;
 }
 
 // Note: called from NSWindow subclass

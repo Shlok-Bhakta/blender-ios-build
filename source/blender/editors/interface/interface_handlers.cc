@@ -3914,8 +3914,9 @@ static void textedit_begin(bContext *C, Button *but, HandleButtonData *data)
   /* Temporarily turn off window auto-focus on platforms that support it. */
   GHOST_ISystem *ghost_system = GHOST_ISystem::getSystem();
 
-#if defined(WITH_APPLE_CROSSPLATFORM)
-  if (win->runtime->ghostwin != nullptr) {
+  if ((ghost_system->getCapabilities() & GHOST_kCapabilityOnScreenKeyboard) &&
+      win->runtime->ghostwin != nullptr)
+  {
     rctf text_box;
     block_to_window_rctf(data->region, but->block, &text_box, &but->rect);
 
@@ -3941,8 +3942,6 @@ static void textedit_begin(bContext *C, Button *but, HandleButtonData *data)
     ghost_system->popupOnScreenKeyboard(
         static_cast<GHOST_IWindow *>(win->runtime->ghostwin), keyboard_properties);
   }
-#endif
-
   ghost_system->setAutoFocus(false);
 
 #ifdef WITH_INPUT_IME
@@ -3959,9 +3958,10 @@ static void textedit_end(bContext *C, Button *but, HandleButtonData *data)
 
   ED_workspace_status_text(C, nullptr);
 
-#if defined(WITH_APPLE_CROSSPLATFORM)
-  if (win->runtime->ghostwin != nullptr) {
-    GHOST_ISystem *ghost_system = GHOST_ISystem::getSystem();
+  GHOST_ISystem *ghost_system = GHOST_ISystem::getSystem();
+  if ((ghost_system->getCapabilities() & GHOST_kCapabilityOnScreenKeyboard) &&
+      win->runtime->ghostwin != nullptr)
+  {
     GHOST_IWindow *ghost_window = static_cast<GHOST_IWindow *>(win->runtime->ghostwin);
     ghost_system->hideOnScreenKeyboard(ghost_window);
     const char *keyboard_string = ghost_system->getKeyboardInput(ghost_window);
@@ -3969,8 +3969,6 @@ static void textedit_end(bContext *C, Button *but, HandleButtonData *data)
       textedit_string_set(but, text_edit, keyboard_string);
     }
   }
-#endif
-
   if (but) {
     if (but_is_utf8(but)) {
       const int strip = BLI_str_utf8_invalid_strip(but->editstr, strlen(but->editstr));
@@ -4022,7 +4020,6 @@ static void textedit_end(bContext *C, Button *but, HandleButtonData *data)
   WM_cursor_modal_restore(win);
 
   /* Turn back on the auto-focusing of windows. */
-  GHOST_ISystem *ghost_system = GHOST_ISystem::getSystem();
   ghost_system->setAutoFocus(true);
 
   /* Free text undo history text blocks. */

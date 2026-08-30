@@ -71,6 +71,10 @@
 #include "../gpu/gpu_py_api.hh"
 #include "../mathutils/mathutils.hh"
 
+#ifdef BLENDER_PYTHON_PLATFORM_HEADER
+#  include BLENDER_PYTHON_PLATFORM_HEADER
+#endif
+
 namespace blender {
 
 /* Logging types to use anywhere in the Python modules. */
@@ -462,11 +466,8 @@ void BPY_python_start(bContext *C, int argc, const char **argv)
      * While harmless, it's noisy. */
     config.pathconfig_warnings = 0;
 
-#  ifdef WITH_APPLE_CROSSPLATFORM
-    /* iOS app bundles are immutable. CPython's iOS embedding contract also
-     * requires unbuffered standard streams because no terminal owns them. */
-    config.write_bytecode = 0;
-    config.buffered_stdio = 0;
+#  ifdef BLENDER_PYTHON_PLATFORM_HEADER
+    BPY_platform_configure(config);
 #  endif
 
     {
@@ -530,12 +531,8 @@ void BPY_python_start(bContext *C, int argc, const char **argv)
     /* Setting the program name is important so the 'multiprocessing' module
      * can launch new Python instances. */
     {
-#  ifdef WITH_APPLE_CROSSPLATFORM
-      /* CPython's AppleFrameworkLoader resolves extension frameworks relative
-       * to sys.executable. iOS has no standalone Python executable, so use the
-       * application executable and do not replace it with None below. */
-      const char *program_path = BKE_appdir_program_path();
-      status = PyConfig_SetBytesString(&config, &config.executable, program_path);
+#  ifdef BLENDER_PYTHON_PLATFORM_HEADER
+      status = BPY_platform_configure_executable(config);
       pystatus_exit_on_error(status);
       has_python_executable = true;
 #  else
@@ -658,48 +655,8 @@ void BPY_python_start(bContext *C, int argc, const char **argv)
   pyrna_alloc_types();
 
 #ifndef WITH_PYTHON_MODULE
-#  ifdef WITH_APPLE_CROSSPLATFORM
-  /* Simulator/device acceptance can opt into a deterministic import probe
-   * without adding work or logging to normal application launches. */
-  if (BLI_getenv("BLENDER_IOS_PYTHON_SMOKE") != nullptr) {
-    const int smoke_result = PyRun_SimpleString(
-        "import bpy, bz2, ctypes, lzma, sqlite3, ssl\n"
-        "import numpy as np\n"
-        "import zstandard as zstd\n"
-        "import tempfile\n"
-        "from pathlib import Path\n"
-        "from _bpy_internal.http import downloader as http_dl\n"
-        "assert bpy.app.version[:2] == (5, 2)\n"
-        "assert np.__version__ == '2.3.4'\n"
-        "assert np.array([1, 2, 3]).sum() == 6\n"
-        "assert np.linalg.det(np.eye(2)) == 1.0\n"
-        "assert zstd.__version__ == '0.25.0'\n"
-        "_zstd_payload = b'Blender iOS zstandard smoke'\n"
-        "_zstd_compressed = zstd.ZstdCompressor().compress(_zstd_payload)\n"
-        "assert zstd.ZstdDecompressor().decompress(_zstd_compressed) == _zstd_payload\n"
-        "del _zstd_compressed, _zstd_payload\n"
-        "assert http_dl._background_worker_kind == 'thread'\n"
-        "_http_metadata = http_dl.MetadataProviderFilesystem(\n"
-        "    Path(tempfile.gettempdir()) / 'blender-ios-http-smoke')\n"
-        "_http_options = http_dl.DownloaderOptions(\n"
-        "    _http_metadata, 1, {'User-Agent': 'Blender iOS smoke'})\n"
-        "_http_worker = http_dl.BackgroundDownloader(_http_options, lambda *args: None)\n"
-        "_http_worker.start()\n"
-        "assert _http_worker.is_subprocess_alive\n"
-        "_http_worker.shutdown()\n"
-        "assert _http_worker.is_shutdown_complete\n"
-        "del _http_worker, _http_options, _http_metadata\n");
-    if (smoke_result == 0) {
-      fprintf(stderr, "BLENDER_IOS_PYTHON_READY=5.2\n");
-      fprintf(stderr, "BLENDER_IOS_NUMPY_READY=2.3.4\n");
-      fprintf(stderr, "BLENDER_IOS_ZSTANDARD_READY=0.25.0\n");
-      fprintf(stderr, "BLENDER_IOS_HTTP_READY=thread\n");
-    }
-    else {
-      PyErr_Print();
-      fprintf(stderr, "BLENDER_IOS_PYTHON_FAILED\n");
-    }
-  }
+#  ifdef BLENDER_PYTHON_PLATFORM_HEADER
+  BPY_platform_import_smoke();
 #  endif
 
   /* Python module runs `atexit` when `bpy` is freed. */

@@ -14,6 +14,7 @@
 #include "MEM_guardedalloc.h"
 
 #include "gpu_framebuffer_private.hh"
+#include "mtl_common.hh"
 #include "mtl_texture.hh"
 
 #include <Metal/Metal.h>
@@ -116,7 +117,7 @@ class MTLFrameBuffer : public FrameBuffer {
   int attachment_width_ = 0;
   int attachment_height_ = 0;
 
-#ifdef WITH_APPLE_CROSSPLATFORM
+#if MTL_BACKEND_REQUIRES_COLOR_ATTACHMENT
   /**
    * iOS requires every raster render pass and pipeline to expose at least one valid attachment.
    * Keep this target outside Blender's logical attachment list: it exists only to preserve the
@@ -216,7 +217,7 @@ class MTLFrameBuffer : public FrameBuffer {
   MTLAttachment get_depth_attachment();
   MTLAttachment get_stencil_attachment();
 
-#ifdef WITH_APPLE_CROSSPLATFORM
+#if MTL_BACKEND_REQUIRES_COLOR_ATTACHMENT
   bool requires_attachmentless_color_target() const;
   static constexpr MTLPixelFormat attachmentless_color_format()
   {
@@ -270,7 +271,7 @@ class MTLFrameBuffer : public FrameBuffer {
   /* Clears a render target by force-opening a render pass. */
   void force_clear();
 
-#ifdef WITH_APPLE_CROSSPLATFORM
+#if MTL_BACKEND_REQUIRES_COLOR_ATTACHMENT
   id<MTLTexture> ensure_attachmentless_color_target();
 #endif
 

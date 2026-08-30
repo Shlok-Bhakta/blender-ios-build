@@ -60,15 +60,3 @@ else()
   harvest(external_zstd zstd/include zstd/include "*.h")
   harvest(external_zstd zstd/lib zstd/lib "*.a")
 endif()
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_zstd harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/zstd/include
-      ${HARVEST_TARGET}/zstd/include
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/zstd/lib
-      ${HARVEST_TARGET}/zstd/lib
-    DEPENDEES install
-  )
-endif()

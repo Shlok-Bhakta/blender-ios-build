@@ -2,9 +2,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later */
 
-#ifndef WITH_APPLE_CROSSPLATFORM
-#  import <AppKit/NSDocumentController.h>
-#endif
+#import <AppKit/NSDocumentController.h>
 #import <Foundation/Foundation.h>
 
 #include <optional>
@@ -129,12 +127,8 @@ const char *GHOST_SystemPathsCocoa::getBinaryDir() const
 
 void GHOST_SystemPathsCocoa::addToSystemRecentFiles(const char *filepath) const
 {
-#ifndef WITH_APPLE_CROSSPLATFORM
   @autoreleasepool {
     NSURL *file_url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:filepath]];
     [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:file_url];
   }
-#else
-  (void)filepath;
-#endif
 }

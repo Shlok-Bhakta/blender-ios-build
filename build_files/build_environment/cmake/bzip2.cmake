@@ -17,26 +17,6 @@ if(UNIX AND NOT APPLE)
   )
 else()
   set(BZIP2_CONFIGURE_ENV ${CONFIGURE_ENV})
-  if(WITH_APPLE_CROSSPLATFORM)
-    set(BZIP2_CFLAGS "${PLATFORM_CFLAGS} -fPIC -O2")
-    set(BZIP2_LDFLAGS "${PLATFORM_LDFLAGS}")
-  endif()
-endif()
-
-if(WITH_APPLE_CROSSPLATFORM)
-  set(BZIP2_BUILD_ACTION libbz2.a)
-  set(BZIP2_INSTALL_COMMAND
-    ${CMAKE_COMMAND} -E make_directory ${BZIP2_PREFIX}/include ${BZIP2_PREFIX}/lib &&
-    ${CMAKE_COMMAND} -E copy ${BUILD_DIR}/bzip2/src/external_bzip2/bzlib.h ${BZIP2_PREFIX}/include/bzlib.h &&
-    ${CMAKE_COMMAND} -E copy ${BUILD_DIR}/bzip2/src/external_bzip2/libbz2.a ${BZIP2_PREFIX}/lib/libbz2.a
-  )
-else()
-  set(BZIP2_BUILD_ACTION)
-  set(BZIP2_INSTALL_COMMAND
-    ${BZIP2_CONFIGURE_ENV} &&
-    cd ${BUILD_DIR}/bzip2/src/external_bzip2/ &&
-    make CFLAGS=${BZIP2_CFLAGS} LDFLAGS=${BZIP2_LDFLAGS} PREFIX=${BZIP2_PREFIX} install
-  )
 endif()
 
 ExternalProject_Add(external_bzip2
@@ -48,18 +28,11 @@ ExternalProject_Add(external_bzip2
 
   BUILD_COMMAND ${BZIP2_CONFIGURE_ENV} &&
     cd ${BUILD_DIR}/bzip2/src/external_bzip2/ &&
-    make CFLAGS=${BZIP2_CFLAGS} LDFLAGS=${BZIP2_LDFLAGS} -j${MAKE_THREADS} ${BZIP2_BUILD_ACTION}
+    make CFLAGS=${BZIP2_CFLAGS} LDFLAGS=${BZIP2_LDFLAGS} -j${MAKE_THREADS}
 
-  INSTALL_COMMAND ${BZIP2_INSTALL_COMMAND}
+  INSTALL_COMMAND ${BZIP2_CONFIGURE_ENV} &&
+    cd ${BUILD_DIR}/bzip2/src/external_bzip2/ &&
+    make CFLAGS=${BZIP2_CFLAGS} LDFLAGS=${BZIP2_LDFLAGS} PREFIX=${BZIP2_PREFIX} install
 
   INSTALL_DIR ${LIBDIR}/bzip2
 )
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_bzip2 harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${BZIP2_PREFIX}
-      ${HARVEST_TARGET}/bzip2
-    DEPENDEES install
-  )
-endif()

@@ -652,7 +652,7 @@ void Hierarchy::DownsampleEdgeGraph(std::vector<Vector3i>& FQ, std::vector<Vecto
 }
 
 int Hierarchy::FixFlipSat(int depth, int threshold) {
-#ifdef WITH_APPLE_CROSSPLATFORM
+#if defined(QUADRIFLOW_SUBPROCESS_SUPPORT) && !QUADRIFLOW_SUBPROCESS_SUPPORT
     /* The optional aggressive SAT pass requires desktop subprocesses.
      * Blender's embedded QuadriFlow API does not enable it. */
     (void)depth;

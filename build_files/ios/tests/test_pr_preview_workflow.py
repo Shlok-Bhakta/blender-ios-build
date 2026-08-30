@@ -12,10 +12,20 @@ HOST_PROFILE = (
     REPOSITORY / "build_files" / "cmake" / "config" / "blender_ios_host_tools.cmake"
 )
 DEPENDENCY_DOWNLOADS = (
-    REPOSITORY / "build_files" / "build_environment" / "cmake" / "download.cmake"
+    REPOSITORY
+    / "build_files"
+    / "ios"
+    / "build_environment"
+    / "cmake"
+    / "download.cmake"
 )
 OPENCOLORIO_RECIPE = (
-    REPOSITORY / "build_files" / "build_environment" / "cmake" / "opencolorio.cmake"
+    REPOSITORY
+    / "build_files"
+    / "ios"
+    / "build_environment"
+    / "cmake"
+    / "opencolorio.cmake"
 )
 
 
@@ -83,6 +93,8 @@ class PrPreviewWorkflowTests(unittest.TestCase):
         workflow = WORKFLOW.read_text()
         self.assertIn("github.event.pull_request.head.repo.full_name == github.repository", workflow)
         self.assertIn("startsWith(github.head_ref, 'story/')", workflow)
+        self.assertIn("startsWith(github.head_ref, 'feat/')", workflow)
+        self.assertIn("startsWith(github.head_ref, 'refactor/')", workflow)
 
     def test_host_tools_match_the_device_generator_features(self) -> None:
         profile = HOST_PROFILE.read_text()

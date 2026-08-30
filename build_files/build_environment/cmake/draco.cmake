@@ -6,12 +6,6 @@ set(DRACO_EXTRA_ARGS
   -DBUILD_SHARED_LIBS=ON
 )
 
-if(WITH_APPLE_CROSSPLATFORM)
-  set(DRACO_EXTRA_ARGS
-    -DBUILD_SHARED_LIBS=OFF
-  )
-endif()
-
 if(WIN32)
   set(DRACO_EXTRA_ARGS
     ${DRACO_EXTRA_ARGS}
@@ -25,11 +19,6 @@ ExternalProject_Add(external_draco
   URL_HASH ${DRACO_HASH_TYPE}=${DRACO_HASH}
   CMAKE_GENERATOR ${PLATFORM_ALT_GENERATOR}
   PREFIX ${BUILD_DIR}/draco
-
-  PATCH_COMMAND
-    ${PATCH_CMD} -p 1
-      -d ${BUILD_DIR}/draco/src/external_draco
-      -i ${PATCH_DIR}/draco_no_ios_tools.diff
 
   CMAKE_ARGS
   -DCMAKE_INSTALL_PREFIX=${LIBDIR}/draco

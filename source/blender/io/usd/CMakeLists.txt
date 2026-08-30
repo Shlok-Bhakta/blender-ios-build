@@ -162,11 +162,8 @@ set(SRC
   intern/usd_skel_root_utils.hh
 )
 
-# OpenUSD's Python hook bridge requires its Boost.Python extension bindings.
-# Those bindings cannot be packaged as loadable modules in an iOS app, while
-# native USD import/export remains fully usable without them.
-if(WITH_APPLE_CROSSPLATFORM)
-  list(APPEND SRC intern/usd_hook_stub.cc)
+if(BLENDER_PLATFORM_USD_HOOK_SOURCE)
+  list(APPEND SRC ${BLENDER_PLATFORM_USD_HOOK_SOURCE})
 else()
   list(APPEND SRC intern/usd_hook.cc)
 endif()

@@ -398,7 +398,7 @@ if(WITH_GMP)
 endif()
 
 # Build `makesrna` executable.
-if(NOT WITH_APPLE_CROSSPLATFORM)
+if(NOT TARGET makesrna)
   include("${CMAKE_SOURCE_DIR}/build_files/cmake/host_tool_features.cmake")
 
   add_c_and_cxx_flags_custom_test(makesrna)

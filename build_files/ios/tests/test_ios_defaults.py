@@ -5,9 +5,8 @@ import unittest
 
 
 REPOSITORY = Path(__file__).resolve().parents[3]
-BLENDFILE_SOURCE = (
-    REPOSITORY / "source" / "blender" / "blenkernel" / "intern" / "blendfile.cc"
-)
+BLENDFILE_SOURCE = REPOSITORY / "source" / "blender" / "blenkernel" / "intern" / "blendfile.cc"
+IOS_PLATFORM = REPOSITORY / "build_files" / "ios" / "cmake" / "platform_ios.cmake"
 
 
 class IOSDefaultsTests(unittest.TestCase):
@@ -19,8 +18,9 @@ class IOSDefaultsTests(unittest.TestCase):
             )
         ]
 
-        self.assertIn("#ifdef WITH_APPLE_CROSSPLATFORM", defaults)
-        self.assertIn("userdef->ui_scale = 1.65f;", defaults)
+        self.assertIn("#ifdef BLENDER_PLATFORM_DEFAULT_UI_SCALE", defaults)
+        self.assertIn("userdef->ui_scale = BLENDER_PLATFORM_DEFAULT_UI_SCALE;", defaults)
+        self.assertIn("-DBLENDER_PLATFORM_DEFAULT_UI_SCALE=1.65f", IOS_PLATFORM.read_text())
 
 
 if __name__ == "__main__":

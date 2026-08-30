@@ -5,16 +5,12 @@
 #include "DNA_userdef_types.h"
 
 #include "GPU_debug.hh"
+#include "mtl_common.hh"
 
-#ifdef WITH_APPLE_CROSSPLATFORM
-#  include "intern/GHOST_ContextIOS.hh"
-#else
-#  include "intern/GHOST_ContextMTL.hh"
-#endif
+#include GHOST_METAL_CONTEXT_HEADER
 
 #include "mtl_backend.hh"
 #include "mtl_command_buffer.hh"
-#include "mtl_common.hh"
 #include "mtl_context.hh"
 #include "mtl_debug.hh"
 #include "mtl_framebuffer.hh"

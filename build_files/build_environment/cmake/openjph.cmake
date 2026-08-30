@@ -9,10 +9,6 @@ set(OPENJPH_EXTRA_ARGS
   -DBUILD_SHARED_LIBS=ON
 )
 
-if(WITH_APPLE_CROSSPLATFORM)
-  list(APPEND OPENJPH_EXTRA_ARGS -DBUILD_SHARED_LIBS=OFF)
-endif()
-
 ExternalProject_Add(external_openjph
   URL file://${PACKAGE_DIR}/${OPENJPH_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
@@ -47,16 +43,4 @@ else()
   # Cmake files first because harvest_rpath_lib edits them.
   harvest(external_openjph openjph/lib/cmake/openjph openjph/lib/cmake/openjph "*.cmake")
   harvest_rpath_lib(external_openjph openjph/lib openjph/lib "*${SHAREDLIBEXT}*")
-endif()
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_openjph harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/openjph/include
-      ${HARVEST_TARGET}/openjph/include
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/openjph/lib
-      ${HARVEST_TARGET}/openjph/lib
-    DEPENDEES install
-  )
 endif()

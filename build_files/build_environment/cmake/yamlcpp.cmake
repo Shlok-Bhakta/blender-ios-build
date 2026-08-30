@@ -8,13 +8,6 @@ set(YAMLCPP_EXTRA_ARGS
   -DYAML_CPP_BUILD_CONTRIB=OFF
 )
 
-if(WITH_APPLE_CROSSPLATFORM)
-  list(APPEND YAMLCPP_EXTRA_ARGS
-    -DBUILD_SHARED_LIBS=OFF
-    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-  )
-endif()
-
 if(WIN32)
   set(YAMLCPP_EXTRA_ARGS
     ${YAMLCPP_EXTRA_ARGS}
@@ -37,15 +30,3 @@ ExternalProject_Add(external_yamlcpp
 
   INSTALL_DIR ${LIBDIR}/yamlcpp
 )
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_yamlcpp harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/yamlcpp/include
-      ${HARVEST_TARGET}/yamlcpp/include
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/yamlcpp/lib
-      ${HARVEST_TARGET}/yamlcpp/lib
-    DEPENDEES install
-  )
-endif()

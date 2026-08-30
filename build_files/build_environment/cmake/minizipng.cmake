@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 set(MINIZIPNG_EXTRA_ARGS
-  -DBUILD_SHARED_LIBS=OFF
   # Disable most compression methods like OpenColorIO does, enabling
   # more is not needed and will give link errors.
   -DMZ_FETCH_LIBS=OFF
@@ -42,15 +41,3 @@ add_dependencies(
   external_minizipng
   external_zlib
 )
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_minizipng harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/minizipng/include
-      ${HARVEST_TARGET}/minizipng/include
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/minizipng/lib
-      ${HARVEST_TARGET}/minizipng/lib
-    DEPENDEES install
-  )
-endif()

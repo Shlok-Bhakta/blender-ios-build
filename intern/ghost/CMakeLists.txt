@@ -48,7 +48,6 @@ set(SRC
   intern/GHOST_EventKey.hh
   intern/GHOST_EventManager.hh
   intern/GHOST_EventString.hh
-  intern/GHOST_EventTouch.hh
   intern/GHOST_EventTrackpad.hh
   intern/GHOST_EventWheel.hh
   intern/GHOST_ModifierKeys.hh
@@ -71,14 +70,6 @@ set(LIB
   PRIVATE bf::imbuf
   PRIVATE bf::intern::clog
 )
-
-if(WITH_APPLE_CROSSPLATFORM)
-  add_definitions(-DWITH_APPLE_CROSSPLATFORM)
-endif()
-
-if(WITH_METAL_BACKEND)
-  add_definitions(-DWITH_METAL_BACKEND)
-endif()
 
 if(WITH_INPUT_IME)
   add_definitions(-DWITH_INPUT_IME)
@@ -160,15 +151,8 @@ elseif(WITH_GHOST_SDL)
     bf::dependencies::optional::sdl
   )
 elseif(APPLE AND NOT WITH_GHOST_X11)
-  if(WITH_APPLE_CROSSPLATFORM)
-    list(APPEND SRC
-      intern/GHOST_ContextIOS.hh
-      intern/GHOST_ContextIOS.mm
-      intern/GHOST_SystemIOS.hh
-      intern/GHOST_SystemIOS.mm
-      intern/GHOST_WindowIOS.hh
-      intern/GHOST_WindowIOS.mm
-    )
+  if(GHOST_PLATFORM_CMAKE)
+    include("${GHOST_PLATFORM_CMAKE}")
   else()
     list(APPEND SRC
       intern/GHOST_SystemCocoa.mm
@@ -500,7 +484,7 @@ if(UNIX AND NOT APPLE)
   endif()
 endif()
 
-if(APPLE AND NOT WITH_APPLE_CROSSPLATFORM)
+if(APPLE AND NOT GHOST_PLATFORM_CMAKE)
   if(WITH_METAL_BACKEND)
     list(APPEND SRC
       intern/GHOST_ContextMTL.mm
@@ -511,10 +495,12 @@ if(APPLE AND NOT WITH_APPLE_CROSSPLATFORM)
 endif()
 
 if(APPLE)
-  list(APPEND SRC
-    intern/GHOST_SystemPathsCocoa.hh
-    intern/GHOST_SystemPathsCocoa.mm
-  )
+  if(NOT GHOST_PLATFORM_CMAKE)
+    list(APPEND SRC
+      intern/GHOST_SystemPathsCocoa.hh
+      intern/GHOST_SystemPathsCocoa.mm
+    )
+  endif()
 
 elseif(UNIX)
   list(APPEND SRC

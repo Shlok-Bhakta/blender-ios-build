@@ -31,7 +31,7 @@ if(WITH_APPLE_CROSSPLATFORM)
         pyproject-metadata==${PYPROJECT_METADATA_VERSION}
         setuptools==${SETUPTOOLS_VERSION}
       COMMAND ${PYTHON_BINARY}
-        ${CMAKE_SOURCE_DIR}/../ios/configure_python_cross_venv.py
+        ${BLENDER_IOS_DEPS_ROOT}/../configure_python_cross_venv.py
         --venv ${PYTHON_CROSS_VENV}
         --python-root ${LIBDIR}/python
         --sdk ${PYTHON_CROSS_SDK}

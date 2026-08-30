@@ -26,12 +26,10 @@
 #  include "GHOST_SystemSDL.hh"
 #elif defined(WIN32)
 #  include "GHOST_SystemWin32.hh"
+#elif defined(GHOST_PLATFORM_SYSTEM_HEADER)
+#  include GHOST_PLATFORM_SYSTEM_HEADER
 #elif defined(__APPLE__)
-#  if defined(WITH_APPLE_CROSSPLATFORM)
-#    include "GHOST_SystemIOS.hh"
-#  else
-#    include "GHOST_SystemCocoa.hh"
-#  endif
+#  include "GHOST_SystemCocoa.hh"
 #endif
 
 #include "CLG_log.h"
@@ -161,16 +159,14 @@ GHOST_TSuccess GHOST_ISystem::createSystem(bool verbose, [[maybe_unused]] bool b
     backends_attempted.push_back({"WIN32"});
     CLOG_INFO(&LOG, "Create Windows system");
     system_ = new GHOST_SystemWin32();
+#elif defined(GHOST_PLATFORM_SYSTEM_CLASS)
+    backends_attempted.push_back({GHOST_PLATFORM_SYSTEM_NAME});
+    CLOG_INFO(&LOG, "Create %s system", GHOST_PLATFORM_SYSTEM_NAME);
+    system_ = new GHOST_PLATFORM_SYSTEM_CLASS();
 #elif defined(__APPLE__)
-#  if defined(WITH_APPLE_CROSSPLATFORM)
-    backends_attempted.push_back({"IOS"});
-    CLOG_INFO(&LOG, "Create iOS system");
-    system_ = new GHOST_SystemIOS();
-#  else
     backends_attempted.push_back({"COCOA"});
     CLOG_INFO(&LOG, "Create Cocoa system");
     system_ = new GHOST_SystemCocoa();
-#  endif
 #endif
 
     if (system_) {

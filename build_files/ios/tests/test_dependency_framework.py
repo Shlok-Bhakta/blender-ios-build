@@ -66,7 +66,12 @@ class ConfigurePlanTests(unittest.TestCase):
 class PythonFrameworkRecipeTests(unittest.TestCase):
     def test_supported_platform_array_is_replaced_instead_of_partially_edited(self) -> None:
         recipe = (
-            REPOSITORY / "build_files" / "build_environment" / "cmake" / "python.cmake"
+            REPOSITORY
+            / "build_files"
+            / "ios"
+            / "build_environment"
+            / "cmake"
+            / "python.cmake"
         ).read_text()
         self.assertIn("-remove CFBundleSupportedPlatforms", recipe)
         self.assertIn("-insert CFBundleSupportedPlatforms", recipe)

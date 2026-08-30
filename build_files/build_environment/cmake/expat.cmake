@@ -25,15 +25,3 @@ ExternalProject_Add(external_expat
   INSTALL_DIR ${LIBDIR}/expat
   SOURCE_SUBDIR expat
 )
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_expat harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/expat/include
-      ${HARVEST_TARGET}/expat/include
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/expat/lib
-      ${HARVEST_TARGET}/expat/lib
-    DEPENDEES install
-  )
-endif()

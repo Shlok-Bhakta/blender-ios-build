@@ -2,21 +2,15 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-set(ALEMBIC_USE_BINARIES ON)
-if(WITH_APPLE_CROSSPLATFORM)
-  set(ALEMBIC_USE_BINARIES OFF)
-endif()
-
 set(ALEMBIC_EXTRA_ARGS
   -DImath_ROOT=${LIBDIR}/imath
-  -DImath_DIR=${LIBDIR}/imath/lib/cmake/Imath
   -DUSE_PYALEMBIC=OFF
   -DUSE_ARNOLD=OFF
   -DUSE_MAYA=OFF
   -DUSE_PRMAN=OFF
   -DUSE_HDF5=OFF
   -DUSE_TESTS=OFF
-  -DUSE_BINARIES=${ALEMBIC_USE_BINARIES}
+  -DUSE_BINARIES=ON
   -DALEMBIC_ILMBASE_LINK_STATIC=OFF
   -DALEMBIC_SHARED_LIBS=OFF
 )
@@ -59,9 +53,7 @@ if(WIN32)
 else()
   harvest(external_alembic alembic/include alembic/include "*.h")
   harvest(external_alembic alembic/lib/libAlembic.a alembic/lib/libAlembic.a)
-  if(NOT WITH_APPLE_CROSSPLATFORM)
-    harvest_rpath_bin(external_alembic alembic/bin alembic/bin "*")
-  endif()
+  harvest_rpath_bin(external_alembic alembic/bin alembic/bin "*")
 endif()
 
 
@@ -70,5 +62,3 @@ add_dependencies(
   external_alembic
   external_imath
 )
-
-unset(ALEMBIC_USE_BINARIES)

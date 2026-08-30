@@ -9,6 +9,9 @@ include("${CMAKE_CURRENT_LIST_DIR}/blender_lite.cmake")
 
 set(APPLE_TARGET_DEVICE      ios-simulator CACHE STRING "" FORCE)
 set(WITH_APPLE_CROSSPLATFORM ON           CACHE BOOL   "" FORCE)
+set(BLENDER_PLATFORM_XCODE_CMAKE
+  "${CMAKE_SOURCE_DIR}/build_files/ios/cmake/platform_ios_xcode.cmake"
+  CACHE FILEPATH "iOS Xcode platform setup" FORCE)
 
 set(WITH_PYTHON              OFF CACHE BOOL "" FORCE)
 set(WITH_PYTHON_INSTALL      OFF CACHE BOOL "" FORCE)

@@ -4,17 +4,8 @@
 
 ## Update and uncomment this in the release branch
 set(BLENDER_VERSION 5.2)
-set(
-  BLENDER_DEPENDENCY_DOWNLOADS
-  ""
-  CACHE STRING
-  "Optional semicolon-separated dependency source allowlist"
-)
 
 function(download_source dep)
-  if(BLENDER_DEPENDENCY_DOWNLOADS AND NOT "${dep}" IN_LIST BLENDER_DEPENDENCY_DOWNLOADS)
-    return()
-  endif()
   set(TARGET_FILE ${${dep}_FILE})
   set(TARGET_HASH_TYPE ${${dep}_HASH_TYPE})
   set(TARGET_HASH ${${dep}_HASH})

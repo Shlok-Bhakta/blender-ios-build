@@ -11,12 +11,14 @@ ROOT = Path(__file__).resolve().parents[3]
 class MetalAttachmentlessRenderingTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
+        cls.platform = (ROOT / "source/blender/gpu/metal/mtl_platform_ios.hh").read_text()
         cls.header = (ROOT / "source/blender/gpu/metal/mtl_framebuffer.hh").read_text()
         cls.framebuffer = (ROOT / "source/blender/gpu/metal/mtl_framebuffer.mm").read_text()
         cls.shader = (ROOT / "source/blender/gpu/metal/mtl_shader.mm").read_text()
 
     def test_fallback_is_limited_to_ios(self) -> None:
-        self.assertIn("#ifdef WITH_APPLE_CROSSPLATFORM", self.header)
+        self.assertIn("#define MTL_BACKEND_REQUIRES_COLOR_ATTACHMENT 1", self.platform)
+        self.assertIn("#if MTL_BACKEND_REQUIRES_COLOR_ATTACHMENT", self.header)
         self.assertIn("requires_attachmentless_color_target", self.header)
 
     def test_render_pass_owns_a_real_dummy_target(self) -> None:

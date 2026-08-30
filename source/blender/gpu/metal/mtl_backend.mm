@@ -28,8 +28,9 @@
 
 #include "gpu_capabilities_private.hh"
 #include "gpu_platform_private.hh"
+#include "mtl_common.hh"
 
-#ifdef WITH_APPLE_CROSSPLATFORM
+#if !MTL_BACKEND_DESKTOP
 #  include <Foundation/Foundation.h>
 #  include <TargetConditionals.h>
 #else
@@ -500,7 +501,7 @@ void MTLBackend::capabilities_init(MTLContext *ctx)
 #endif
 
   /** Identify support for tile inputs. */
-#if defined(WITH_APPLE_CROSSPLATFORM) && TARGET_OS_SIMULATOR
+#if MTL_BACKEND_FORCE_SUBPASS_EMULATION
   /* The iOS Simulator reports the host Apple GPU's tile architecture, but its Metal compiler
    * rejects framebuffer-fetch inputs when a render pipeline is created. Use the texture-backed
    * subpass emulation path there. Physical iOS GPUs retain native tile inputs. */

@@ -45,21 +45,6 @@ set(OPENVDB_EXTRA_ARGS
   # -DLLVM_DIR=${LIBDIR}/llvm/lib/cmake/llvm
 )
 
-if(WITH_APPLE_CROSSPLATFORM)
-  # iOS cannot ship OpenVDB's desktop shared library or a target-side Python
-  # extension. Blender only needs the C++ and NanoVDB libraries at runtime.
-  list(APPEND OPENVDB_EXTRA_ARGS
-    -DUSE_STATIC_DEPENDENCIES=ON
-    -DTBB_USE_STATIC_LIBS=ON
-    -DTbb_INCLUDE_DIR=${LIBDIR}/tbb/include
-    -DTbb_tbb_LIBRARY_RELEASE=${LIBDIR}/tbb/lib/libtbb.a
-    -DTbb_tbb_LIBRARY_DEBUG=${LIBDIR}/tbb/lib/libtbb.a
-    -DOPENVDB_CORE_SHARED=OFF
-    -DOPENVDB_CORE_STATIC=ON
-    -DOPENVDB_BUILD_PYTHON_MODULE=OFF
-  )
-endif()
-
 set(OPENVDB_PATCH
   ${PATCH_CMD} -p 1 -d
     ${BUILD_DIR}/openvdb/src/external_openvdb <
@@ -87,16 +72,10 @@ add_dependencies(
   external_tbb
   external_zlib
   external_blosc
+  external_python
+  external_numpy # Runtime dependency
+  external_nanobind
 )
-
-if(NOT WITH_APPLE_CROSSPLATFORM)
-  add_dependencies(
-    external_openvdb
-    external_python
-    external_numpy # Runtime dependency
-    external_nanobind
-  )
-endif()
 
 if(WIN32)
   if(BLENDER_PLATFORM_ARM)

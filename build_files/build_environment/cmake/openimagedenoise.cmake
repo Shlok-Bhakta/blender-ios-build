@@ -49,16 +49,6 @@ else()
   endif()
 endif()
 
-if(WITH_APPLE_CROSSPLATFORM)
-  # The iOS runtime uses OIDN's Metal device. Building the CPU device would
-  # pull in a target-side ISPC compiler and LLVM toolchain that cannot execute
-  # during the cross build.
-  list(APPEND OIDN_EXTRA_ARGS
-    -DOIDN_DEVICE_CPU=OFF
-    -DOIDN_STATIC_LIB=ON
-  )
-endif()
-
 if(WIN32 AND NOT BLENDER_PLATFORM_ARM)
   set(OIDN_EXTRA_ARGS
     ${OIDN_EXTRA_ARGS}
@@ -131,12 +121,9 @@ unset(OIDN_PATCH_COMMAND)
 add_dependencies(
   external_openimagedenoise
   external_tbb
+  external_ispc
   external_python
 )
-
-if(NOT WITH_APPLE_CROSSPLATFORM)
-  add_dependencies(external_openimagedenoise external_ispc)
-endif()
 
 if(NOT (APPLE OR WIN32 OR BLENDER_PLATFORM_ARM))
   add_dependencies(

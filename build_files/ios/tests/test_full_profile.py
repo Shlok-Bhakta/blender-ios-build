@@ -10,29 +10,31 @@ REPOSITORY = Path(__file__).resolve().parents[3]
 CONFIG_DIRECTORY = REPOSITORY / "build_files" / "cmake" / "config"
 WORKFLOW = REPOSITORY / ".github" / "workflows" / "ios-pr-preview.yml"
 IOS_DEPENDENCY_PLATFORM = (
-    REPOSITORY / "build_files" / "build_environment" / "cmake" / "ios_platform.cmake"
+    REPOSITORY / "build_files" / "ios" / "build_environment" / "cmake" / "ios_platform.cmake"
 )
 IOS_FEATURES = CONFIG_DIRECTORY / "blender_ios_features.cmake"
 APPLE_PLATFORM = (
-    REPOSITORY / "build_files" / "cmake" / "platform" / "platform_apple.cmake"
+    REPOSITORY / "build_files" / "ios" / "cmake" / "platform_ios.cmake"
 )
-USD_RECIPE = REPOSITORY / "build_files" / "build_environment" / "cmake" / "usd.cmake"
+USD_RECIPE = REPOSITORY / "build_files" / "ios" / "build_environment" / "cmake" / "usd.cmake"
 USD_NO_GL_PATCH = (
     REPOSITORY
     / "build_files"
+    / "ios"
     / "build_environment"
     / "patches"
     / "usd_no_storm_without_gl.diff"
 )
 FFMPEG_RECIPE = (
-    REPOSITORY / "build_files" / "build_environment" / "cmake" / "ffmpeg.cmake"
+    REPOSITORY / "build_files" / "ios" / "build_environment" / "cmake" / "ffmpeg.cmake"
 )
 FLAC_RECIPE = (
-    REPOSITORY / "build_files" / "build_environment" / "cmake" / "flac.cmake"
+    REPOSITORY / "build_files" / "ios" / "build_environment" / "cmake" / "flac.cmake"
 )
 MATERIALX_RECIPE = (
     REPOSITORY
     / "build_files"
+    / "ios"
     / "build_environment"
     / "cmake"
     / "materialx.cmake"
@@ -40,6 +42,7 @@ MATERIALX_RECIPE = (
 DRACO_IOS_PATCH = (
     REPOSITORY
     / "build_files"
+    / "ios"
     / "build_environment"
     / "patches"
     / "draco_no_ios_tools.diff"
@@ -47,6 +50,7 @@ DRACO_IOS_PATCH = (
 MESHOPTIMIZER_RECIPE = (
     REPOSITORY
     / "build_files"
+    / "ios"
     / "build_environment"
     / "cmake"
     / "meshoptimizer.cmake"
@@ -126,9 +130,11 @@ class FullProfileTests(unittest.TestCase):
     def test_quadriflow_keeps_remeshing_without_ios_subprocesses(self) -> None:
         local_sat = QUADRIFLOW_LOCAL_SAT.read_text()
         hierarchy = QUADRIFLOW_HIERARCHY.read_text()
-        self.assertIn("#ifdef WITH_APPLE_CROSSPLATFORM", local_sat)
+        platform = APPLE_PLATFORM.read_text()
+        self.assertIn("QUADRIFLOW_SUBPROCESS_SUPPORT=0", platform)
+        self.assertIn("QUADRIFLOW_SUBPROCESS_SUPPORT", local_sat)
         self.assertIn("return SolverStatus::Unsat;", local_sat)
-        self.assertIn("#ifdef WITH_APPLE_CROSSPLATFORM", hierarchy)
+        self.assertIn("QUADRIFLOW_SUBPROCESS_SUPPORT", hierarchy)
         self.assertIn("return 0;", hierarchy)
 
     def test_usd_uses_static_apple_embedded_metal_profile(self) -> None:
@@ -143,8 +149,8 @@ class FullProfileTests(unittest.TestCase):
         self.assertIn("if (NOT TARGET hdx)", no_gl_patch)
         self.assertIn("if (NOT TARGET usdImagingGL)", no_gl_patch)
         usd_cmake = USD_CMAKE.read_text()
-        self.assertIn("if(WITH_APPLE_CROSSPLATFORM)", usd_cmake)
-        self.assertIn("intern/usd_hook_stub.cc", usd_cmake)
+        self.assertIn("BLENDER_PLATFORM_USD_HOOK_SOURCE", usd_cmake)
+        self.assertIn("intern/usd_hook_stub.cc", APPLE_PLATFORM.read_text())
         self.assertIn("return false;", USD_HOOK_STUB.read_text())
 
     def test_ffmpeg_keeps_ios_media_with_native_apple_acceleration(self) -> None:
@@ -193,7 +199,7 @@ class FullProfileTests(unittest.TestCase):
     def test_localization_uses_a_native_msgfmt_during_cross_compile(self) -> None:
         platform = APPLE_PLATFORM.read_text()
         self.assertIn("datatoc msgfmt shader_tool", platform)
-        self.assertIn("if(NOT WITH_APPLE_CROSSPLATFORM)", MSGFMT_CMAKE.read_text())
+        self.assertIn("if(NOT TARGET msgfmt)", MSGFMT_CMAKE.read_text())
         messages = APPLE_MESSAGES.read_text()
         self.assertIn("<Foundation/Foundation.h>", messages)
         self.assertNotIn("<Cocoa/Cocoa.h>", messages)

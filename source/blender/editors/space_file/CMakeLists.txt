@@ -56,9 +56,9 @@ if(WIN32)
     fsmenu_system_win32.cc
   )
 elseif(APPLE)
-  if(WITH_APPLE_CROSSPLATFORM)
+  if(BLENDER_PLATFORM_FILE_MENU_SOURCE)
     list(APPEND SRC
-      fsmenu_system_ios.mm
+      ${BLENDER_PLATFORM_FILE_MENU_SOURCE}
     )
   else()
     list(APPEND SRC

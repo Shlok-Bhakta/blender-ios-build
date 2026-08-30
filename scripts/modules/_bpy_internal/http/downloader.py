@@ -32,25 +32,20 @@ import enum
 import hashlib
 import logging
 import os
-import sys
 import time
 import zlib  # For streaming gzip decompression.
 from collections.abc import Callable, Generator
 from pathlib import Path
 from typing import Protocol, TypeAlias, Any, override
 
-# To work around this error:
-# mypy   : Variable "multiprocessing.Event" is not valid as a type
-#          note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
-# Pylance: Variable not allowed in type expression
-if sys.platform == 'ios':
-    from threading import Event as EventClass
-    from .thread_context import ThreadContext
-else:
-    import multiprocessing
-    import multiprocessing.connection
-    import multiprocessing.process
-    from multiprocessing.synchronize import Event as EventClass
+from .worker_context import (
+    Connection as _Connection,
+    EventClass,
+    Worker as _Worker,
+    context as _mp_context,
+    start_worker as _start_background_worker,
+    worker_kind as _background_worker_kind,
+)
 
 import cattrs
 import cattrs.preconf.json
@@ -408,39 +403,6 @@ class ConditionalDownloader:
         return not isinstance(self._reporter, _DummyReporter)
 
 
-# On Linux, 'fork' is the default. However the Python docs state "Note
-# that safely forking a multithreaded process is problematic.", and then
-# mention:
-#
-# The default start method will change away from fork in Python 3.14.
-# Code that requires fork should explicitly specify that via
-# get_context() or set_start_method().
-#
-# So I (Sybren) figure it's better to test with the 'spawn' method,
-# which is also the current default on Windows and macOS.
-if sys.platform == 'ios':
-    # CPython intentionally disables multiprocessing on iOS because application
-    # processes cannot fork or spawn children. A worker thread preserves the
-    # downloader queue, cancellation, and reporting contract without blocking
-    # Blender's main thread.
-    _mp_context = ThreadContext()
-    _background_worker_kind = 'thread'
-else:
-    _mp_context = multiprocessing.get_context(method='spawn')
-    _background_worker_kind = 'process'
-
-
-class _Connection(Protocol):
-    def send(self, value: Any) -> None: ...
-    def poll(self, timeout: float = 0.0) -> bool: ...
-    def recv(self) -> Any: ...
-
-
-class _Worker(Protocol):
-    def start(self) -> None: ...
-    def is_alive(self) -> bool: ...
-
-
 @dataclasses.dataclass
 class DownloaderOptions:
     metadata_provider: MetadataProvider
@@ -695,11 +657,7 @@ class BackgroundDownloader:
             daemon=True,
         )
         self._logger.info("starting downloader worker (%s)", _background_worker_kind)
-        if _background_worker_kind == 'thread':
-            self._downloader_process.start()
-        else:
-            with _cleanup_main_file_attribute():
-                self._downloader_process.start()
+        _start_background_worker(self._downloader_process, _cleanup_main_file_attribute)
 
     @property
     def is_shutdown_requested(self) -> bool:
