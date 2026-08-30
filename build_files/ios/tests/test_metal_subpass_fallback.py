@@ -11,13 +11,18 @@ ROOT = Path(__file__).resolve().parents[3]
 class MetalSubpassFallbackTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
+        cls.platform = (ROOT / "source/blender/gpu/metal/mtl_platform_ios.hh").read_text()
         cls.backend = (ROOT / "source/blender/gpu/metal/mtl_backend.mm").read_text()
         cls.generator = (ROOT / "source/blender/gpu/metal/mtl_shader_generate.cc").read_text()
         cls.interface = (ROOT / "source/blender/gpu/metal/mtl_shader_interface.mm").read_text()
         cls.framebuffer = (ROOT / "source/blender/gpu/metal/mtl_framebuffer.mm").read_text()
 
     def test_simulator_does_not_advertise_framebuffer_fetch(self) -> None:
-        self.assertIn("TARGET_OS_SIMULATOR", self.backend)
+        self.assertIn(
+            "#define MTL_BACKEND_FORCE_SUBPASS_EMULATION TARGET_OS_SIMULATOR",
+            self.platform,
+        )
+        self.assertIn("#if MTL_BACKEND_FORCE_SUBPASS_EMULATION", self.backend)
         self.assertIn("supports_native_tile_inputs = false", self.backend)
 
     def test_shader_generator_loads_subpass_inputs_from_bound_textures(self) -> None:

@@ -88,6 +88,10 @@ set(SRC
   message_bus/wm_message_bus.hh
 )
 
+if(WINDOWMANAGER_PLATFORM_CMAKE)
+  include("${WINDOWMANAGER_PLATFORM_CMAKE}")
+endif()
+
 set(LIB
   PRIVATE bf::asset_system
   PRIVATE bf::blenfont

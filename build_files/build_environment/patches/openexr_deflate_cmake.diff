@@ -9,7 +9,7 @@ diff -Naur openexr/cmake/OpenEXRConfig.cmake.in openexr/cmake/OpenEXRConfig.cmak
  find_dependency(Imath)
  
 -if (@libdeflate_FOUND@)
-+if (@libdeflate_FOUND@ AND (@EXR_DEFLATE_SHARED@ OR CMAKE_SYSTEM_NAME STREQUAL "iOS"))
++if (@libdeflate_FOUND@ AND @EXR_DEFLATE_SHARED@)
    find_dependency(libdeflate)
  endif()
  

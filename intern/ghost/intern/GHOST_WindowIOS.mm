@@ -1091,7 +1091,8 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
                                                                   event_info.translation.x,
                                                                   event_info.translation.y,
                                                                   true,
-                                                                  3));
+                                                                  3,
+                                                                  GHOST_kModifierKeyLeftShift));
           break;
         case UserInputEvent::EventTypes::POINTER_SCROLL:
           system->pushEvent(std::make_unique<GHOST_EventTrackpad>(system->getMilliSeconds(),

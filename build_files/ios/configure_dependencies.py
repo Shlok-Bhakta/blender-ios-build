@@ -106,16 +106,17 @@ def build_inputs(
     build_python_version: str,
 ) -> dict[str, str]:
     sdk = "iphonesimulator" if target == "ios-simulator" else "iphoneos"
-    dependency_root = repository / "build_files" / "build_environment"
-    # Every recipe participates because iOS adaptations are intentionally kept as
-    # narrow conditionals in the current v5.2 recipes instead of a detached fork.
-    framework_paths = list((dependency_root / "cmake").glob("*.cmake"))
-    framework_paths.extend((dependency_root / "patches").glob("*ios*.diff"))
+    upstream_dependency_root = repository / "build_files" / "build_environment"
+    dependency_root = repository / "build_files" / "ios" / "build_environment"
+    framework_paths = list(dependency_root.rglob("*.cmake"))
+    framework_paths.extend(dependency_root.rglob("*.diff"))
     framework_paths.append(dependency_root / "CMakeLists.txt")
     xcode_lines = checked_output(["xcodebuild", "-version"]).splitlines()
     return {
         "baseline_sha": checked_output(["git", "rev-parse", "v5.2.0"], repository),
-        "dependency_versions_sha256": file_digest(dependency_root / "cmake" / "versions.cmake"),
+        "dependency_versions_sha256": file_digest(
+            upstream_dependency_root / "cmake" / "versions.cmake"
+        ),
         "ios_framework_sha256": tree_digest(framework_paths),
         "xcode": " / ".join(xcode_lines),
         "sdk": checked_output(["xcrun", "--sdk", sdk, "--show-sdk-version"]),
@@ -229,7 +230,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     command = [
         "cmake",
         "-S",
-        str(repository / "build_files" / "build_environment"),
+        str(repository / "build_files" / "ios" / "build_environment"),
         "-B",
         str(build_directory),
         "-G",

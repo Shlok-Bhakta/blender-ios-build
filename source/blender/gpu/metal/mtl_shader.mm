@@ -710,7 +710,7 @@ MTLRenderPipelineStateInstance *MTLShader::bake_current_pipeline_state(
           gpu_texture_format_to_metal(stencil_attachment.texture->format_get()) :
           MTLPixelFormatInvalid;
 
-#ifdef WITH_APPLE_CROSSPLATFORM
+#if MTL_BACKEND_REQUIRES_COLOR_ATTACHMENT
   if (framebuffer->requires_attachmentless_color_target()) {
     /* Match the hidden render-pass attachment supplied by MTLFrameBuffer. Color writes remain
      * disabled because the logical pass only uses fragment-shader buffer side effects. */

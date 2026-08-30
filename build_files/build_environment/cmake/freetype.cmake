@@ -63,23 +63,3 @@ else()
   harvest(external_freetype freetype/include freetype/include "*.h")
   harvest(external_freetype freetype/lib/libfreetype2ST.a freetype/lib/libfreetype.a)
 endif()
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_freetype library_alias_ios
-    COMMAND ${CMAKE_COMMAND} -E copy
-      ${LIBDIR}/freetype/lib/libfreetype2ST.a
-      ${LIBDIR}/freetype/lib/libfreetype.a
-    DEPENDEES install
-  )
-  ExternalProject_Add_Step(external_freetype harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/freetype/include
-      ${HARVEST_TARGET}/freetype/include
-    COMMAND ${CMAKE_COMMAND} -E make_directory
-      ${HARVEST_TARGET}/freetype/lib
-    COMMAND ${CMAKE_COMMAND} -E copy
-      ${LIBDIR}/freetype/lib/libfreetype2ST.a
-      ${HARVEST_TARGET}/freetype/lib/libfreetype.a
-    DEPENDEES install
-  )
-endif()

@@ -389,8 +389,11 @@ static bool get_path_local_ex(char *targetpath,
    * we must move the blender_version dir with contents to Resources.
    * Add 4 + 9 for the temporary `/../` path & `Resources`. */
   char osx_resourses[FILE_MAX + 4 + 9];
-#  ifdef WITH_APPLE_CROSSPLATFORM
-  BLI_path_join(osx_resourses, sizeof(osx_resourses), g_app.program_dirname, "Assets");
+#  ifdef BLENDER_PLATFORM_RESOURCE_DIR
+  BLI_path_join(osx_resourses,
+                sizeof(osx_resourses),
+                g_app.program_dirname,
+                BLENDER_PLATFORM_RESOURCE_DIR);
 #  else
   BLI_path_join(osx_resourses, sizeof(osx_resourses), g_app.program_dirname, "..", "Resources");
 #  endif

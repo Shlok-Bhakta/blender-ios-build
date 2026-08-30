@@ -38,9 +38,9 @@ class GhostTouchNavigationTests(unittest.TestCase):
             source.index("case GHOST_kEventTrackpad:") : source.index("/* Mouse button. */")
         ]
 
-        self.assertIn("pd->numFingers == 3", trackpad_case)
+        self.assertIn("pd->modifierKey", trackpad_case)
         self.assertIn("event.modifier |= KM_SHIFT", trackpad_case)
-        self.assertIn("#if defined(WITH_APPLE_CROSSPLATFORM)", trackpad_case)
+        self.assertNotIn("WITH_APPLE_CROSSPLATFORM", trackpad_case)
 
 
 if __name__ == "__main__":

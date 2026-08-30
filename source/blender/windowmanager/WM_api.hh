@@ -158,12 +158,10 @@ void WM_exit(bContext *C, int exit_code) ATTR_NORETURN;
 
 void WM_main(bContext *C) ATTR_NORETURN;
 
-#ifdef WITH_APPLE_CROSSPLATFORM
-/** Initialize the event loop before UIKit takes ownership of the process loop. */
+/** Initialize the event loop for a platform-owned process loop. */
 void WM_main_entry(bContext *C);
-/** Process one Blender frame from the active MTKView draw callback. */
+/** Process one Blender frame from a platform-owned process loop. */
 void WM_main_loop_body(bContext *C);
-#endif
 
 /**
  * Show the splash screen as needed on startup.

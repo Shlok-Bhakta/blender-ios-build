@@ -19,17 +19,13 @@
 
 #include "GHOST_Types.hh"
 #include "intern/GHOST_Context.hh"
-#ifdef WITH_APPLE_CROSSPLATFORM
-#  include "intern/GHOST_ContextIOS.hh"
-#else
-#  include "intern/GHOST_ContextMTL.hh"
-#endif
+#include "mtl_common.hh"
+#include GHOST_METAL_CONTEXT_HEADER
 #include "intern/GHOST_Window.hh"
 
 #include "mtl_backend.hh"
 #include "mtl_capabilities.hh"
 #include "mtl_command_buffer.hh"
-#include "mtl_common.hh"
 #include "mtl_framebuffer.hh"
 #include "mtl_memory.hh"
 #include "mtl_shader.hh"

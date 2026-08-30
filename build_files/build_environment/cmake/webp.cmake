@@ -16,12 +16,6 @@ set(WEBP_EXTRA_ARGS
   -DWEBP_BUILD_WEBPMUX=OFF
   -DWEBP_BUILD_EXTRAS=OFF
 )
-if(WITH_APPLE_CROSSPLATFORM)
-  list(APPEND WEBP_EXTRA_ARGS
-    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-    -DBUILD_SHARED_LIBS=OFF
-  )
-endif()
 
 if(WIN32)
   set(WEBP_BUILD_DIR ${BUILD_MODE}/)
@@ -58,16 +52,4 @@ if(WIN32)
 else()
   harvest(external_webp webp/lib webp/lib "*.a")
   harvest(external_webp webp/include webp/include "*.h")
-endif()
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_webp harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/webp/include
-      ${HARVEST_TARGET}/webp/include
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/webp/lib
-      ${HARVEST_TARGET}/webp/lib
-    DEPENDEES install
-  )
 endif()

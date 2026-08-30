@@ -2,22 +2,7 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-if(WITH_APPLE_CROSSPLATFORM)
-  set(OPENSUBDIV_PLATFORM_ARGS
-    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-    -DBUILD_SHARED_LIBS=OFF
-    -DNO_OPENGL=ON
-    -DNO_TBB=ON
-  )
-else()
-  set(OPENSUBDIV_PLATFORM_ARGS
-    -DNO_OPENGL=OFF
-    -DNO_TBB=OFF
-  )
-endif()
-
 set(OPENSUBDIV_EXTRA_ARGS
-  ${OPENSUBDIV_PLATFORM_ARGS}
   -DNO_LIB=OFF
   -DNO_EXAMPLES=ON
   -DNO_TUTORIALS=ON
@@ -25,9 +10,11 @@ set(OPENSUBDIV_EXTRA_ARGS
   -DNO_PTEX=ON
   -DNO_DOC=ON
   -DNO_OMP=ON
+  -DNO_TBB=OFF
   -DNO_CUDA=ON
   -DNO_OPENCL=ON
   -DNO_CLEW=ON
+  -DNO_OPENGL=OFF
   -DNO_METAL=OFF
   -DNO_DX=ON
   -DNO_TESTS=ON
@@ -81,20 +68,7 @@ if(WIN32)
   endif()
 else()
   harvest(external_opensubdiv opensubdiv/include opensubdiv/include "*.h")
-  harvest(external_opensubdiv opensubdiv/lib opensubdiv/lib "*.a")
   harvest_rpath_lib(external_opensubdiv opensubdiv/lib opensubdiv/lib "*${SHAREDLIBEXT}*")
-endif()
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_opensubdiv harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/opensubdiv/include
-      ${HARVEST_TARGET}/opensubdiv/include
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/opensubdiv/lib
-      ${HARVEST_TARGET}/opensubdiv/lib
-    DEPENDEES install
-  )
 endif()
 
 add_dependencies(

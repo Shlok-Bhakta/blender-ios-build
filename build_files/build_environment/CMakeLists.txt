@@ -15,28 +15,10 @@
 ##################################################################################################
 
 cmake_minimum_required(VERSION 3.10)
-
-set(APPLE_TARGET_DEVICE "macos" CACHE STRING "Apple target: macos, ios, or ios-simulator")
-set_property(CACHE APPLE_TARGET_DEVICE PROPERTY STRINGS macos ios ios-simulator)
-if(APPLE_TARGET_DEVICE STREQUAL "ios" OR APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
-  # Cross-compilation must be selected before project() performs compiler checks.
-  set(CMAKE_SYSTEM_NAME "iOS" CACHE STRING "Target operating system" FORCE)
-endif()
-
 project("BlenderDependencies")
 if(POLICY CMP0135)
   cmake_policy(SET CMP0135 NEW) # CMake 3.24+ Set the date/time for extracted files to time of extraction
 endif()
-
-if(APPLE_TARGET_DEVICE STREQUAL "ios" OR APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
-  set(WITH_APPLE_CROSSPLATFORM ON CACHE BOOL "Build for a non-host Apple platform" FORCE)
-  set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "iOS architecture" FORCE)
-elseif(APPLE_TARGET_DEVICE STREQUAL "macos")
-  set(WITH_APPLE_CROSSPLATFORM OFF CACHE BOOL "Build for a non-host Apple platform" FORCE)
-else()
-  message(FATAL_ERROR "Unsupported APPLE_TARGET_DEVICE: ${APPLE_TARGET_DEVICE}")
-endif()
-
 include(ExternalProject)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/../cmake/Modules")
@@ -72,9 +54,7 @@ include(cmake/imath.cmake)
 include(cmake/openexr.cmake)
 include(cmake/brotli.cmake)
 include(cmake/freetype.cmake)
-if(NOT WITH_APPLE_CROSSPLATFORM)
-  include(cmake/epoxy.cmake)
-endif()
+include(cmake/epoxy.cmake)
 include(cmake/alembic.cmake)
 include(cmake/opensubdiv.cmake)
 include(cmake/sdl.cmake)
@@ -89,7 +69,6 @@ elseif(UNIX AND NOT APPLE)
 endif()
 include(cmake/tbb.cmake)
 include(cmake/python.cmake)
-include(cmake/python_cross_environment.cmake)
 include(cmake/llvm.cmake)
 include(cmake/osl.cmake)
 include(cmake/cython.cmake)

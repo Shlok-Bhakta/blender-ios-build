@@ -39,14 +39,7 @@ if(WITH_TBB)
   # that it is initialized before MKL and static library initialization order issues are avoided.
   #
   # This isn't fully robust but seems to work.
-  if(WITH_APPLE_CROSSPLATFORM)
-    # The static iOS package exposes only a configuration-specific archive
-    # location. Preserve link ordering through its imported target instead of
-    # expanding the intentionally empty legacy path variable.
-    list(INSERT LIB 0 TBB::tbb)
-  else()
-    list(INSERT LIB 0 ${TBB_LIBRARIES})
-  endif()
+  list(INSERT LIB 0 ${TBB_LIBRARIES})
   list(INSERT LIB 0 bf_blenkernel)
 endif()
 
@@ -54,12 +47,8 @@ if(WIN32)
   list(APPEND INC ../../intern/utfconv)
 endif()
 
-if(APPLE)
-  if(WITH_APPLE_CROSSPLATFORM)
-    set(OSX_APP_SOURCEDIR ${CMAKE_SOURCE_DIR}/release/ios/Blender.app)
-  else()
-    set(OSX_APP_SOURCEDIR ${CMAKE_SOURCE_DIR}/release/darwin/Blender.app)
-  endif()
+if(BLENDER_PLATFORM_CREATOR_CMAKE)
+  include("${BLENDER_PLATFORM_CREATOR_CMAKE}")
 endif()
 
 if(WITH_LIBMV)
@@ -449,10 +438,8 @@ elseif(APPLE)
       set(TARGETDIR_LIB ${PYTHON_SITE_PACKAGES}/bpy/lib)
     endif()
   else()
-    if(WITH_APPLE_CROSSPLATFORM)
-      set(TARGETDIR_VER "Blender.app/Assets/${BLENDER_VERSION}")
-      set(TARGETDIR_LIB "Blender.app/Assets/lib")
-      set(TARGETDIR_TEXT "Blender.app/Assets/text")
+    if(COMMAND blender_platform_set_resource_directories)
+      blender_platform_set_resource_directories()
     else()
       set(TARGETDIR_VER "Blender.app/Contents/Resources/${BLENDER_VERSION}")
       set(TARGETDIR_LIB "Blender.app/Contents/Resources/lib")
@@ -541,20 +528,8 @@ if(WITH_PYTHON)
     )
   endif()
 
-  if(WITH_APPLE_CROSSPLATFORM)
-    # iOS permits embedded executable code only under the application
-    # Frameworks directory. The glTF loader falls back to this standard app
-    # location when a bridge is not bundled beside the add-on.
-    install(CODE "
-      execute_process(
-        COMMAND \"${PYTHON_EXECUTABLE}\"
-          \"${CMAKE_SOURCE_DIR}/build_files/ios/package_gltf_bridges.py\"
-          --app-bundle \"\${CMAKE_INSTALL_PREFIX}/Blender.app\"
-          --addon-directory
-            \"\${CMAKE_INSTALL_PREFIX}/${GLTF_BRIDGE_INSTALL_DIR}\"
-        COMMAND_ERROR_IS_FATAL ANY
-      )
-    ")
+  if(COMMAND blender_platform_install_gltf_bridges)
+    blender_platform_install_gltf_bridges("${GLTF_BRIDGE_INSTALL_DIR}")
   endif()
 
   unset(GLTF_BRIDGE_INSTALL_DIR)
@@ -1737,6 +1712,10 @@ elseif(APPLE)
     set_target_properties(blender PROPERTIES OUTPUT_NAME Blender)
   endif()
 
+  if(NOT DEFINED OSX_APP_SOURCEDIR)
+    set(OSX_APP_SOURCEDIR ${CMAKE_SOURCE_DIR}/release/darwin/Blender.app)
+  endif()
+
   # Setup `Info.plist`.
   execute_process(
     COMMAND date "+%Y-%m-%d"
@@ -1744,13 +1723,8 @@ elseif(APPLE)
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 
-  if(WITH_APPLE_CROSSPLATFORM)
-    set_target_properties(blender PROPERTIES
-      MACOSX_BUNDLE_INFO_PLIST ${OSX_APP_SOURCEDIR}/Info.plist
-      MACOSX_BUNDLE_SHORT_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH}"
-      MACOSX_BUNDLE_LONG_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH} ${BLENDER_DATE}"
-      XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
-    )
+  if(COMMAND blender_platform_configure_bundle)
+    blender_platform_configure_bundle(blender "${BLENDER_DATE}")
   else()
     set_target_properties(blender PROPERTIES
       MACOSX_BUNDLE_INFO_PLIST ${OSX_APP_SOURCEDIR}/Contents/Info.plist
@@ -1798,29 +1772,8 @@ elseif(APPLE)
     DESTINATION "."
   )
 
-  if(WITH_APPLE_CROSSPLATFORM)
-    install(
-      FILES ${OSX_APP_SOURCEDIR}/PkgInfo
-      DESTINATION "Blender.app"
-    )
-    if(APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
-      set(_ios_asset_platform "iphonesimulator")
-    else()
-      set(_ios_asset_platform "iphoneos")
-    endif()
-    install(CODE "
-      execute_process(
-        COMMAND \"${PYTHON_EXECUTABLE}\"
-          \"${CMAKE_SOURCE_DIR}/build_files/ios/compile_asset_catalog.py\"
-          --app-bundle \"\${CMAKE_INSTALL_PREFIX}/Blender.app\"
-          --icon-package
-            \"${CMAKE_SOURCE_DIR}/release/darwin/blender_liquid_glass.icon\"
-          --platform \"${_ios_asset_platform}\"
-          --minimum-os \"${CMAKE_OSX_DEPLOYMENT_TARGET}\"
-        COMMAND_ERROR_IS_FATAL ANY
-      )
-    ")
-    unset(_ios_asset_platform)
+  if(COMMAND blender_platform_install_bundle_resources)
+    blender_platform_install_bundle_resources()
   else()
     install(
       FILES ${OSX_APP_SOURCEDIR}/Contents/PkgInfo
@@ -1855,39 +1808,12 @@ elseif(APPLE)
   endif()
 
   # Python.
-  if(WITH_APPLE_CROSSPLATFORM AND WITH_PYTHON AND NOT WITH_PYTHON_MODULE)
-    # iOS requires the interpreter itself and every extension module to live in
-    # a framework. Pure Python files remain in Blender's versioned Assets tree.
-    install(
-      DIRECTORY ${LIBDIR}/python/Python.framework
-      DESTINATION "Blender.app/Frameworks"
-      PATTERN "Headers" EXCLUDE
-    )
-    install_dir(
-      ${PYTHON_LIBPATH}/python${PYTHON_VERSION}
-      ${TARGETDIR_VER}/python/lib
-    )
-
-    if(APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
-      set(_python_ios_platform "iPhoneSimulator")
-    else()
-      set(_python_ios_platform "iPhoneOS")
-    endif()
-    install(CODE "
-      execute_process(
-        COMMAND \"${PYTHON_EXECUTABLE}\"
-          \"${CMAKE_SOURCE_DIR}/build_files/ios/package_python_frameworks.py\"
-          --app-bundle \"\${CMAKE_INSTALL_PREFIX}/Blender.app\"
-          --import-root
-            \"\${CMAKE_INSTALL_PREFIX}/${TARGETDIR_VER}/python/lib/python${PYTHON_VERSION}\"
-          --bundle-identifier \"org.blenderfoundation.blender.ios\"
-          --platform \"${_python_ios_platform}\"
-          --minimum-os \"${CMAKE_OSX_DEPLOYMENT_TARGET}\"
-        COMMAND_ERROR_IS_FATAL ANY
-      )
-    ")
-    unset(_python_ios_platform)
-  elseif(WITH_PYTHON AND NOT WITH_PYTHON_MODULE AND NOT WITH_PYTHON_FRAMEWORK)
+  set(BLENDER_PLATFORM_PYTHON_INSTALLED OFF)
+  if(COMMAND blender_platform_install_python AND WITH_PYTHON AND NOT WITH_PYTHON_MODULE)
+    blender_platform_install_python()
+  endif()
+  if(NOT BLENDER_PLATFORM_PYTHON_INSTALLED AND
+     WITH_PYTHON AND NOT WITH_PYTHON_MODULE AND NOT WITH_PYTHON_FRAMEWORK)
     # Copy the python libraries into the install directory.
     install_dir(
       ${PYTHON_LIBPATH}/python${PYTHON_VERSION}
@@ -1917,7 +1843,7 @@ elseif(APPLE)
     )
   endif()
 
-  if(NOT WITH_APPLE_CROSSPLATFORM AND
+  if(NOT BLENDER_PLATFORM_PYTHON_INSTALLED AND
      NOT WITH_PYTHON_MODULE AND WITH_PYTHON AND WITH_PYTHON_INSTALL)
     get_filename_component(PYTHON_EXECUTABLE_NAME_ONLY ${PYTHON_EXECUTABLE} NAME)
     configure_file(

@@ -58,14 +58,7 @@ endif()
 ###########################################################################
 
 if(WITH_CYCLES_DEVICE_METAL)
-  if(WITH_APPLE_CROSSPLATFORM)
-    # The iOS platform setup disables framework discovery while resolving the
-    # static dependency sysroot. Point Cycles at the target SDK framework
-    # explicitly instead of falling back to the macOS host SDK.
-    set(METAL_LIBRARY "${CMAKE_OSX_SYSROOT}/System/Library/Frameworks/Metal.framework")
-  else()
-    find_library(METAL_LIBRARY Metal)
-  endif()
+  find_library(METAL_LIBRARY Metal)
 
   # This file was added in the 12.0 SDK, use it as a way to detect the version.
   if(METAL_LIBRARY)

@@ -322,10 +322,10 @@ void main_python_exit()
 extern "C" int GHOST_HACK_getFirstFile(char buf[]);
 #endif
 
-#ifdef WITH_APPLE_CROSSPLATFORM
+#ifdef BLENDER_PLATFORM_MAIN
 namespace blender {
-int GHOST_iosmain(int argc, const char **argv);
-void GHOST_iosfinalize(bContext *C);
+int BLENDER_PLATFORM_MAIN(int argc, const char **argv);
+void BLENDER_PLATFORM_FINALIZE(bContext *C);
 }  // namespace blender
 #endif
 
@@ -336,13 +336,13 @@ void GHOST_iosfinalize(bContext *C);
  * - run #WM_main() event loop,
  *   or exit immediately when running in background-mode.
  */
-#ifdef WITH_APPLE_CROSSPLATFORM
+#ifdef BLENDER_PLATFORM_MAIN
 int main(int argc, const char **argv)
 {
-  return blender::GHOST_iosmain(argc, argv);
+  return blender::BLENDER_PLATFORM_MAIN(argc, argv);
 }
 
-int main_ios_callback(int argc, const char **argv)
+int BLENDER_PLATFORM_MAIN_CALLBACK(int argc, const char **argv)
 #else
 int main(int argc,
 #ifdef USE_WIN32_UNICODE_ARGS
@@ -676,14 +676,14 @@ int main(int argc,
     /* Shows the splash as needed. */
     WM_init_splash_on_startup(C);
 
-#  ifdef WITH_APPLE_CROSSPLATFORM
+#  ifdef BLENDER_PLATFORM_MAIN
     WM_main_entry(C);
-    GHOST_iosfinalize(C);
+    BLENDER_PLATFORM_FINALIZE(C);
 #  else
     WM_main(C);
 #  endif
   }
-#  ifndef WITH_APPLE_CROSSPLATFORM
+#  ifndef BLENDER_PLATFORM_MAIN
   /* Neither #WM_exit, #WM_main return, this quiets CLANG's `unreachable-code-return` warning. */
   BLI_assert_unreachable();
 #  endif

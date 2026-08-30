@@ -569,18 +569,12 @@ void MetalDevice::compile_and_load(const int device_id, MetalPipelineType pso_ty
 
     MTLCompileOptions *options = [[MTLCompileOptions alloc] init];
 
-#  if defined(WITH_APPLE_CROSSPLATFORM)
-    /* The iOS port targets 18.0 or newer, where mathMode replaces the
-     * deprecated fastMathEnabled property. */
-    options.mathMode = MTLMathModeFast;
-#  else
-    if (@available(macOS 15.0, *)) {
+    if (@available(macOS 15.0, iOS 18.0, *)) {
       options.mathMode = MTLMathModeFast;
     }
     else {
       options.fastMathEnabled = YES;
     }
-#  endif
     if (@available(macos 12.0, *)) {
       options.languageVersion = MTLLanguageVersion2_4;
     }

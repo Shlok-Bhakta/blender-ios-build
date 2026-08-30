@@ -2,11 +2,8 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-set(ROBINMAP_EXTRA_ARGS)
-
-if(WITH_APPLE_CROSSPLATFORM)
-  list(APPEND ROBINMAP_EXTRA_ARGS -DCMAKE_POLICY_VERSION_MINIMUM=3.5)
-endif()
+set(ROBINMAP_EXTRA_ARGS
+)
 
 ExternalProject_Add(external_robinmap
   URL file://${PACKAGE_DIR}/${ROBINMAP_FILE}
@@ -21,15 +18,3 @@ ExternalProject_Add(external_robinmap
 
   INSTALL_DIR ${LIBDIR}/robinmap
 )
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_robinmap harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/robinmap/include
-      ${HARVEST_TARGET}/robinmap/include
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/robinmap/share
-      ${HARVEST_TARGET}/robinmap/share
-    DEPENDEES install
-  )
-endif()

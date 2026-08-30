@@ -25,17 +25,3 @@ ExternalProject_Add(external_lzma
 
   INSTALL_DIR ${LIBDIR}/lzma
 )
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_lzma harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/lzma/include
-      ${HARVEST_TARGET}/lzma/include
-    COMMAND ${CMAKE_COMMAND} -E make_directory
-      ${HARVEST_TARGET}/lzma/lib
-    COMMAND ${CMAKE_COMMAND} -E copy
-      ${LIBDIR}/lzma/lib/liblzma.a
-      ${HARVEST_TARGET}/lzma/lib/liblzma.a
-    DEPENDEES install
-  )
-endif()

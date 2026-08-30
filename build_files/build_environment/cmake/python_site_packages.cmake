@@ -25,81 +25,37 @@ file(WRITE ${PIP_CONSTRAINT_FILE}
 "setuptools-scm==${SETUPTOOLS_SCM_VERSION}\n"
 )
 
-set(_python_site_package_requirements
-  setuptools==${SETUPTOOLS_VERSION}
-  meson-python==${MESON_PYTHON_VERSION}
-  packaging==${PACKAGING_VERSION}
-  pyproject-metadata==${PYPROJECT_METADATA_VERSION}
-  idna==${IDNA_VERSION}
-  charset-normalizer==${CHARSET_NORMALIZER_VERSION}
-  urllib3==${URLLIB3_VERSION}
-  certifi==${CERTIFI_VERSION}
-  requests==${REQUESTS_VERSION}
-  autopep8==${AUTOPEP8_VERSION}
-  pycodestyle==${PYCODESTYLE_VERSION}
-  docutils==${DOCUTILS_VERSION}
-  meson==${MESON_VERSION}
-  attrs==${ATTRS_VERSION}
-  cattrs==${CATTRS_VERSION}
-  fastjsonschema==${FASTJSONSCHEMA_VERSION}
-  typing-extensions==${TYPING_EXTENSIONS_VERSION}
-  tomli-w==${TOMLI_W_VERSION}
+ExternalProject_Add(external_python_site_packages
+  DOWNLOAD_COMMAND ""
+  CONFIGURE_COMMAND ${PIP_CONFIGURE_COMMAND}
+  BUILD_COMMAND ""
+  PREFIX ${BUILD_DIR}/site_packages
+
+  # We do not build numpy, cython, or zstandard here as the pip builds are not reproducible.
+  INSTALL_COMMAND
+    ${CMAKE_COMMAND} -E env
+      PIP_CONSTRAINT=${PIP_CONSTRAINT_FILE}
+      ${PYTHON_BINARY} -m pip install --no-cache-dir ${SITE_PACKAGES_EXTRA}
+      setuptools==${SETUPTOOLS_VERSION}
+      meson-python==${MESON_PYTHON_VERSION}
+      packaging==${PACKAGING_VERSION}
+      pyproject-metadata==${PYPROJECT_METADATA_VERSION}
+      idna==${IDNA_VERSION}
+      charset-normalizer==${CHARSET_NORMALIZER_VERSION}
+      urllib3==${URLLIB3_VERSION}
+      certifi==${CERTIFI_VERSION}
+      requests==${REQUESTS_VERSION}
+      autopep8==${AUTOPEP8_VERSION}
+      pycodestyle==${PYCODESTYLE_VERSION}
+      docutils==${DOCUTILS_VERSION}
+      meson==${MESON_VERSION}
+      attrs==${ATTRS_VERSION}
+      cattrs==${CATTRS_VERSION}
+      fastjsonschema==${FASTJSONSCHEMA_VERSION}
+      typing-extensions==${TYPING_EXTENSIONS_VERSION}
+      tomli-w==${TOMLI_W_VERSION}
+      --no-binary :all:
 )
-
-if(WITH_APPLE_CROSSPLATFORM)
-  # iOS cannot execute its target interpreter during the dependency build.
-  # Force platform-independent wheels and install them into the target standard
-  # library. This also prevents the historical recipe from modifying the host
-  # Python environment during a cross build.
-  set(_python_target_site_packages
-    ${LIBDIR}/python/lib/python${PYTHON_SHORT_VERSION}/site-packages
-  )
-  ExternalProject_Add(external_python_site_packages
-    DOWNLOAD_COMMAND ""
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    PREFIX ${BUILD_DIR}/site_packages
-    INSTALL_COMMAND
-      ${CMAKE_COMMAND} -E make_directory ${_python_target_site_packages}
-      COMMAND ${CMAKE_COMMAND} -E env
-        PIP_CONSTRAINT=${PIP_CONSTRAINT_FILE}
-        ${PYTHON_BINARY} -m pip install
-          --target ${_python_target_site_packages}
-          --only-binary=:all:
-          --platform any
-          --implementation py
-          --python-version ${PYTHON_SHORT_VERSION}
-          --abi none
-          --no-compile
-          --cache-dir ${DOWNLOAD_DIR}/python-wheels
-          --no-deps
-          ${_python_site_package_requirements}
-  )
-  ExternalProject_Add_Step(external_python_site_packages harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${_python_target_site_packages}
-      ${HARVEST_TARGET}/python/lib/python${PYTHON_SHORT_VERSION}/site-packages
-    DEPENDEES install
-  )
-else()
-  ExternalProject_Add(external_python_site_packages
-    DOWNLOAD_COMMAND ""
-    CONFIGURE_COMMAND ${PIP_CONFIGURE_COMMAND}
-    BUILD_COMMAND ""
-    PREFIX ${BUILD_DIR}/site_packages
-
-    # We do not build numpy, cython, or zstandard here as the pip builds are not reproducible.
-    INSTALL_COMMAND
-      ${CMAKE_COMMAND} -E env
-        PIP_CONSTRAINT=${PIP_CONSTRAINT_FILE}
-        ${PYTHON_BINARY} -m pip install --no-cache-dir ${SITE_PACKAGES_EXTRA}
-        ${_python_site_package_requirements}
-        --no-binary :all:
-  )
-endif()
-
-unset(_python_site_package_requirements)
-unset(_python_target_site_packages)
 
 add_dependencies(
   external_python_site_packages

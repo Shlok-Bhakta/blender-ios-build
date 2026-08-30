@@ -17,13 +17,6 @@ set(TIFF_EXTRA_ARGS
   -Dtiff-tests=OFF
   -Dsphinx=OFF
 )
-if(WITH_APPLE_CROSSPLATFORM)
-  list(APPEND TIFF_EXTRA_ARGS
-    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-    -Dtiff-tools=OFF
-    -Dtiff-contrib=OFF
-  )
-endif()
 
 if(APPLE)
   set(TIFF_EXTRA_ARGS
@@ -52,15 +45,3 @@ add_dependencies(
   external_zlib
   external_jpeg
 )
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_tiff harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/tiff/include
-      ${HARVEST_TARGET}/tiff/include
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/tiff/lib
-      ${HARVEST_TARGET}/tiff/lib
-    DEPENDEES install
-  )
-endif()

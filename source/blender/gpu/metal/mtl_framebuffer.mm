@@ -86,7 +86,7 @@ MTLFrameBuffer::~MTLFrameBuffer()
     }
   }
 
-#ifdef WITH_APPLE_CROSSPLATFORM
+#if MTL_BACKEND_REQUIRES_COLOR_ATTACHMENT
   if (attachmentless_color_texture_ != nil) {
     [attachmentless_color_texture_ release];
     attachmentless_color_texture_ = nil;
@@ -1491,7 +1491,7 @@ bool MTLFrameBuffer::validate_render_pass()
   return true;
 }
 
-#ifdef WITH_APPLE_CROSSPLATFORM
+#if MTL_BACKEND_REQUIRES_COLOR_ATTACHMENT
 bool MTLFrameBuffer::requires_attachmentless_color_target() const
 {
   if (mtl_depth_attachment_.used || mtl_stencil_attachment_.used) {
@@ -1833,7 +1833,7 @@ MTLRenderPassDescriptor *MTLFrameBuffer::bake_render_pass_descriptor(bool load_c
                                 (mtl_stencil_attachment_.used ? 1 : 0);
     if (total_num_attachments == 0) {
       BLI_assert(width_ > 0 && height_ > 0);
-#ifdef WITH_APPLE_CROSSPLATFORM
+#if MTL_BACKEND_REQUIRES_COLOR_ATTACHMENT
       /* iOS rejects raster render pipelines with no valid pixel format. Bind a hidden no-write
        * target so attachmentless passes can keep using fragment shaders for buffer side effects.
        */

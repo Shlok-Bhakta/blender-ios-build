@@ -73,9 +73,9 @@ elseif(SUPPORTS_NEON_BUILD AND SSE2NEON_FOUND)
   set(CXX_HAS_SSE42 FALSE)
   set(CXX_HAS_AVX2 FALSE)
   set(CXX_HAS_F16C FALSE)
-elseif(WITH_APPLE_CROSSPLATFORM AND CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
-  # Compiler flag probes can run with the macOS host defaults during an iOS
-  # cross-build. Never add x86 kernel flags to the native arm64 CPU kernel.
+elseif(CMAKE_CROSSCOMPILING AND
+       (CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64" OR CMAKE_OSX_ARCHITECTURES STREQUAL "arm64"))
+  # Never add host CPU flags to a cross-compiled arm64 kernel.
   set(CXX_HAS_SSE42 FALSE)
   set(CXX_HAS_AVX2 FALSE)
   set(CXX_HAS_F16C FALSE)

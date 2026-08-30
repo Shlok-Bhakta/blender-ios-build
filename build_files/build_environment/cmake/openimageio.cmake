@@ -107,42 +107,6 @@ set(OPENIMAGEIO_EXTRA_ARGS
   -DLibheif_DIR=${LIBDIR}/libheif/lib/cmake/libheif
 )
 
-if(WITH_APPLE_CROSSPLATFORM)
-  set(OIIO_TOOLS OFF)
-  list(APPEND OPENIMAGEIO_EXTRA_ARGS
-    -DBUILD_SHARED_LIBS=OFF
-    -DOpenImageIO_REQUIRED_DEPS=WebP$<SEMICOLON>JPEG$<SEMICOLON>TIFF$<SEMICOLON>OpenEXR$<SEMICOLON>PNG$<SEMICOLON>OpenJPEG$<SEMICOLON>fmt$<SEMICOLON>Robinmap$<SEMICOLON>ZLIB$<SEMICOLON>pugixml$<SEMICOLON>openjph
-    -DUSE_TBB=OFF
-    -DUSE_PYTHON=OFF
-    -DUSE_LIBHEIF=OFF
-    -DOIIO_BUILD_TOOLS=OFF
-    -DUSE_SIMD=0
-    -DImath_DIR=${LIBDIR}/imath/lib/cmake/Imath
-    -DOpenEXR_DIR=${LIBDIR}/openexr/lib/cmake/OpenEXR
-    -DOpenJPEG_DIR=${LIBDIR}/openjpeg/lib/cmake/openjpeg-2.5
-    -Dlibdeflate_DIR=${LIBDIR}/deflate/lib/cmake/libdeflate
-    -DCMAKE_DISABLE_FIND_PACKAGE_libjpeg-turbo=ON
-    -DJPEG_LIBRARY=${LIBDIR}/jpeg/lib/libjpeg${LIBEXT}
-    -DJPEG_INCLUDE_DIR=${LIBDIR}/jpeg/include
-    -DPNG_DIR=${LIBDIR}/png/lib/cmake/PNG
-    -DWebP_DIR=${LIBDIR}/webp/share/WebP/cmake
-    -Dfmt_DIR=${LIBDIR}/fmt/lib/cmake/fmt
-    -DROBINMAP_INCLUDE_DIR=${LIBDIR}/robinmap/include
-    -Dexpat_DIR=${LIBDIR}/expat/lib/cmake/expat-2.7.5
-    -Dpystring_ROOT=${LIBDIR}/pystring
-    -Dpystring_LIBRARY=${LIBDIR}/pystring/lib/libpystring${LIBEXT}
-    -Dpystring_INCLUDE_DIR=${LIBDIR}/pystring/include
-    -Dyaml-cpp_DIR=${LIBDIR}/yamlcpp/lib/cmake/yaml-cpp
-    -Dminizip-ng_ROOT=${LIBDIR}/minizipng
-    -Dminizip-ng_LIBRARY=${LIBDIR}/minizipng/lib/libminizip${LIBEXT}
-    -Dminizip-ng_INCLUDE_DIR=${LIBDIR}/minizipng/include/minizip-ng/minizip
-    -Dminizip-ng_STATIC_LIBRARY=ON
-    -DOPENEXR_ILMTHREAD_LIBRARY=${LIBDIR}/openexr/lib/libIlmThread${LIBEXT}
-    -DOPENEXR_IEX_LIBRARY=${LIBDIR}/openexr/lib/libIex${LIBEXT}
-    -DOPENEXR_ILMIMF_LIBRARY=${LIBDIR}/openexr/lib/libOpenEXR${LIBEXT}
-  )
-endif()
-
 if(WIN32)
   # We don't want the SOABI tags in the final filename since it gets the debug
   # tags wrong and the final .pyd won't be found by python, pybind11 will try to
@@ -194,17 +158,11 @@ add_dependencies(
   external_robinmap
   external_openjpeg${OPENJPEG_POSTFIX}
   external_webp
+  external_python
+  external_pybind11
+  external_tbb
+  external_libheif
 )
-
-if(NOT WITH_APPLE_CROSSPLATFORM)
-  add_dependencies(
-    external_openimageio
-    external_python
-    external_pybind11
-    external_tbb
-    external_libheif
-  )
-endif()
 
 if(WIN32)
   if(BUILD_MODE STREQUAL Release)
@@ -268,29 +226,13 @@ if(WIN32)
     )
   endif()
 else()
-  if(NOT WITH_APPLE_CROSSPLATFORM)
-    harvest_rpath_bin(external_openimageio openimageio/bin openimageio/bin "*")
-  endif()
+  harvest_rpath_bin(external_openimageio openimageio/bin openimageio/bin "*")
   harvest(external_openimageio openimageio/include openimageio/include "*")
   harvest(external_openimageio openimageio/lib/cmake/OpenImageIO openimageio/lib/cmake/OpenImageIO "*.cmake")
   harvest_rpath_lib(external_openimageio openimageio/lib openimageio/lib "*${SHAREDLIBEXT}*")
-  if(NOT WITH_APPLE_CROSSPLATFORM)
-    harvest_rpath_python(external_openimageio
-      openimageio/lib/python${PYTHON_SHORT_VERSION}
-      python/lib/python${PYTHON_SHORT_VERSION}
-      "*"
-    )
-  endif()
-endif()
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_openimageio harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/openimageio/include
-      ${HARVEST_TARGET}/openimageio/include
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/openimageio/lib
-      ${HARVEST_TARGET}/openimageio/lib
-    DEPENDEES install
+  harvest_rpath_python(external_openimageio
+    openimageio/lib/python${PYTHON_SHORT_VERSION}
+    python/lib/python${PYTHON_SHORT_VERSION}
+    "*"
   )
 endif()

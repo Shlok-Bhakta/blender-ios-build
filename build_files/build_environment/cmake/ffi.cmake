@@ -42,9 +42,6 @@ else()
       --enable-static=yes
       --with-pic
   )
-  if(WITH_APPLE_CROSSPLATFORM)
-    list(APPEND FFI_EXTRA_ARGS --host=aarch64-apple-darwin)
-  endif()
 endif()
 
 ExternalProject_Add(external_ffi
@@ -98,20 +95,6 @@ elseif(WIN32)
     COMMAND ${CMAKE_COMMAND} -E copy
       ${BUILD_DIR}/ffi/src/external_ffi/${FFI_TARGET_HOST}/fficonfig.h
       ${LIBDIR}/ffi/${FFI_PYTHON_TARGET_ARCH}/include/fficonfig.h
-    DEPENDEES install
-  )
-endif()
-
-if(WITH_APPLE_CROSSPLATFORM)
-  ExternalProject_Add_Step(external_ffi harvest_ios
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${LIBDIR}/ffi/include
-      ${HARVEST_TARGET}/ffi/include
-    COMMAND ${CMAKE_COMMAND} -E make_directory
-      ${HARVEST_TARGET}/ffi/lib
-    COMMAND ${CMAKE_COMMAND} -E copy
-      ${LIBDIR}/ffi/lib/libffi.a
-      ${HARVEST_TARGET}/ffi/lib/libffi.a
     DEPENDEES install
   )
 endif()

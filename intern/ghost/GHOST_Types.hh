@@ -184,6 +184,8 @@ enum GHOST_TCapabilityFlag {
    * Otherwise client-side-decorations should be used, see: `WITH_GHOST_CSD`.
    */
   GHOST_kCapabilityWindowDecorationServerSide = (1 << 14),
+  /** Support for a platform-managed on-screen keyboard. */
+  GHOST_kCapabilityOnScreenKeyboard = (1 << 15),
 };
 
 /**
@@ -327,13 +329,11 @@ enum GHOST_TEventType {
    */
   GHOST_kEventTrackpad,
 
-#if defined(WITH_APPLE_CROSSPLATFORM)
   /** Touch event carrying #GHOST_TEventTouchData. */
   GHOST_kEventTouch,
   GHOST_kEventTwoFingerTap,
   GHOST_kEventThreeFingerTap,
   GHOST_kEventFourFingerTap,
-#endif
 
 #ifdef WITH_INPUT_NDOF
   /**
@@ -591,9 +591,7 @@ enum GHOST_TKey {
   GHOST_kKeyF23,
   GHOST_kKeyF24,
 
-#if defined(WITH_APPLE_CROSSPLATFORM)
   GHOST_kKeyTextEdit,
-#endif
 
   /* Multimedia keypad buttons. */
   GHOST_kKeyMediaPlay,
@@ -683,13 +681,12 @@ struct GHOST_TEventTrackpadData {
   int32_t deltaY;
   /** The delta is inverted from the device due to system preferences. */
   char isDirectionInverted;
-#if defined(WITH_APPLE_CROSSPLATFORM)
   /** Number of fingers triggering the trackpad or touch event. */
   uint numFingers;
-#endif
+  /** Optional event-local modifier, without changing persistent keyboard state. */
+  GHOST_TModifierKey modifierKey;
 };
 
-#if defined(WITH_APPLE_CROSSPLATFORM)
 enum GHOST_TTouchEventSubTypes {
   GHOST_kTouchEventUnknown = 0,
   GHOST_kTouchEventEdgeSwipeInLeft,
@@ -704,7 +701,6 @@ struct GHOST_TEventTouchData {
   int32_t y;
   uint numFingers;
 };
-#endif
 
 enum GHOST_TDragnDropTypes {
   GHOST_kDragnDropTypeUnknown = 0,
@@ -1435,7 +1431,6 @@ enum GHOST_NDOF_ButtonT {
   GHOST_NDOF_BUTTON_USER = 0x10000
 };
 
-#if defined(WITH_APPLE_CROSSPLATFORM)
 struct GHOST_KeyboardProperties {
   enum text_field_state {
     move_cursor_to_start,
@@ -1460,4 +1455,3 @@ struct GHOST_KeyboardProperties {
   const char *tip_text;
   const char *text_string;
 };
-#endif
