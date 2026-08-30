@@ -334,7 +334,8 @@ static UserInputEvent::EventTypes pointerButtonEvent(const UIEventButtonMask but
 @end
 
 /* GHOSTUIWindow interface. */
-@interface GHOSTUIWindow : UIWindow <UIGestureRecognizerDelegate, UIPencilInteractionDelegate>
+@interface GHOSTUIWindow :
+    UIWindow <UIGestureRecognizerDelegate, UIPencilInteractionDelegate, UITextFieldDelegate>
 {
   GHOST_SystemIOS *system;
   GHOST_WindowIOS *window;
@@ -671,6 +672,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 
   if (text_field != nil) {
     [text_field resignFirstResponder];
+    text_field.delegate = nil;
     [text_field removeTarget:self action:NULL forControlEvents:UIControlEventAllEvents];
     text_field.inputAccessoryView = nil;
     [text_field removeFromSuperview];
@@ -1659,6 +1661,50 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   }
 }
 
+- (BOOL)textField:(UITextField *)sender
+    shouldChangeCharactersInRange:(NSRange)range
+                replacementString:(NSString *)replacement_string
+{
+  @synchronized(self) {
+    if (!onscreen_keyboard_active) {
+      return YES;
+    }
+
+    /* UIKit owns the hidden responder while Blender owns the visible edit string. Mirror each
+     * native edit as ordinary key events so live controls, especially search fields, update before
+     * the keyboard is dismissed. One backspace replaces either the current selection or the
+     * character immediately before the cursor, matching UITextField's edit range. */
+    if (range.length > 0) {
+      [self generateKeyEvent:GHOST_kKeyBackSpace down:true utf8:nullptr];
+      [self generateKeyEvent:GHOST_kKeyBackSpace down:false utf8:nullptr];
+    }
+
+    NSData *encoded = [replacement_string dataUsingEncoding:NSUTF8StringEncoding];
+    const unsigned char *bytes = static_cast<const unsigned char *>(encoded.bytes);
+    for (NSUInteger offset = 0; offset < encoded.length;) {
+      const unsigned char lead = bytes[offset];
+      NSUInteger scalar_length = 1;
+      if ((lead & 0xe0) == 0xc0) {
+        scalar_length = 2;
+      }
+      else if ((lead & 0xf0) == 0xe0) {
+        scalar_length = 3;
+      }
+      else if ((lead & 0xf8) == 0xf0) {
+        scalar_length = 4;
+      }
+      scalar_length = std::min(scalar_length, encoded.length - offset);
+
+      char utf8[6] = {};
+      memcpy(utf8, bytes + offset, scalar_length);
+      [self generateKeyEvent:GHOST_kKeyUnknown down:true utf8:utf8];
+      [self generateKeyEvent:GHOST_kKeyUnknown down:false utf8:nullptr];
+      offset += scalar_length;
+    }
+  }
+  return YES;
+}
+
 - (void)handleKeyboardEditChange:(UITextField *)sender
 {
   @synchronized(self) {
@@ -1728,6 +1774,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
     text_field.textColor = UIColor.clearColor;
     text_field.tintColor = UIColor.clearColor;
     text_field.hidden = YES;
+    text_field.delegate = self;
 
     if (toolbar_enabled) {
       [self initToolbar];
