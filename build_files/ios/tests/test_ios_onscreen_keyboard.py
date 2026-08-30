@@ -74,6 +74,32 @@ class IOSOnscreenKeyboardTests(unittest.TestCase):
 
         self.assertIn("if (onscreen_keyboard_active && text_field.text != nil)", getter)
 
+    def test_native_edits_are_forwarded_to_blender_while_typing(self) -> None:
+        source = WINDOW_SOURCE.read_text()
+        interface = source[
+            source.index("@interface GHOSTUIWindow") : source.index("@implementation GHOSTUIWindow")
+        ]
+        init = source[
+            source.rindex("- (void)initUITextField") : source.rindex(
+                "- (UITextField *)getUITextField"
+            )
+        ]
+        delegate = source[
+            source.index("- (BOOL)textField:") : source.index("- (void)handleKeyboardEditChange:")
+        ]
+
+        self.assertIn("UITextFieldDelegate", interface)
+        self.assertIn("text_field.delegate = self;", init)
+        self.assertIn("GHOST_kKeyBackSpace", delegate)
+        self.assertIn("GHOST_kKeyUnknown", delegate)
+        self.assertGreaterEqual(delegate.count("generateKeyEvent"), 4)
+        key_events = source[
+            source.index(
+                "- (void)generateKeyEvent:(GHOST_TKey)key down:(bool)is_down utf8:(const char *)utf8\n{"
+            ) : source.index("- (void)generateUndoRedoShortcut:(bool)redo\n{")
+        ]
+        self.assertIn("notifyExternalEventProcessed", key_events)
+
 
 if __name__ == "__main__":
     unittest.main()
