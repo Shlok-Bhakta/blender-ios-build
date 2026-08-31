@@ -30,6 +30,11 @@ OPENCOLORIO_RECIPE = (
 
 
 class PrPreviewWorkflowTests(unittest.TestCase):
+    def test_cancels_obsolete_preview_builds(self) -> None:
+        workflow = WORKFLOW.read_text()
+        self.assertIn("cancel-in-progress: true", workflow)
+        self.assertNotIn("cancel-in-progress: false", workflow)
+
     def test_uses_github_hosted_arm_runner_and_content_addressed_caches(self) -> None:
         workflow = WORKFLOW.read_text()
         self.assertIn("runs-on: macos-15", workflow)
@@ -69,6 +74,36 @@ class PrPreviewWorkflowTests(unittest.TestCase):
         self.assertIn('test -s "$DEPS_BUILD/Release/zlib/lib/libz.a"', workflow)
         self.assertIn('test -s "$DEPS_BUILD/Release/ffmpeg/lib/libavcodec.a"', workflow)
         self.assertIn('test -s "$DEPS_BUILD/Release/usd/lib/libusd_m.a"', workflow)
+
+    def test_cached_dependencies_skip_the_redundant_full_abi_scan(self) -> None:
+        workflow = WORKFLOW.read_text()
+        audit_step = workflow.split("- name: Audit cached dependency prefix", 1)[1].split(
+            "- name: Save iOS dependency prefix", 1
+        )[0]
+        self.assertIn("DEPENDENCY_CACHE_HIT", audit_step)
+        self.assertIn("build_files/ios/audit.py abi", audit_step)
+        self.assertIn('if [[ "$DEPENDENCY_CACHE_HIT" != "true" ]]', audit_step)
+
+    def test_full_app_build_reuses_a_bounded_compiler_cache(self) -> None:
+        workflow = WORKFLOW.read_text()
+        self.assertIn("CCACHE_DIR:", workflow)
+        self.assertIn("CCACHE_MAXSIZE: 4G", workflow)
+        self.assertIn("Restore full-app compiler cache", workflow)
+        self.assertIn("Save full-app compiler cache", workflow)
+        self.assertIn("ios-device-ccache-v1-", workflow)
+        self.assertIn("restore-keys:", workflow)
+        self.assertIn("-DCMAKE_C_COMPILER_LAUNCHER=ccache", workflow)
+        self.assertIn("-DCMAKE_CXX_COMPILER_LAUNCHER=ccache", workflow)
+        self.assertIn("ccache --show-stats", workflow)
+
+    def test_build_parallelism_tracks_the_runner_instead_of_a_magic_number(self) -> None:
+        workflow = WORKFLOW.read_text()
+        app_step = workflow.split("- name: Configure and build unsigned device app", 1)[1].split(
+            "- name: Save full-app compiler cache", 1
+        )[0]
+        self.assertIn('build_jobs="$(sysctl -n hw.logicalcpu)"', app_step)
+        self.assertIn('--parallel "$build_jobs"', app_step)
+        self.assertNotIn("--parallel 3", app_step)
 
     def test_opencolorio_finishes_static_library_copies_before_harvesting(self) -> None:
         recipe = OPENCOLORIO_RECIPE.read_text()

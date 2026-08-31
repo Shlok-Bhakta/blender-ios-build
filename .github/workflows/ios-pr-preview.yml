@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: ios-pr-preview-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build-package-publish:
@@ -32,6 +32,12 @@ jobs:
       HOST_BUILD: ${{ github.workspace }}/.ios-preview/host-build
       HOST_INSTALL: ${{ github.workspace }}/.ios-preview/host-install
       APP_BUILD: ${{ github.workspace }}/.ios-preview/app-build
+      CCACHE_DIR: ${{ github.workspace }}/.ios-preview/ccache
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      CCACHE_COMPILERCHECK: content
+      CCACHE_NOHASHDIR: 'true'
+      CCACHE_COMPRESS: 'true'
+      CCACHE_MAXSIZE: 4G
       RELEASE_DIR: ${{ github.workspace }}/.ios-preview/release
       ASSET_NAME: DevBlender-test.blenderfoundation.blender.ios-unsigned.ipa
       GIT_LFS_SKIP_SMUDGE: '1'
@@ -89,7 +95,7 @@ jobs:
 
       - name: Install dependency build tools
         run: |
-          brew install autoconf automake bison dos2unix flex libtool meson ninja pkgconf yasm
+          brew install autoconf automake bison ccache dos2unix flex libtool meson ninja pkgconf yasm
           echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
           echo "$(brew --prefix flex)/bin" >> "$GITHUB_PATH"
           echo "$(brew --prefix libtool)/libexec/gnubin" >> "$GITHUB_PATH"
@@ -132,7 +138,8 @@ jobs:
           )"
           library_revision="$(git rev-parse HEAD:lib/macos_arm64)"
           {
-          echo "dependency-cache-key=ios-device-deps-v5-${xcode_key}-${dependency_key}"
+            echo "xcode-cache-key=$xcode_key"
+            echo "dependency-cache-key=ios-device-deps-v5-${xcode_key}-${dependency_key}"
             echo "host-tool-cache-key=ios-host-tools-v2-${xcode_key}-${library_revision}-${host_key}"
           } >> "$GITHUB_OUTPUT"
 
@@ -151,6 +158,15 @@ jobs:
         with:
           path: ${{ env.HOST_INSTALL }}
           key: ${{ steps.cache-keys.outputs.host-tool-cache-key }}
+
+      - name: Restore full-app compiler cache
+        id: app-compiler-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ios-device-ccache-v1-${{ steps.cache-keys.outputs.xcode-cache-key }}-${{ github.event.pull_request.head.sha }}
+          restore-keys: |
+            ios-device-ccache-v1-${{ steps.cache-keys.outputs.xcode-cache-key }}-
 
       - name: Build and harvest iOS dependencies on cache miss
         if: steps.dependency-cache.outputs.cache-hit != 'true'
@@ -207,6 +223,8 @@ jobs:
 
       - name: Audit cached dependency prefix
         shell: bash
+        env:
+          DEPENDENCY_CACHE_HIT: ${{ steps.dependency-cache.outputs.cache-hit }}
         run: |
           set -euo pipefail
           test -f "$DEPS_INSTALL/python/Python.framework/Python" || { echo "::error::Missing cached file: $DEPS_INSTALL/python/Python.framework/Python"; exit 1; }
@@ -225,7 +243,11 @@ jobs:
           test -s "$DEPS_BUILD/Release/openvdb/lib/libopenvdb.a" || { echo "::error::Missing OpenVDB"; exit 1; }
           test -s "$DEPS_BUILD/Release/ffmpeg/lib/libavcodec.a" || { echo "::error::Missing FFmpeg"; exit 1; }
           test -s "$DEPS_BUILD/Release/usd/lib/libusd_m.a" || { echo "::error::Missing USD"; exit 1; }
-          python3 build_files/ios/audit.py abi "$DEPS_BUILD/Release" --target ios-device --arch arm64
+          if [[ "$DEPENDENCY_CACHE_HIT" != "true" ]]; then
+            python3 build_files/ios/audit.py abi "$DEPS_BUILD/Release" --target ios-device --arch arm64
+          else
+            echo "Dependency cache was ABI-audited before it was saved; skipping duplicate scan."
+          fi
 
       - name: Save iOS dependency prefix
         if: steps.dependency-cache.outputs.cache-hit != 'true'
@@ -294,6 +316,9 @@ jobs:
           set -euo pipefail
           export DYLD_LIBRARY_PATH="$HOST_INSTALL/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
           sdk_path="$(xcrun --sdk iphoneos --show-sdk-path)"
+          build_jobs="$(sysctl -n hw.logicalcpu)"
+          ccache --zero-stats
+          ccache --set-config=max_size="$CCACHE_MAXSIZE"
           cmake \
             -S . \
             -B "$APP_BUILD" \
@@ -305,12 +330,22 @@ jobs:
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=18.0 \
             -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DIOS_HOST_TOOLS_DIR="$HOST_INSTALL" \
             -DLIBDIR="$DEPS_BUILD/Release"
-          cmake --build "$APP_BUILD" --parallel 3 --target install
+          cmake --build "$APP_BUILD" --parallel "$build_jobs" --target install
+          ccache --show-stats
           python3 build_files/ios/audit_build_features.py \
             "$APP_BUILD/bin/Blender.app/Blender" \
             --require-opensubdiv
+
+      - name: Save full-app compiler cache
+        if: success() && steps.app-compiler-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ios-device-ccache-v1-${{ steps.cache-keys.outputs.xcode-cache-key }}-${{ github.event.pull_request.head.sha }}
 
       - name: Package and gate DevBlender IPA
         id: package
