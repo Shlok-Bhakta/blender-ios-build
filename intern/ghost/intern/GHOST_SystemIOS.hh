@@ -17,9 +17,12 @@
 
 #include "GHOST_System.hh"
 
+#include <memory>
+
 class GHOST_EventCursor;
 class GHOST_EventKey;
 class GHOST_EventWindow;
+class GHOST_IOSVirtualPointer;
 class GHOST_WindowIOS;
 
 #ifdef __OBJC__
@@ -273,9 +276,12 @@ class GHOST_SystemIOS : public GHOST_System {
 
   /** Keep polling APIs synchronized with UIKit events dispatched outside processEvents(). */
   GHOST_TSuccess pushEvent(std::unique_ptr<const GHOST_IEvent> event);
-  void updateCursorPositionState(int32_t x, int32_t y);
-  void updateButtonState(GHOST_TButton button, bool down);
   void updateModifierState(GHOST_TModifierKey modifier, bool down);
+
+  GHOST_IOSVirtualPointer *virtualPointer() const
+  {
+    return virtual_pointer_.get();
+  }
 
   /**
    * \see GHOST_ISystem
@@ -312,10 +318,8 @@ class GHOST_SystemIOS : public GHOST_System {
   /** State of the modifiers. */
   GHOST_ModifierKeys modifier_keys_;
 
-  /** Last UIKit pointer state, used by the polling APIs. */
-  int32_t cursor_x_ = 0;
-  int32_t cursor_y_ = 0;
-  GHOST_Buttons buttons_;
+  /** Shared cursor state for finger, Pencil, hardware pointer, and Blender warps. */
+  std::unique_ptr<GHOST_IOSVirtualPointer> virtual_pointer_;
 
   /** Ignores window size messages (when window is dragged). */
   bool ignore_window_sized_message_;

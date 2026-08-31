@@ -16,7 +16,7 @@ class GhostGlobalSearchGestureTests(unittest.TestCase):
     def test_four_finger_tap_is_direct_touch_only(self) -> None:
         registration = self.source[
             self.source.index("/* Four-finger tap gesture recognizer. */") :
-            self.source.index("/* Pan gesture recognizer - static UI. */")
+            self.source.index("/* A direct finger moves the virtual cursor relatively")
         ]
 
         self.assertIn("tap4f_gesture_recognizer.numberOfTouchesRequired = 4;", registration)

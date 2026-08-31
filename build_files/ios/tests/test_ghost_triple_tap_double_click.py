@@ -27,16 +27,15 @@ class GhostTripleTapDoubleClickTests(unittest.TestCase):
             self.source,
         )
 
-    def test_triple_tap_emits_two_left_clicks_at_the_first_tap(self) -> None:
+    def test_triple_tap_emits_two_left_clicks_at_the_virtual_cursor(self) -> None:
         handler = self.source[
             self.source.rindex("- (void)handleTripleTap:") :
             self.source.rindex("- (void)handleMouseButtonTap:")
         ]
 
-        self.assertIn("getScaledFirstTapPoint", handler)
-        self.assertEqual(handler.count("LEFT_BUTTON_DOWN"), 2)
-        self.assertEqual(handler.count("LEFT_BUTTON_UP"), 2)
-        self.assertNotIn("RIGHT_BUTTON", handler)
+        self.assertEqual(handler.count("virtual_pointer->click(GHOST_kButtonMaskLeft)"), 2)
+        self.assertNotIn("getScaledFirstTapPoint", handler)
+        self.assertNotIn("GHOST_kButtonMaskRight", handler)
 
 
 if __name__ == "__main__":

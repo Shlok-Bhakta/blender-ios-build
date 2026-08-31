@@ -6,6 +6,9 @@ list(APPEND SRC
   intern/GHOST_ContextIOS.hh
   intern/GHOST_ContextIOS.mm
   intern/GHOST_EventTouch.hh
+  intern/GHOST_IOSVirtualPointer.hh
+  intern/GHOST_IOSVirtualPointer.mm
+  intern/GHOST_IOSVirtualPointerState.hh
   intern/GHOST_SystemIOS.hh
   intern/GHOST_SystemIOS.mm
   intern/GHOST_SystemPathsCocoa.hh

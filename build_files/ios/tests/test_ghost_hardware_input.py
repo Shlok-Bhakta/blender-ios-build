@@ -21,10 +21,15 @@ class GhostHardwareInputTests(unittest.TestCase):
 
     def test_mouse_drags_preserve_the_pressed_button(self) -> None:
         self.assertIn("initial_button_mask = event.buttonMask", self.source)
-        self.assertIn("MIDDLE_BUTTON_DOWN", self.source)
-        self.assertIn("MIDDLE_BUTTON_UP", self.source)
-        self.assertIn("RIGHT_BUTTON_DOWN", self.source)
-        self.assertIn("RIGHT_BUTTON_UP", self.source)
+        self.assertIn("return GHOST_kButtonMaskMiddle;", self.source)
+        self.assertIn("return GHOST_kButtonMaskRight;", self.source)
+        handler = self.source[
+            self.source.rindex("- (void)handleHardwareDrag:") :
+            self.source.rindex("- (void)handlePan2f:")
+        ]
+        self.assertIn("pointerButton(button_mask)", handler)
+        self.assertIn("virtual_pointer->button(button, true)", handler)
+        self.assertIn("virtual_pointer->button(button, false)", handler)
 
     def test_pointer_scroll_generates_a_trackpad_scroll_event(self) -> None:
         self.assertIn("scroll_gesture_recognizer", self.source)

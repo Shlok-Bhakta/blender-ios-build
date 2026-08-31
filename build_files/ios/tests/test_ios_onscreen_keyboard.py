@@ -94,9 +94,9 @@ class IOSOnscreenKeyboardTests(unittest.TestCase):
         self.assertIn("GHOST_kKeyUnknown", delegate)
         self.assertGreaterEqual(delegate.count("generateKeyEvent"), 4)
         key_events = source[
-            source.index(
+            source.rindex(
                 "- (void)generateKeyEvent:(GHOST_TKey)key down:(bool)is_down utf8:(const char *)utf8\n{"
-            ) : source.index("- (void)generateUndoRedoShortcut:(bool)redo\n{")
+            ) : source.rindex("- (void)generateHardwareKeyEvents:")
         ]
         self.assertIn("notifyExternalEventProcessed", key_events)
 

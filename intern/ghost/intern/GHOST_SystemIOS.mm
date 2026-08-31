@@ -9,6 +9,7 @@
 #include "GHOST_SystemIOS.hh"
 
 #include "GHOST_ContextIOS.hh"
+#include "GHOST_IOSVirtualPointer.hh"
 #include "GHOST_WindowIOS.hh"
 
 #include "GHOST_Debug.hh"
@@ -486,6 +487,7 @@ GHOST_SystemIOS::GHOST_SystemIOS()
 {
   outside_loop_event_processed_ = false;
   ignore_window_sized_message_ = false;
+  virtual_pointer_ = std::make_unique<GHOST_IOSVirtualPointer>(this);
 }
 
 GHOST_SystemIOS::~GHOST_SystemIOS() {}
@@ -623,16 +625,10 @@ GHOST_TSuccess GHOST_SystemIOS::disposeContext(GHOST_IContext *context)
   return GHOST_kSuccess;
 }
 
-/** Return the last UIKit pointer location in scene screen coordinates. */
+/** Return the virtual pointer location in scene screen coordinates. */
 GHOST_TSuccess GHOST_SystemIOS::getCursorPosition(int32_t &x, int32_t &y) const
 {
-  GHOST_WindowIOS *window = static_cast<GHOST_WindowIOS *>(
-      this->window_manager_->getActiveWindow());
-  if (!window) {
-    return GHOST_kFailure;
-  }
-  window->clientToScreen(cursor_x_, cursor_y_, x, y);
-  return GHOST_kSuccess;
+  return virtual_pointer_->getCursorPosition(x, y);
 }
 
 /** Update software cursor state from scene screen coordinates.
@@ -647,15 +643,7 @@ GHOST_TSuccess GHOST_SystemIOS::setCursorPosition(int32_t x, int32_t y)
   int32_t client_x;
   int32_t client_y;
   window->screenToClient(x, y, client_x, client_y);
-  updateCursorPositionState(client_x, client_y);
-  pushEvent(std::make_unique<GHOST_EventCursor>(
-      getMilliSeconds(),
-      GHOST_kEventCursorMove,
-      window,
-      client_x,
-      client_y,
-      window->getTabletData()));
-  outside_loop_event_processed_ = true;
+  virtual_pointer_->warp(client_x, client_y);
 
   return GHOST_kSuccess;
 }
@@ -673,12 +661,13 @@ GHOST_TSuccess GHOST_SystemIOS::getModifierKeys(GHOST_ModifierKeys &keys) const
 
 GHOST_TSuccess GHOST_SystemIOS::getButtons(GHOST_Buttons &buttons) const
 {
-  buttons = buttons_;
+  virtual_pointer_->getButtons(buttons);
   return GHOST_kSuccess;
 }
 GHOST_TCapabilityFlag GHOST_SystemIOS::getCapabilities() const
 {
-  return GHOST_TCapabilityFlag(GHOST_kCapabilityGPUReadFrontBuffer |
+  return GHOST_TCapabilityFlag(GHOST_kCapabilityCursorWarp |
+                               GHOST_kCapabilityGPUReadFrontBuffer |
                                GHOST_kCapabilityOnScreenKeyboard);
 }
 
@@ -700,7 +689,7 @@ bool GHOST_SystemIOS::processEvents(bool /*waitForEvent*/)
 GHOST_TSuccess GHOST_SystemIOS::handleApplicationBecomeActiveEvent()
 {
   modifier_keys_.clear();
-  buttons_.clear();
+  virtual_pointer_->clearButtons();
 
   outside_loop_event_processed_ = true;
   return GHOST_kSuccess;
@@ -726,19 +715,6 @@ GHOST_TSuccess GHOST_SystemIOS::pushEvent(std::unique_ptr<const GHOST_IEvent> ev
 {
   outside_loop_event_processed_ = true;
   return GHOST_System::pushEvent(std::move(event));
-}
-
-void GHOST_SystemIOS::updateCursorPositionState(const int32_t x, const int32_t y)
-{
-  cursor_x_ = x;
-  cursor_y_ = y;
-  notifyExternalEventProcessed();
-}
-
-void GHOST_SystemIOS::updateButtonState(const GHOST_TButton button, const bool down)
-{
-  buttons_.set(button, down);
-  notifyExternalEventProcessed();
 }
 
 void GHOST_SystemIOS::updateModifierState(const GHOST_TModifierKey modifier, const bool down)
