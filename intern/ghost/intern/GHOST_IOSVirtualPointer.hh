@@ -43,6 +43,7 @@ class GHOST_IOSVirtualPointer {
   void clearButtons();
   void getButtons(GHOST_Buttons &buttons) const;
 
+  void getClientPosition(double &x, double &y) const;
   GHOST_TSuccess getCursorPosition(int32_t &screen_x, int32_t &screen_y) const;
   void setBlenderVisibility(bool visible);
   void setGrabMode(GHOST_TGrabCursorMode mode);

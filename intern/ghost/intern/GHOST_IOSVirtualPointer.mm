@@ -58,25 +58,33 @@ class GHOST_IOSVirtualPointer::Impl {
     }
 
     const CGSize native_size = window_->getNativeWindowSize();
-    state_.initialize(native_size.width, native_size.height);
+    state_.initialize(native_size.width, native_size.height, window_->getWindowScaleFactor());
 
     UIBezierPath *path = [UIBezierPath bezierPath];
-    [path moveToPoint:CGPointMake(1.0, 1.0)];
-    [path addLineToPoint:CGPointMake(1.0, 18.0)];
-    [path addLineToPoint:CGPointMake(5.5, 13.5)];
-    [path addLineToPoint:CGPointMake(9.0, 21.0)];
-    [path addLineToPoint:CGPointMake(12.0, 19.5)];
-    [path addLineToPoint:CGPointMake(8.5, 12.5)];
-    [path addLineToPoint:CGPointMake(15.0, 12.5)];
+    /* The outside edge of the stroke lands at (0, 0), making the visible tip the hotspot. */
+    [path moveToPoint:CGPointMake(0.75, 0.75)];
+    [path addQuadCurveToPoint:CGPointMake(2.8, 1.25) controlPoint:CGPointMake(1.45, 0.35)];
+    [path addLineToPoint:CGPointMake(24.0, 17.0)];
+    [path addQuadCurveToPoint:CGPointMake(21.5, 21.0) controlPoint:CGPointMake(25.2, 20.0)];
+    [path addLineToPoint:CGPointMake(14.0, 21.0)];
+    [path addLineToPoint:CGPointMake(9.8, 28.0)];
+    [path addQuadCurveToPoint:CGPointMake(5.6, 27.1) controlPoint:CGPointMake(7.1, 30.1)];
+    [path addLineToPoint:CGPointMake(0.5, 3.0)];
+    [path addQuadCurveToPoint:CGPointMake(0.75, 0.75) controlPoint:CGPointMake(0.2, 1.4)];
     [path closePath];
 
     cursor_layer_ = [[CAShapeLayer layer] retain];
     cursor_layer_.path = path.CGPath;
-    cursor_layer_.fillColor = UIColor.whiteColor.CGColor;
-    cursor_layer_.strokeColor = UIColor.blackColor.CGColor;
+    cursor_layer_.fillColor = [UIColor colorWithWhite:0.24 alpha:0.98].CGColor;
+    cursor_layer_.strokeColor = [UIColor colorWithWhite:0.78 alpha:0.80].CGColor;
     cursor_layer_.lineWidth = 1.5;
-    cursor_layer_.bounds = CGRectMake(0.0, 0.0, 24.0, 24.0);
+    cursor_layer_.lineJoin = kCALineJoinRound;
+    cursor_layer_.lineCap = kCALineCapRound;
+    cursor_layer_.bounds = CGRectMake(0.0, 0.0, 30.0, 32.0);
     cursor_layer_.anchorPoint = CGPointMake(0.0, 0.0);
+    cursor_layer_.contentsScale = UIScreen.mainScreen.scale;
+    cursor_layer_.shouldRasterize = YES;
+    cursor_layer_.rasterizationScale = UIScreen.mainScreen.scale;
     cursor_layer_.zPosition = 100000.0;
     [window_->getView().layer addSublayer:cursor_layer_];
 
@@ -191,7 +199,7 @@ void GHOST_IOSVirtualPointer::detachWindow(GHOST_WindowIOS *window)
 
 void GHOST_IOSVirtualPointer::beginRelative(const double finger_x, const double finger_y)
 {
-  impl_->state_.beginRelative(finger_x, finger_y);
+  impl_->state_.beginRelative(finger_x, finger_y, CACurrentMediaTime());
   impl_->updateCursorLayer();
 }
 
@@ -199,7 +207,7 @@ void GHOST_IOSVirtualPointer::moveRelativeTo(const double finger_x,
                                              const double finger_y,
                                              const GHOST_TabletData &tablet)
 {
-  impl_->state_.moveRelativeTo(finger_x, finger_y);
+  impl_->state_.moveRelativeTo(finger_x, finger_y, CACurrentMediaTime());
   impl_->sendCursorEvent(tablet);
 }
 
@@ -261,6 +269,12 @@ void GHOST_IOSVirtualPointer::getButtons(GHOST_Buttons &buttons) const
               impl_->state_.buttonDown(GHOST_IOSPointerButton::Middle));
   buttons.set(GHOST_kButtonMaskRight,
               impl_->state_.buttonDown(GHOST_IOSPointerButton::Right));
+}
+
+void GHOST_IOSVirtualPointer::getClientPosition(double &x, double &y) const
+{
+  x = impl_->state_.x();
+  y = impl_->state_.y();
 }
 
 GHOST_TSuccess GHOST_IOSVirtualPointer::getCursorPosition(int32_t &screen_x,
