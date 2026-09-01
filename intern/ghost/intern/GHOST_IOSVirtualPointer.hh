@@ -23,9 +23,14 @@ class GHOST_IOSVirtualPointer {
   void detachWindow(GHOST_WindowIOS *window);
 
   void beginRelative(double finger_x, double finger_y);
+  void beginRelativeAtTime(double finger_x, double finger_y, double timestamp_seconds);
   void moveRelativeTo(double finger_x,
                       double finger_y,
                       const GHOST_TabletData &tablet = GHOST_TABLET_DATA_NONE);
+  void moveRelativeToAtTime(double finger_x,
+                            double finger_y,
+                            double timestamp_seconds,
+                            const GHOST_TabletData &tablet = GHOST_TABLET_DATA_NONE);
   void endRelative();
 
   void moveAbsolute(double x,

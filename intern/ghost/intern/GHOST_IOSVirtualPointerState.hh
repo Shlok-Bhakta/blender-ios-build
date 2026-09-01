@@ -22,6 +22,11 @@ enum class GHOST_IOSPointerButton : uint8_t {
   Right,
 };
 
+struct GHOST_IOSPointerWrapOffset {
+  double x = 0.0;
+  double y = 0.0;
+};
+
 /** Pure acceleration math, kept independent of UIKit so it can be tested directly. */
 class GHOST_IOSPointerAcceleration {
  public:
@@ -114,6 +119,56 @@ class GHOST_IOSVirtualPointerState {
     x_ = x;
     y_ = y;
     initialized_ = true;
+  }
+
+  void clampToBounds(const double left,
+                     const double top,
+                     const double right,
+                     const double bottom)
+  {
+    if (right < left || bottom < top) {
+      return;
+    }
+    x_ = std::clamp(x_, left, right);
+    y_ = std::clamp(y_, top, bottom);
+  }
+
+  GHOST_IOSPointerWrapOffset wrapToBounds(const double left,
+                                          const double top,
+                                          const double right,
+                                          const double bottom,
+                                          const double margin,
+                                          const bool wrap_x,
+                                          const bool wrap_y)
+  {
+    GHOST_IOSPointerWrapOffset offset;
+    const double width = right - left;
+    const double height = bottom - top;
+    const double horizontal_span = width - margin * 2.0;
+    const double vertical_span = height - margin * 2.0;
+    const double old_x = x_;
+    const double old_y = y_;
+
+    if (wrap_x && horizontal_span > 0.0) {
+      while (x_ - margin < left) {
+        x_ += horizontal_span;
+      }
+      while (x_ + margin > right) {
+        x_ -= horizontal_span;
+      }
+    }
+    if (wrap_y && vertical_span > 0.0) {
+      while (y_ - margin < top) {
+        y_ += vertical_span;
+      }
+      while (y_ + margin > bottom) {
+        y_ -= vertical_span;
+      }
+    }
+
+    offset.x = old_x - x_;
+    offset.y = old_y - y_;
+    return offset;
   }
 
   void setSource(const GHOST_IOSPointerSource source)

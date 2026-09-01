@@ -181,12 +181,16 @@ static GHOST_TButton pointerButton(const UIEventButtonMask button_mask)
   CGPoint cached_translation;
   CGPoint initial_touch_point;
   BOOL has_initial_touch_point;
+  NSTimeInterval initial_touch_timestamp;
+  NSTimeInterval touch_timestamp;
   UIEventButtonMask initial_button_mask;
 }
 - (CGPoint)getScaledTouchPoint:(GHOST_WindowIOS *)window;
 - (CGPoint)getScaledInitialTouchPoint:(GHOST_WindowIOS *)window;
 - (CGPoint)getScaledTranslation:(GHOST_WindowIOS *)window;
 - (CGPoint)getRelativeTranslation:(CGPoint)translation;
+- (NSTimeInterval)getInitialTouchTimestamp;
+- (NSTimeInterval)getTouchTimestamp;
 
 - (void)setCachedTranslation:(CGPoint)translation;
 - (CGPoint)getCachedTranslation;
@@ -207,9 +211,20 @@ static GHOST_TButton pointerButton(const UIEventButtonMask button_mask)
   if (self.minimumNumberOfTouches == 1 && self.maximumNumberOfTouches == 1) {
     UITouch *touch = [touches anyObject];
     initial_touch_point = [touch locationInView:self.view];
+    initial_touch_timestamp = touch.timestamp;
+    touch_timestamp = touch.timestamp;
     has_initial_touch_point = YES;
   }
   [super touchesBegan:touches withEvent:event];
+}
+
+- (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
+{
+  UITouch *touch = [touches anyObject];
+  if (touch != nil) {
+    touch_timestamp = touch.timestamp;
+  }
+  [super touchesMoved:touches withEvent:event];
 }
 
 - (CGPoint)getScaledInitialTouchPoint:(GHOST_WindowIOS *)window
@@ -232,6 +247,16 @@ static GHOST_TButton pointerButton(const UIEventButtonMask button_mask)
   relative_translation.x = translation.x - cached_translation.x;
   relative_translation.y = translation.y - cached_translation.y;
   return relative_translation;
+}
+
+- (NSTimeInterval)getInitialTouchTimestamp
+{
+  return initial_touch_timestamp;
+}
+
+- (NSTimeInterval)getTouchTimestamp
+{
+  return touch_timestamp;
 }
 
 - (void)setCachedTranslation:(CGPoint)translation
@@ -1353,13 +1378,19 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 - (void)handlePan:(GHOSTUIPanGestureRecognizer *)sender
 {
   if (sender.state == UIGestureRecognizerStateBegan) {
-    const CGPoint touch_point = [sender getScaledInitialTouchPoint:window];
-    virtual_pointer->beginRelative(touch_point.x, touch_point.y);
+    const CGPoint initial_touch_point = [sender getScaledInitialTouchPoint:window];
+    const CGPoint touch_point = [sender getScaledTouchPoint:window];
+    virtual_pointer->beginRelativeAtTime(initial_touch_point.x,
+                                         initial_touch_point.y,
+                                         [sender getInitialTouchTimestamp]);
+    virtual_pointer->moveRelativeToAtTime(
+        touch_point.x, touch_point.y, [sender getTouchTimestamp]);
   }
 
   if (sender.state == UIGestureRecognizerStateChanged) {
     const CGPoint touch_point = [sender getScaledTouchPoint:window];
-    virtual_pointer->moveRelativeTo(touch_point.x, touch_point.y);
+    virtual_pointer->moveRelativeToAtTime(
+        touch_point.x, touch_point.y, [sender getTouchTimestamp]);
   }
 
   if (sender.state == UIGestureRecognizerStateEnded ||
@@ -2510,6 +2541,9 @@ GHOST_TSuccess GHOST_WindowIOS::setWindowCursorVisibility(bool visible)
 
 GHOST_TSuccess GHOST_WindowIOS::setWindowCursorGrab(GHOST_TGrabCursorMode mode)
 {
+  /* Update the pointer shim first so restoring a hidden grab is not treated as another wrapped
+   * motion event while GHOST_Window is still transitioning its shared grab state. */
+  system_ios_->virtualPointer()->setGrabMode(mode);
   if (mode != GHOST_kGrabDisable && mode != GHOST_kGrabNormal) {
     system_ios_->getCursorPosition(cursor_grab_init_pos_[0], cursor_grab_init_pos_[1]);
     setCursorGrabAccum(0, 0);
@@ -2520,7 +2554,6 @@ GHOST_TSuccess GHOST_WindowIOS::setWindowCursorGrab(GHOST_TGrabCursorMode mode)
     }
     setCursorGrabAccum(0, 0);
   }
-  system_ios_->virtualPointer()->setGrabMode(mode);
   return GHOST_kSuccess;
 }
 

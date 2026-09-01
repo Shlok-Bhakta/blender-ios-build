@@ -13,6 +13,7 @@
 
 #include "GHOST_EventButton.hh"
 #include "GHOST_EventCursor.hh"
+#include "GHOST_Rect.hh"
 
 #import <QuartzCore/QuartzCore.h>
 #import <UIKit/UIKit.h>
@@ -118,11 +119,59 @@ class GHOST_IOSVirtualPointer::Impl {
     if (window_ == nullptr) {
       return;
     }
-    const int32_t x = int32_t(std::lround(state_.x()));
-    const int32_t y = int32_t(std::lround(state_.y()));
+    int32_t x = int32_t(std::lround(state_.x()));
+    int32_t y = int32_t(std::lround(state_.y()));
+    constrainCursorForEvent(x, y);
     system_->pushEvent(std::make_unique<GHOST_EventCursor>(
         system_->getMilliSeconds(), GHOST_kEventCursorMove, window_, x, y, tablet));
     updateCursorLayer();
+  }
+
+  void constrainCursorForEvent(int32_t &event_x, int32_t &event_y)
+  {
+    GHOST_Rect bounds;
+    if (grab_mode_ == GHOST_kGrabWrap || grab_mode_ == GHOST_kGrabHide) {
+      if (window_->getCursorGrabBounds(bounds) == GHOST_kSuccess) {
+        int32_t left;
+        int32_t top;
+        int32_t right;
+        int32_t bottom;
+        window_->screenToClient(bounds.l_, bounds.t_, left, top);
+        window_->screenToClient(bounds.r_, bounds.b_, right, bottom);
+        bounds.set(left, top, right, bottom);
+      }
+      else {
+        window_->getClientBounds(bounds);
+      }
+
+      const double margin = grab_mode_ == GHOST_kGrabHide ?
+                                double(bounds.getWidth()) / 10.0 :
+                                2.0;
+      const GHOST_TAxisFlag axis = window_->getCursorGrabAxis();
+      const GHOST_IOSPointerWrapOffset offset = state_.wrapToBounds(bounds.l_,
+                                                                    bounds.t_,
+                                                                    bounds.r_,
+                                                                    bounds.b_,
+                                                                    margin,
+                                                                    axis & GHOST_kAxisX,
+                                                                    axis & GHOST_kAxisY);
+      /* UIKit has no hardware cursor to constrain the axes Blender did not request to wrap. */
+      state_.clampToBounds(bounds.l_, bounds.t_, bounds.r_, bounds.b_);
+      int32_t accumulated_x;
+      int32_t accumulated_y;
+      window_->getCursorGrabAccum(accumulated_x, accumulated_y);
+      accumulated_x += int32_t(std::lround(offset.x));
+      accumulated_y += int32_t(std::lround(offset.y));
+      window_->setCursorGrabAccum(accumulated_x, accumulated_y);
+      event_x = int32_t(std::lround(state_.x())) + accumulated_x;
+      event_y = int32_t(std::lround(state_.y())) + accumulated_y;
+      return;
+    }
+
+    window_->getClientBounds(bounds);
+    state_.clampToBounds(bounds.l_, bounds.t_, bounds.r_, bounds.b_);
+    event_x = int32_t(std::lround(state_.x()));
+    event_y = int32_t(std::lround(state_.y()));
   }
 
   void sendButtonEvent(const GHOST_TButton button,
@@ -199,7 +248,14 @@ void GHOST_IOSVirtualPointer::detachWindow(GHOST_WindowIOS *window)
 
 void GHOST_IOSVirtualPointer::beginRelative(const double finger_x, const double finger_y)
 {
-  impl_->state_.beginRelative(finger_x, finger_y, CACurrentMediaTime());
+  beginRelativeAtTime(finger_x, finger_y, CACurrentMediaTime());
+}
+
+void GHOST_IOSVirtualPointer::beginRelativeAtTime(const double finger_x,
+                                                  const double finger_y,
+                                                  const double timestamp_seconds)
+{
+  impl_->state_.beginRelative(finger_x, finger_y, timestamp_seconds);
   impl_->updateCursorLayer();
 }
 
@@ -207,7 +263,15 @@ void GHOST_IOSVirtualPointer::moveRelativeTo(const double finger_x,
                                              const double finger_y,
                                              const GHOST_TabletData &tablet)
 {
-  impl_->state_.moveRelativeTo(finger_x, finger_y, CACurrentMediaTime());
+  moveRelativeToAtTime(finger_x, finger_y, CACurrentMediaTime(), tablet);
+}
+
+void GHOST_IOSVirtualPointer::moveRelativeToAtTime(const double finger_x,
+                                                   const double finger_y,
+                                                   const double timestamp_seconds,
+                                                   const GHOST_TabletData &tablet)
+{
+  impl_->state_.moveRelativeTo(finger_x, finger_y, timestamp_seconds);
   impl_->sendCursorEvent(tablet);
 }
 

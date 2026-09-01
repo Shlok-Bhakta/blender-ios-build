@@ -161,6 +161,65 @@ class GhostVirtualPointerStateTests(unittest.TestCase):
             self.assertEqual(compile_result.returncode, 0, compile_result.stderr)
             subprocess.run([str(executable)], check=True)
 
+    def test_pointer_bounds_clamp_normally_and_accumulate_modal_wraps(self) -> None:
+        harness = textwrap.dedent(
+            r"""
+            #include "GHOST_IOSVirtualPointerState.hh"
+
+            #include <cassert>
+
+            int main()
+            {
+              GHOST_IOSVirtualPointerState state;
+              state.initialize(200.0, 100.0, 2.0);
+
+              state.warp(205.0, -3.0);
+              state.clampToBounds(0.0, 0.0, 200.0, 100.0);
+              assert(state.x() == 200.0);
+              assert(state.y() == 0.0);
+
+              state.warp(205.0, 105.0);
+              const GHOST_IOSPointerWrapOffset wrap =
+                  state.wrapToBounds(0.0, 0.0, 200.0, 100.0, 2.0, true, false);
+              state.clampToBounds(0.0, 0.0, 200.0, 100.0);
+              assert(state.x() == 9.0);
+              assert(state.y() == 100.0);
+              assert(wrap.x == 196.0);
+              assert(wrap.y == 0.0);
+
+              /* More than one screen of relative travel must still wrap correctly. */
+              state.warp(610.0, 50.0);
+              const GHOST_IOSPointerWrapOffset repeated_wrap =
+                  state.wrapToBounds(0.0, 0.0, 200.0, 100.0, 2.0, true, false);
+              assert(state.x() == 22.0);
+              assert(repeated_wrap.x == 588.0);
+              return 0;
+            }
+            """
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            source = temporary / "virtual_pointer_bounds_test.cc"
+            executable = temporary / "virtual_pointer_bounds_test"
+            source.write_text(harness)
+            compile_result = subprocess.run(
+                [
+                    "xcrun",
+                    "clang++",
+                    "-std=c++17",
+                    "-I",
+                    str(POINTER_STATE_HEADER.parent),
+                    str(source),
+                    "-o",
+                    str(executable),
+                ],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(compile_result.returncode, 0, compile_result.stderr)
+            subprocess.run([str(executable)], check=True)
+
 
 class GhostVirtualPointerIntegrationTests(unittest.TestCase):
     def test_ios_build_owns_the_pointer_shim(self) -> None:
@@ -217,6 +276,40 @@ class GhostVirtualPointerIntegrationTests(unittest.TestCase):
         self.assertIn("virtual_pointer_->warp", source)
         self.assertIn("virtual_pointer_->getButtons", source)
 
+    def test_finger_pan_uses_touch_timestamps_and_processes_the_first_delta(self) -> None:
+        source = WINDOW_SOURCE.read_text()
+        recognizer = source[
+            source.index("@interface GHOSTUIPanGestureRecognizer"):
+            source.index("@interface GHOSTUIPinchGestureRecognizer")
+        ]
+        handler = source[
+            source.rindex("- (void)handlePan:"): source.rindex("- (void)handlePencilDrag:")
+        ]
+        self.assertIn("getInitialTouchTimestamp", recognizer)
+        self.assertIn("getTouchTimestamp", recognizer)
+        self.assertIn("beginRelativeAtTime", handler)
+        self.assertIn("moveRelativeToAtTime", handler)
+        began = handler[handler.index("UIGestureRecognizerStateBegan"):
+                        handler.index("UIGestureRecognizerStateChanged")]
+        self.assertIn("getScaledInitialTouchPoint", began)
+        self.assertIn("getScaledTouchPoint", began)
+        self.assertIn("moveRelativeToAtTime", began)
+
+    def test_relative_pointer_motion_is_constrained_or_wrapped_in_the_ios_shim(self) -> None:
+        source = POINTER_SOURCE.read_text()
+        constraint = source[
+            source.index("void constrainCursorForEvent"):
+            source.index("void sendButtonEvent")
+        ]
+        self.assertIn("grab_mode_ == GHOST_kGrabWrap", source)
+        self.assertIn("grab_mode_ == GHOST_kGrabHide", source)
+        self.assertIn("getCursorGrabBounds", source)
+        self.assertIn("wrapToBounds", source)
+        self.assertIn("clampToBounds", source)
+        self.assertIn("setCursorGrabAccum", source)
+        wrap_branch = constraint[:constraint.index("return;")]
+        self.assertIn("clampToBounds", wrap_branch)
+
     def test_virtual_pointer_advertises_real_cursor_warp_support(self) -> None:
         source = SYSTEM_SOURCE.read_text()
         capabilities = source[
@@ -235,6 +328,10 @@ class GhostVirtualPointerIntegrationTests(unittest.TestCase):
         self.assertIn("system_ios_->getCursorPosition", grab)
         self.assertIn("system_ios_->setCursorPosition", grab)
         self.assertIn("cursor_grab_ == GHOST_kGrabHide", grab)
+        self.assertLess(
+            grab.index("virtualPointer()->setGrabMode(mode)"),
+            grab.index("system_ios_->setCursorPosition"),
+        )
 
     def test_cursor_is_rendered_and_the_system_pointer_is_suppressed(self) -> None:
         source = POINTER_SOURCE.read_text()
