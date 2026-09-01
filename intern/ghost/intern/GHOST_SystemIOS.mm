@@ -558,6 +558,10 @@ GHOST_IWindow *GHOST_SystemIOS::createWindow(const char *title,
   const GHOST_ContextParams context_params = GHOST_CONTEXT_PARAMS_FROM_GPU_SETTINGS(gpu_settings);
   GHOST_IWindow *window = nullptr;
   @autoreleasepool {
+    /* Every iOS window fills the scene. Top-level Blender windows still need somewhere to return
+     * when closed, even though Blender intentionally gives them no parent. */
+    const GHOST_IWindow *close_return_window =
+        parent_window ? parent_window : window_manager_->getActiveWindow();
 
     /* Create window at native size. */
     UIWindowScene *window_scene = GHOST_IOS_activeWindowScene();
@@ -574,7 +578,7 @@ GHOST_IWindow *GHOST_SystemIOS::createWindow(const char *title,
                                                   gpu_settings.context_type,
                                                   context_params,
                                                   is_dialog,
-                                                  (GHOST_WindowIOS *)parent_window);
+                                                  (GHOST_WindowIOS *)close_return_window);
 
     if (window->getValid()) {
       // Store the pointer to the window

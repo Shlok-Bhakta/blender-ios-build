@@ -7,6 +7,7 @@ import unittest
 REPOSITORY = Path(__file__).resolve().parents[3]
 WINDOW_HEADER = REPOSITORY / "intern" / "ghost" / "intern" / "GHOST_WindowIOS.hh"
 WINDOW_SOURCE = REPOSITORY / "intern" / "ghost" / "intern" / "GHOST_WindowIOS.mm"
+SYSTEM_SOURCE = REPOSITORY / "intern" / "ghost" / "intern" / "GHOST_SystemIOS.mm"
 
 
 class GhostWindowCloseTests(unittest.TestCase):
@@ -23,7 +24,7 @@ class GhostWindowCloseTests(unittest.TestCase):
         self.assertIn("bool is_dialog,", constructor)
         self.assertIn("is_dialog_(is_dialog)", constructor)
 
-    def test_only_child_windows_receive_a_native_close_control(self) -> None:
+    def test_every_secondary_window_receives_the_native_close_control(self) -> None:
         source = WINDOW_SOURCE.read_text()
         registration = source[
             source.rindex("- (void)registerWindowControls") : source.rindex(
@@ -34,6 +35,20 @@ class GhostWindowCloseTests(unittest.TestCase):
         self.assertIn("window->hasParentWindow()", registration)
         self.assertIn("close_window_button", registration)
         self.assertIn('accessibilityIdentifier = @"blender_child_window_close";', registration)
+        self.assertNotIn("Blender Render", registration)
+        self.assertNotIn("Preferences", registration)
+
+    def test_toplevel_secondary_window_returns_to_the_active_ios_window(self) -> None:
+        source = SYSTEM_SOURCE.read_text()
+        create_window = source[
+            source.index("GHOST_IWindow *GHOST_SystemIOS::createWindow"):
+            source.index("GHOST_IContext *GHOST_SystemIOS::createOffscreenContext")
+        ]
+
+        self.assertIn("close_return_window", create_window)
+        self.assertIn("parent_window ?", create_window)
+        self.assertIn("window_manager_->getActiveWindow()", create_window)
+        self.assertIn("(GHOST_WindowIOS *)close_return_window", create_window)
 
     def test_native_close_control_uses_blenders_window_close_event(self) -> None:
         source = WINDOW_SOURCE.read_text()
