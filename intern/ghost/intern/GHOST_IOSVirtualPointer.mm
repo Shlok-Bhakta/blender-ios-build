@@ -169,7 +169,12 @@ class GHOST_IOSVirtualPointer::Impl {
     }
 
     window_->getClientBounds(bounds);
-    state_.clampToBounds(bounds.l_, bounds.t_, bounds.r_, bounds.b_);
+    if constexpr (GHOST_IOSInputTuning::pointer_always_wrap) {
+      state_.wrapToBounds(bounds.l_, bounds.t_, bounds.r_, bounds.b_, 2.0, true, true);
+    }
+    else {
+      state_.clampToBounds(bounds.l_, bounds.t_, bounds.r_, bounds.b_);
+    }
     event_x = int32_t(std::lround(state_.x()));
     event_y = int32_t(std::lround(state_.y()));
   }

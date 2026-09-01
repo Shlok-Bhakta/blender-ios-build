@@ -16,6 +16,7 @@ POINTER_SOURCE = REPOSITORY / "intern" / "ghost" / "intern" / "GHOST_IOSVirtualP
 WINDOW_SOURCE = REPOSITORY / "intern" / "ghost" / "intern" / "GHOST_WindowIOS.mm"
 SYSTEM_SOURCE = REPOSITORY / "intern" / "ghost" / "intern" / "GHOST_SystemIOS.mm"
 GHOST_CMAKE = REPOSITORY / "build_files" / "ios" / "cmake" / "ghost_ios.cmake"
+INPUT_TUNING = REPOSITORY / "intern" / "ghost" / "intern" / "GHOST_IOSInputTuning.hh"
 
 
 class GhostVirtualPointerStateTests(unittest.TestCase):
@@ -161,7 +162,7 @@ class GhostVirtualPointerStateTests(unittest.TestCase):
             self.assertEqual(compile_result.returncode, 0, compile_result.stderr)
             subprocess.run([str(executable)], check=True)
 
-    def test_pointer_bounds_clamp_normally_and_accumulate_modal_wraps(self) -> None:
+    def test_pointer_bounds_wrap_on_both_axes_and_accumulate_modal_wraps(self) -> None:
         harness = textwrap.dedent(
             r"""
             #include "GHOST_IOSVirtualPointerState.hh"
@@ -174,9 +175,9 @@ class GhostVirtualPointerStateTests(unittest.TestCase):
               state.initialize(200.0, 100.0, 2.0);
 
               state.warp(205.0, -3.0);
-              state.clampToBounds(0.0, 0.0, 200.0, 100.0);
-              assert(state.x() == 200.0);
-              assert(state.y() == 0.0);
+              state.wrapToBounds(0.0, 0.0, 200.0, 100.0, 2.0, true, true);
+              assert(state.x() == 9.0);
+              assert(state.y() == 93.0);
 
               state.warp(205.0, 105.0);
               const GHOST_IOSPointerWrapOffset wrap =
@@ -309,6 +310,19 @@ class GhostVirtualPointerIntegrationTests(unittest.TestCase):
         self.assertIn("setCursorGrabAccum", source)
         wrap_branch = constraint[:constraint.index("return;")]
         self.assertIn("clampToBounds", wrap_branch)
+
+    def test_ordinary_pointer_motion_always_wraps_around_the_full_window(self) -> None:
+        tuning = INPUT_TUNING.read_text()
+        source = POINTER_SOURCE.read_text()
+        constraint = source[
+            source.index("void constrainCursorForEvent"):
+            source.index("void sendButtonEvent")
+        ]
+        ordinary_branch = constraint[constraint.index("return;") + len("return;") :]
+
+        self.assertIn("pointer_always_wrap = true", tuning)
+        self.assertIn("pointer_always_wrap", ordinary_branch)
+        self.assertIn("wrapToBounds", ordinary_branch)
 
     def test_virtual_pointer_advertises_real_cursor_warp_support(self) -> None:
         source = SYSTEM_SOURCE.read_text()
