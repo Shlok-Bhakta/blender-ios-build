@@ -50,6 +50,7 @@
 
 #  include "ffmpeg_swscale.hh"
 #  include "movie_util.hh"
+#  include "movie_write_pixel_format.hh"
 #endif
 
 namespace blender {
@@ -1051,7 +1052,17 @@ static AVStream *alloc_video_stream(MovieWriter *context,
 
   const enum AVPixelFormat *pix_fmts = ffmpeg_get_pix_fmts(c, codec);
   if (pix_fmts) {
-    c->pix_fmt = pix_fmts[0];
+    c->pix_fmt = ffmpeg_first_software_pixel_format(pix_fmts);
+    if (c->pix_fmt == AV_PIX_FMT_NONE) {
+      BLI_snprintf(error,
+                   error_size,
+                   "Video codec %s does not accept CPU-backed input frames",
+                   codec->name);
+      av_dict_free(&opts);
+      avcodec_free_context(&c);
+      context->video_codec = nullptr;
+      return nullptr;
+    }
   }
   else {
     /* makes HuffYUV happy ... */
@@ -1246,6 +1257,17 @@ static AVStream *alloc_video_stream(MovieWriter *context,
 
   /* FFMPEG expects its data in the output pixel format. */
   context->current_frame = alloc_frame(c->pix_fmt, c->width, c->height);
+  if (context->current_frame == nullptr) {
+    BLI_snprintf(error,
+                 error_size,
+                 "Failed to allocate FFmpeg output frame (%s, %dx%d)",
+                 av_get_pix_fmt_name(c->pix_fmt),
+                 c->width,
+                 c->height);
+    avcodec_free_context(&c);
+    context->video_codec = nullptr;
+    return nullptr;
+  }
 
   if (c->pix_fmt == AV_PIX_FMT_RGBA && ELEM(c->colorspace, AVCOL_SPC_RGB, AVCOL_SPC_UNSPECIFIED)) {
     /* Output pixel format and colorspace is the same we use internally, no conversion needed. */
@@ -1258,6 +1280,18 @@ static AVStream *alloc_video_stream(MovieWriter *context,
     const AVPixelFormat src_format = is_10_bpp || is_12_bpp || is_16_bpp ? AV_PIX_FMT_GBRAPF32LE :
                                                                            AV_PIX_FMT_RGBA;
     context->img_convert_frame = alloc_frame(src_format, c->width, c->height);
+    if (context->img_convert_frame == nullptr) {
+      BLI_snprintf(error,
+                   error_size,
+                   "Failed to allocate FFmpeg conversion frame (%s, %dx%d)",
+                   av_get_pix_fmt_name(src_format),
+                   c->width,
+                   c->height);
+      av_frame_free(&context->current_frame);
+      avcodec_free_context(&c);
+      context->video_codec = nullptr;
+      return nullptr;
+    }
     context->img_convert_ctx = ffmpeg_sws_get_context(
         c->width,
         c->height,
@@ -1270,6 +1304,18 @@ static AVStream *alloc_video_stream(MovieWriter *context,
         c->color_range == AVCOL_RANGE_JPEG,
         c->colorspace != AVCOL_SPC_RGB ? c->colorspace : -1,
         SWS_BICUBIC);
+    if (context->img_convert_ctx == nullptr) {
+      BLI_snprintf(error,
+                   error_size,
+                   "Failed to initialize FFmpeg frame conversion (%s to %s)",
+                   av_get_pix_fmt_name(src_format),
+                   av_get_pix_fmt_name(c->pix_fmt));
+      av_frame_free(&context->img_convert_frame);
+      av_frame_free(&context->current_frame);
+      avcodec_free_context(&c);
+      context->video_codec = nullptr;
+      return nullptr;
+    }
   }
 
   avcodec_parameters_from_context(st->codecpar, c);
