@@ -24,7 +24,7 @@ class GhostWindowCloseTests(unittest.TestCase):
         self.assertIn("bool is_dialog,", constructor)
         self.assertIn("is_dialog_(is_dialog)", constructor)
 
-    def test_every_secondary_window_receives_the_native_close_control(self) -> None:
+    def test_every_non_main_window_receives_the_native_close_control(self) -> None:
         source = WINDOW_SOURCE.read_text()
         registration = source[
             source.rindex("- (void)registerWindowControls") : source.rindex(
@@ -32,11 +32,26 @@ class GhostWindowCloseTests(unittest.TestCase):
             )
         ]
 
-        self.assertIn("window->hasParentWindow()", registration)
+        self.assertIn("window->isMainWindow()", registration)
+        self.assertNotIn("window->hasParentWindow()", registration)
         self.assertIn("close_window_button", registration)
         self.assertIn('accessibilityIdentifier = @"blender_child_window_close";', registration)
         self.assertNotIn("Blender Render", registration)
         self.assertNotIn("Preferences", registration)
+
+    def test_main_window_identity_does_not_depend_on_parent_or_title(self) -> None:
+        header = WINDOW_HEADER.read_text()
+        source = SYSTEM_SOURCE.read_text()
+        create_window = source[
+            source.index("GHOST_IWindow *GHOST_SystemIOS::createWindow"):
+            source.index("GHOST_IContext *GHOST_SystemIOS::createOffscreenContext")
+        ]
+
+        self.assertIn("bool is_main_window,", header)
+        self.assertIn("bool isMainWindow() const", header)
+        self.assertIn("window_manager_->getWindows().empty()", create_window)
+        self.assertIn("is_main_window", create_window)
+        self.assertNotIn('STREQ(title, "Blender Render")', create_window)
 
     def test_toplevel_secondary_window_returns_to_the_active_ios_window(self) -> None:
         source = SYSTEM_SOURCE.read_text()
@@ -58,7 +73,8 @@ class GhostWindowCloseTests(unittest.TestCase):
             )
         ]
 
-        self.assertIn("window->hasParentWindow()", handler)
+        self.assertIn("window->isMainWindow()", handler)
+        self.assertNotIn("window->hasParentWindow()", handler)
         self.assertIn("handleWindowEvent(GHOST_kEventWindowClose, window)", handler)
 
     def test_close_control_is_detached_before_window_teardown(self) -> None:

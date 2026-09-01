@@ -558,6 +558,10 @@ GHOST_IWindow *GHOST_SystemIOS::createWindow(const char *title,
   const GHOST_ContextParams context_params = GHOST_CONTEXT_PARAMS_FROM_GPU_SETTINGS(gpu_settings);
   GHOST_IWindow *window = nullptr;
   @autoreleasepool {
+    /* The first managed GHOST window owns the app scene. All later windows are closable overlays,
+     * regardless of whether Blender supplies a parent for them. */
+    const bool is_main_window = window_manager_->getWindows().empty();
+
     /* Every iOS window fills the scene. Top-level Blender windows still need somewhere to return
      * when closed, even though Blender intentionally gives them no parent. */
     const GHOST_IWindow *close_return_window =
@@ -577,6 +581,7 @@ GHOST_IWindow *GHOST_SystemIOS::createWindow(const char *title,
                                                   state,
                                                   gpu_settings.context_type,
                                                   context_params,
+                                                  is_main_window,
                                                   is_dialog,
                                                   (GHOST_WindowIOS *)close_return_window);
 

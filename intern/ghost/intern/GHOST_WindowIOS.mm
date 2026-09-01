@@ -743,7 +743,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 
 - (void)registerWindowControls
 {
-  if (window == nullptr || !window->hasParentWindow()) {
+  if (window == nullptr || window->isMainWindow()) {
     return;
   }
 
@@ -774,7 +774,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 
 - (void)handleCloseWindow
 {
-  if (system == nullptr || window == nullptr || !window->hasParentWindow()) {
+  if (system == nullptr || window == nullptr || window->isMainWindow()) {
     return;
   }
   system->handleWindowEvent(GHOST_kEventWindowClose, window);
@@ -793,7 +793,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 
 - (NSArray<UIKeyCommand *> *)keyCommands
 {
-  if (window == nullptr || !window->hasParentWindow()) {
+  if (window == nullptr || window->isMainWindow()) {
     return @[];
   }
 
@@ -2129,10 +2129,12 @@ GHOST_WindowIOS::GHOST_WindowIOS(GHOST_SystemIOS *system_ios,
                                  GHOST_TWindowState state,
                                  GHOST_TDrawingContextType type,
                                  const GHOST_ContextParams &context_params,
+                                 bool is_main_window,
                                  bool is_dialog,
                                  GHOST_WindowIOS *parent_window)
     : GHOST_Window(width, height, state, context_params, false),
       metal_view_(nil),
+      is_main_window_(is_main_window),
       is_dialog_(is_dialog)
 {
   /* Fill the device screen. Page-sheet + alert-level windows otherwise float as a
