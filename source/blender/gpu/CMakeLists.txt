@@ -379,6 +379,7 @@ set(VULKAN_SRC
 set(METAL_SRC
   metal/mtl_backend.mm
   metal/mtl_batch.mm
+  metal/mtl_buffer_texture_compat.mm
   metal/mtl_command_buffer.mm
   metal/mtl_context.mm
   metal/mtl_debug.mm
@@ -402,6 +403,7 @@ set(METAL_SRC
 
   metal/mtl_backend.hh
   metal/mtl_batch.hh
+  metal/mtl_buffer_texture_compat.hh
   metal/mtl_capabilities.hh
   metal/mtl_command_buffer.hh
   metal/mtl_common.hh
