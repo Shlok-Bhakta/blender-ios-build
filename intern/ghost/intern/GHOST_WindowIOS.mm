@@ -2247,6 +2247,9 @@ GHOST_WindowIOS::~GHOST_WindowIOS()
   }
 
   if (rootWindow) {
+    /* UIWindowScene can retain a released window in its window stack. Hide it explicitly so a
+     * closed full-screen window can never cover the parent after its controls are detached. */
+    rootWindow.hidden = YES;
     [(GHOSTUIWindow *)rootWindow invalidateInput];
   }
 
@@ -2712,6 +2715,7 @@ void GHOST_WindowIOS::resignKeyWindow()
   /* Wait until any outstanding presents in flight are done. */
   while (uiview_controller_.beingPresented) {
   }
+  [rootWindow resignKeyWindow];
   IOS_WINDOW_LOG(@"Resigning Key Window: (ui_View)%p (mtkView)%p con(%p) (win=%p)",
                  uiview_,
                  metal_view_,

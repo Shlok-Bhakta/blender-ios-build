@@ -88,6 +88,26 @@ class GhostWindowCloseTests(unittest.TestCase):
         self.assertIn("[close_window_button release]", invalidation)
         self.assertIn("close_window_button = nil;", invalidation)
 
+    def test_destroyed_window_is_hidden_before_uikit_releases_it(self) -> None:
+        source = WINDOW_SOURCE.read_text()
+        destructor = source[
+            source.index("GHOST_WindowIOS::~GHOST_WindowIOS()"):
+            source.index("#pragma mark accessors")
+        ]
+
+        hide = destructor.index("rootWindow.hidden = YES;")
+        release = destructor.index("[rootWindow release]")
+        self.assertLess(hide, release)
+
+    def test_deactivation_resigns_native_key_window_status(self) -> None:
+        source = WINDOW_SOURCE.read_text()
+        resign = source[
+            source.index("void GHOST_WindowIOS::resignKeyWindow()"):
+            source.index("CGPoint GHOST_WindowIOS::scalePointToWindow")
+        ]
+
+        self.assertIn("[rootWindow resignKeyWindow]", resign)
+
 
 if __name__ == "__main__":
     unittest.main()
