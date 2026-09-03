@@ -414,6 +414,8 @@ static GHOST_TButton pointerButton(const UIEventButtonMask button_mask)
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer
     shouldRecognizeSimultaneouslyWithGestureRecognizer:
         (UIGestureRecognizer *)otherGestureRecognizer;
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer
+       shouldReceiveTouch:(UITouch *)touch;
 - (CGPoint)getVirtualPointerPoint;
 - (void)handleTap:(GHOSTUITapGestureRecognizer *)sender;
 - (void)handleTripleTap:(GHOSTUITapGestureRecognizer *)sender;
@@ -1156,6 +1158,19 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
 }
 
 /* Allow simultaneous gestures for two finger pans and zooms but nothing else. */
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer
+       shouldReceiveTouch:(UITouch *)touch
+{
+  (void)gestureRecognizer;
+  if (close_window_button != nil &&
+      (touch.view == close_window_button ||
+       [touch.view isDescendantOfView:close_window_button]))
+  {
+    return NO;
+  }
+  return YES;
+}
+
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer
     shouldRecognizeSimultaneouslyWithGestureRecognizer:
         (UIGestureRecognizer *)otherGestureRecognizer

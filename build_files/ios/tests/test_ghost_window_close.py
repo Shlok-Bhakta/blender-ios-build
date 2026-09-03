@@ -8,6 +8,7 @@ REPOSITORY = Path(__file__).resolve().parents[3]
 WINDOW_HEADER = REPOSITORY / "intern" / "ghost" / "intern" / "GHOST_WindowIOS.hh"
 WINDOW_SOURCE = REPOSITORY / "intern" / "ghost" / "intern" / "GHOST_WindowIOS.mm"
 SYSTEM_SOURCE = REPOSITORY / "intern" / "ghost" / "intern" / "GHOST_SystemIOS.mm"
+POINTER_SOURCE = REPOSITORY / "intern" / "ghost" / "intern" / "GHOST_IOSVirtualPointer.mm"
 
 
 class GhostWindowCloseTests(unittest.TestCase):
@@ -107,6 +108,24 @@ class GhostWindowCloseTests(unittest.TestCase):
         ]
 
         self.assertIn("[rootWindow resignKeyWindow]", resign)
+
+    def test_close_button_touch_is_not_also_sent_to_blender(self) -> None:
+        source = WINDOW_SOURCE.read_text()
+
+        self.assertIn("shouldReceiveTouch:(UITouch *)touch", source)
+        self.assertIn("isDescendantOfView:close_window_button", source)
+
+    def test_repeated_secondary_window_close_restores_main_cursor_state(self) -> None:
+        pointer = POINTER_SOURCE.read_text()
+        attach = pointer[
+            pointer.index("void attachWindow(GHOST_WindowIOS *window)"):
+            pointer.index("void detachWindow(GHOST_WindowIOS *window)")
+        ]
+
+        self.assertIn("window_->getCursorVisibility()", attach)
+        self.assertIn("window_->getCursorGrabMode()", attach)
+        self.assertIn("state_.setBlenderVisibility", attach)
+        self.assertIn("grab_mode_ =", attach)
 
 
 if __name__ == "__main__":

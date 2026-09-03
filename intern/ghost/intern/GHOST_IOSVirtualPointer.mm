@@ -48,6 +48,8 @@ class GHOST_IOSVirtualPointer::Impl {
   void attachWindow(GHOST_WindowIOS *window)
   {
     if (window_ == window && cursor_layer_ != nil) {
+      state_.setBlenderVisibility(window_->getCursorVisibility());
+      grab_mode_ = window_->getCursorGrabMode();
       updateCursorLayer();
       return;
     }
@@ -60,6 +62,8 @@ class GHOST_IOSVirtualPointer::Impl {
 
     const CGSize native_size = window_->getNativeWindowSize();
     state_.initialize(native_size.width, native_size.height, window_->getWindowScaleFactor());
+    state_.setBlenderVisibility(window_->getCursorVisibility());
+    grab_mode_ = window_->getCursorGrabMode();
 
     UIBezierPath *path = [UIBezierPath bezierPath];
     /* The outside edge of the stroke lands at (0, 0), making the visible tip the hotspot. */
