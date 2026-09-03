@@ -565,7 +565,7 @@ GHOST_IWindow *GHOST_SystemIOS::createWindow(const char *title,
     /* Every iOS window fills the scene. Top-level Blender windows still need somewhere to return
      * when closed, even though Blender intentionally gives them no parent. */
     const GHOST_IWindow *close_return_window =
-        parent_window ? parent_window : window_manager_->getActiveWindow();
+        parent_window ? parent_window : current_active_window_;
 
     /* Create window at native size. */
     UIWindowScene *window_scene = GHOST_IOS_activeWindowScene();

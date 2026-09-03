@@ -54,7 +54,7 @@ class GhostWindowCloseTests(unittest.TestCase):
         self.assertIn("is_main_window", create_window)
         self.assertNotIn('STREQ(title, "Blender Render")', create_window)
 
-    def test_toplevel_secondary_window_returns_to_the_active_ios_window(self) -> None:
+    def test_toplevel_secondary_window_returns_to_the_native_active_ios_window(self) -> None:
         source = SYSTEM_SOURCE.read_text()
         create_window = source[
             source.index("GHOST_IWindow *GHOST_SystemIOS::createWindow"):
@@ -63,8 +63,19 @@ class GhostWindowCloseTests(unittest.TestCase):
 
         self.assertIn("close_return_window", create_window)
         self.assertIn("parent_window ?", create_window)
-        self.assertIn("window_manager_->getActiveWindow()", create_window)
+        self.assertIn("current_active_window_", create_window)
+        self.assertNotIn("window_manager_->getActiveWindow()", create_window)
         self.assertIn("(GHOST_WindowIOS *)close_return_window", create_window)
+
+    def test_native_reactivation_resynchronizes_ghost_before_the_next_toplevel_window(self) -> None:
+        source = WINDOW_SOURCE.read_text()
+        activation = source[
+            source.index("bool GHOST_WindowIOS::makeKeyWindow()"):
+            source.index("void GHOST_WindowIOS::resignKeyWindow()")
+        ]
+
+        self.assertIn("getWindowManager()->getActiveWindow() != this", activation)
+        self.assertIn("handleWindowEvent(GHOST_kEventWindowActivate, this)", activation)
 
     def test_native_close_control_uses_blenders_window_close_event(self) -> None:
         source = WINDOW_SOURCE.read_text()

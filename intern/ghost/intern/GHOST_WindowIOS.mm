@@ -18,6 +18,7 @@
 #include "GHOST_EventKey.hh"
 #include "GHOST_EventTouch.hh"
 #include "GHOST_EventTrackpad.hh"
+#include "GHOST_WindowManager.hh"
 
 #import <GameController/GameController.h>
 #import <Metal/Metal.h>
@@ -2711,6 +2712,16 @@ bool GHOST_WindowIOS::makeKeyWindow()
 
   system_ios_->current_active_window_ = this;
   system_ios_->virtualPointer()->attachWindow(this);
+  /* Creating a secondary window marks it active in GHOST before UIKit switches windows. Closing
+   * that window clears GHOST's active pointer. Restore it when UIKit makes the return window key,
+   * otherwise the next top-level window has no owner and its close leaves the app without an
+   * active render loop or software cursor. The initial window reaches this point before GHOST has
+   * registered it, so only send an activation event for an already-managed return window. */
+  if (system_ios_->validWindow(this) &&
+      system_ios_->getWindowManager()->getActiveWindow() != this)
+  {
+    system_ios_->handleWindowEvent(GHOST_kEventWindowActivate, this);
+  }
   is_active_window_ = true;
   request_to_make_active_ = false;
   return true;
