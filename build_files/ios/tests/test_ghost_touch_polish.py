@@ -9,17 +9,15 @@ WINDOW_SOURCE = REPOSITORY / "intern" / "ghost" / "intern" / "GHOST_WindowIOS.mm
 
 
 class GhostTouchPolishTests(unittest.TestCase):
-    def test_one_finger_drag_is_only_a_left_button_drag(self) -> None:
+    def test_one_finger_pan_only_moves_the_virtual_cursor(self) -> None:
         source = WINDOW_SOURCE.read_text()
         handler = source[
-            source.rindex("- (void)handlePan:") : source.rindex("- (void)handlePan2f:")
+            source.rindex("- (void)handlePan:") : source.rindex("- (void)handlePencilDrag:")
         ]
 
-        self.assertIn("LEFT_BUTTON_DOWN", handler)
-        self.assertIn("LEFT_BUTTON_UP", handler)
-        self.assertIn("CURSOR_MOVE", handler)
+        self.assertIn("virtual_pointer->moveRelative", handler)
         self.assertIn("getScaledInitialTouchPoint", handler)
-        self.assertNotIn("PAN_GESTURE", handler)
+        self.assertNotIn("virtual_pointer->button", handler)
 
     def test_only_two_finger_pan_can_run_with_pinch(self) -> None:
         source = WINDOW_SOURCE.read_text()
@@ -32,29 +30,29 @@ class GhostTouchPolishTests(unittest.TestCase):
         self.assertIn("gestureRecognizer == pan2f_gesture_recognizer", delegate)
         self.assertNotIn("gestureRecognizer == pan_gesture_recognizer", delegate)
 
-    def test_double_tap_right_click_is_anchored_to_the_first_tap(self) -> None:
+    def test_double_tap_hold_is_an_explicit_relative_left_drag(self) -> None:
         source = WINDOW_SOURCE.read_text()
 
-        self.assertIn("double_tap_gesture_recognizer.numberOfTapsRequired = 2;", source)
+        self.assertIn("double_tap_drag_gesture_recognizer.numberOfTapsRequired = 1;", source)
         self.assertIn(
-            "[tap_gesture_recognizer requireGestureRecognizerToFail:double_tap_gesture_recognizer];",
+            "[tap_gesture_recognizer requireGestureRecognizerToFail:double_tap_drag_gesture_recognizer];",
             source,
         )
-        self.assertIn("touch.tapCount == 1", source)
 
         handler = source[
-            source.index("- (void)handleDoubleTap:") : source.index("- (void)handleTap2F:")
+            source.rindex("- (void)handleDoubleTapDrag:") : source.rindex("- (void)handleMouseButtonTap:")
         ]
-        self.assertIn("getScaledFirstTapPoint", handler)
-        self.assertIn("RIGHT_BUTTON_CLICK", handler)
-        self.assertIn("CURSOR_MOVE", handler)
+        self.assertIn("virtual_pointer->beginRelative", handler)
+        self.assertIn("virtual_pointer->moveRelative", handler)
+        self.assertIn("virtual_pointer->button(GHOST_kButtonMaskLeft, true)", handler)
+        self.assertIn("virtual_pointer->button(GHOST_kButtonMaskLeft, false)", handler)
 
-    def test_double_tap_recognizer_is_direct_touch_only_and_released(self) -> None:
+    def test_double_tap_drag_recognizer_is_direct_touch_only_and_released(self) -> None:
         source = WINDOW_SOURCE.read_text()
 
-        self.assertIn("double_tap_gesture_recognizer.allowedTouchTypes = @[@(UITouchTypeDirect)];", source)
+        self.assertIn("double_tap_drag_gesture_recognizer.allowedTouchTypes = @[@(UITouchTypeDirect)];", source)
         self.assertIn(
-            "[self releaseGestureRecognizer:double_tap_gesture_recognizer fromView:input_view];",
+            "[self releaseGestureRecognizer:double_tap_drag_gesture_recognizer fromView:input_view];",
             source,
         )
 

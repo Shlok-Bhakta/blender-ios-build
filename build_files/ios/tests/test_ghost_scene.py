@@ -10,6 +10,9 @@ REPOSITORY = Path(__file__).resolve().parents[3]
 SYSTEM_SOURCE = REPOSITORY / "intern" / "ghost" / "intern" / "GHOST_SystemIOS.mm"
 WINDOW_SOURCE = REPOSITORY / "intern" / "ghost" / "intern" / "GHOST_WindowIOS.mm"
 CONTEXT_SOURCE = REPOSITORY / "intern" / "ghost" / "intern" / "GHOST_ContextIOS.mm"
+POINTER_SOURCE = (
+    REPOSITORY / "intern" / "ghost" / "intern" / "GHOST_IOSVirtualPointer.mm"
+)
 
 
 class GhostSceneTests(unittest.TestCase):
@@ -37,10 +40,11 @@ class GhostSceneTests(unittest.TestCase):
         self.assertIn("toCoordinateSpace:window_scene.coordinateSpace", source)
 
     def test_cursor_state_converts_between_scene_screen_and_client_coordinates(self) -> None:
-        source = SYSTEM_SOURCE.read_text()
-        self.assertIn("window->clientToScreen(cursor_x_, cursor_y_, x, y);", source)
-        self.assertIn("window->screenToClient(x, y, client_x, client_y);", source)
-        self.assertIn("updateCursorPositionState(client_x, client_y);", source)
+        system_source = SYSTEM_SOURCE.read_text()
+        pointer_source = POINTER_SOURCE.read_text()
+        self.assertIn("window->screenToClient(x, y, client_x, client_y);", system_source)
+        self.assertIn("virtual_pointer_->warp(client_x, client_y);", system_source)
+        self.assertIn("impl_->window_->clientToScreen", pointer_source)
 
     def test_metal_framebuffer_follows_the_current_drawable(self) -> None:
         source = CONTEXT_SOURCE.read_text()

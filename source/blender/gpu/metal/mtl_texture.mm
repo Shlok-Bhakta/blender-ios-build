@@ -21,6 +21,7 @@
 
 #include "MEM_guardedalloc.h"
 #include "mtl_backend.hh"
+#include "mtl_buffer_texture_compat.hh"
 #include "mtl_common.hh"
 #include "mtl_context.hh"
 #include "mtl_debug.hh"
@@ -2013,6 +2014,10 @@ bool gpu::MTLTexture::init_internal(VertBuf *vbo)
   /* Get Metal Buffer. */
   id<MTLBuffer> source_buffer = mtl_vbo->get_metal_buffer();
   BLI_assert(source_buffer);
+  backing_buffer_ = mtl_buffer_texture_compat_prepare_private_copy(source_buffer);
+  id<MTLBuffer> texture_buffer = backing_buffer_ != nullptr ?
+                                     backing_buffer_->get_metal_buffer() :
+                                     source_buffer;
 
   /* Verify size. */
   if (w_ <= 0) {
@@ -2077,12 +2082,12 @@ bool gpu::MTLTexture::init_internal(VertBuf *vbo)
   texture_descriptor_.usage =
       MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite |
       MTLTextureUsagePixelFormatView; /* TODO(Metal): Optimize usage flags. */
-  texture_descriptor_.storageMode = [source_buffer storageMode];
+  texture_descriptor_.storageMode = texture_buffer.storageMode;
   texture_descriptor_.sampleCount = 1;
-  texture_descriptor_.cpuCacheMode = [source_buffer cpuCacheMode];
-  texture_descriptor_.hazardTrackingMode = [source_buffer hazardTrackingMode];
+  texture_descriptor_.cpuCacheMode = texture_buffer.cpuCacheMode;
+  texture_descriptor_.hazardTrackingMode = texture_buffer.hazardTrackingMode;
 
-  texture_ = [source_buffer
+  texture_ = [texture_buffer
       newTextureWithDescriptor:texture_descriptor_
                         offset:0
                    bytesPerRow:ceil_to_multiple_ul(bytes_per_row, align_requirement)];

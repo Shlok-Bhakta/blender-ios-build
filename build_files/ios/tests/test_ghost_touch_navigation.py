@@ -26,16 +26,38 @@ class GhostTouchNavigationTests(unittest.TestCase):
 
     def test_three_finger_pan_reuses_incremental_trackpad_translation(self) -> None:
         source = WINDOW_SOURCE.read_text()
-        handler = source[source.index("- (void)handlePan3f:") : source.index("- (void)handleEdgeSwipe:")]
+        handler = source[source.index("- (void)handlePan3f:"): source.index("- (void)handleEdgeSwipe:")]
 
         self.assertIn("getRelativeTranslation", handler)
         self.assertIn("PAN_GESTURE_THREE_FINGERS", handler)
         self.assertIn("setCachedTranslation:CGPointMake(0.0f, 0.0f)", handler)
 
+    def test_multitouch_events_target_the_virtual_pointer_not_finger_location(self) -> None:
+        source = WINDOW_SOURCE.read_text()
+        helper = source[
+            source.rindex("- (CGPoint)getVirtualPointerPoint"):
+            source.rindex("- (void)handleTap:")
+        ]
+        self.assertIn("virtual_pointer->getClientPosition", helper)
+
+        two_finger = source[
+            source.rindex("- (void)handlePan2f:"): source.rindex("- (void)handlePan3f:")
+        ]
+        three_finger = source[
+            source.rindex("- (void)handlePan3f:"): source.rindex("- (void)handlePointerScroll:")
+        ]
+        pinch = source[
+            source.rindex("- (void)handleZoom:"): source.rindex("- (void)pencilInteractionDidTap:")
+        ]
+        for handler in (two_finger, three_finger, pinch):
+            self.assertIn("[self getVirtualPointerPoint]", handler)
+            self.assertNotIn("getScaledTouchPoint", handler)
+            self.assertNotIn("getPinchMidpoint", handler)
+
     def test_three_finger_trackpad_event_selects_blender_pan_keymap(self) -> None:
         source = EVENT_SOURCE.read_text()
         trackpad_case = source[
-            source.index("case GHOST_kEventTrackpad:") : source.index("/* Mouse button. */")
+            source.index("case GHOST_kEventTrackpad:"): source.index("/* Mouse button. */")
         ]
 
         self.assertIn("pd->modifierKey", trackpad_case)

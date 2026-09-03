@@ -55,6 +55,7 @@ class GHOST_WindowIOS : public GHOST_Window {
                   GHOST_TWindowState state,
                   GHOST_TDrawingContextType type,
                   const GHOST_ContextParams &context_params,
+                  bool is_main_window,
                   bool is_dialog,
                   GHOST_WindowIOS *parent_window);
 
@@ -244,6 +245,11 @@ class GHOST_WindowIOS : public GHOST_Window {
     return parent_window_ != nullptr;
   }
 
+  bool isMainWindow() const
+  {
+    return is_main_window_;
+  }
+
   /* Active window controls. We can only present on active windows.  */
   void requestToActivateWindow();
   void requestToDeactivateWindow();
@@ -310,6 +316,7 @@ class GHOST_WindowIOS : public GHOST_Window {
 
   bool immediate_draw_;
   bool debug_context_;  // for debug messages during context setup
+  bool is_main_window_;
   bool is_dialog_;
   bool is_active_window_;
   bool request_to_make_active_;
