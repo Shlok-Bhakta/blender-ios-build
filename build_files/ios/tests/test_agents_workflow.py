@@ -24,6 +24,7 @@ class AgentWorkflowTests(unittest.TestCase):
         self.assertIn("one change per stacked PR", guidance)
         self.assertIn("base the new PR on the previous PR branch", guidance)
         self.assertIn("Do not create a GitHub issue unless the user asks", guidance)
+        self.assertIn("Use a `story/`, `feat/`, or `refactor/` branch", guidance)
 
     def test_agents_require_one_silent_ci_watcher(self) -> None:
         guidance = AGENTS.read_text()

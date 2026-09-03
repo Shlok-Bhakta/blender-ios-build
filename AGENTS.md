@@ -10,6 +10,7 @@ Use this workflow for every feature, fix, or maintenance change in this port.
 
 - Inspect the open pull requests before branching. Confirm the latest stacked PR, its head branch, its base branch, and its green commit.
 - Branch from that exact head commit. Keep one change per stacked PR.
+- Use a `story/`, `feat/`, or `refactor/` branch. The iOS preview workflow ignores other branch prefixes.
 - When opening the PR, base the new PR on the previous PR branch, not Blender's default branch. State the parent PR in the description so reviewers can follow the stack.
 - Do not create a GitHub issue unless the user asks for one. A normal change request can go straight into a branch and PR.
 - Preserve unrelated work in the checkout. Stop if the intended edit overlaps unexplained local changes.
