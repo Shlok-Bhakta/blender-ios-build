@@ -1,0 +1,19 @@
+appId: org.blenderfoundation.blender.ios
+name: Blender iOS file location access
+---
+- extendedWaitUntil:
+    visible:
+      id: blender_child_window_close
+    timeout: 120000
+- extendedWaitUntil:
+    visible:
+      id: blender_file_browser_add_location
+    timeout: 30000
+- startRecording: blender-ios-file-access
+- tapOn:
+    id: blender_file_browser_add_location
+- extendedWaitUntil:
+    visible: Cancel
+    timeout: 30000
+- takeScreenshot: blender-ios-folder-picker
+- stopRecording

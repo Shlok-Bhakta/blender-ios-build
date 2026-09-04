@@ -317,6 +317,7 @@ if(WITH_APPLE_CROSSPLATFORM)
   set(PLATFORM_LINKFLAGS "\
 -fexceptions -framework Foundation -framework UIKit -framework CoreGraphics \
 -framework Metal -framework MetalKit -framework QuartzCore -framework GameController \
+-framework UniformTypeIdentifiers \
 -framework Accelerate -framework AudioToolbox -framework CoreAudio \
 -framework VideoToolbox -framework CoreMedia -framework CoreVideo \
 -framework MetalPerformanceShaders -framework MetalPerformanceShadersGraph -liconv"
