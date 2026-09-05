@@ -157,6 +157,21 @@ class PrPreviewWorkflowTests(unittest.TestCase):
         workflow = WORKFLOW.read_text()
         self.assertIn("submodule.lib/macos_arm64.update=checkout", workflow)
 
+    def test_runs_portable_file_access_regressions_before_building(self) -> None:
+        workflow = WORKFLOW.read_text()
+        regression_step = workflow.split(
+            "- name: Run portable iOS file-access regression tests", 1
+        )[1].split("- name: Build revision-matched native tools on cache miss", 1)[0]
+
+        for test_file in (
+            "test_ghost_file_access.py",
+            "test_simulator_file_access.py",
+            "test_file_access_runtime.py",
+            "test_pr_preview_workflow.py",
+        ):
+            self.assertIn(test_file, regression_step)
+        self.assertNotIn("test_*.py", regression_step)
+
 
 if __name__ == "__main__":
     unittest.main()
