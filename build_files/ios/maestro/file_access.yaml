@@ -1,6 +1,9 @@
+# Run through simulator_file_access.py to prepare the external folder and probe.
 appId: org.blenderfoundation.blender.ios
-name: Blender iOS file location access
+name: Blender iOS file location selection and return
 ---
+- setOrientation: PORTRAIT
+- waitForAnimationToEnd
 - extendedWaitUntil:
     visible:
       id: blender_child_window_close
@@ -15,5 +18,45 @@ name: Blender iOS file location access
 - extendedWaitUntil:
     visible: Cancel
     timeout: 30000
+- waitForAnimationToEnd
 - takeScreenshot: blender-ios-folder-picker
+- tapOn:
+    point: 84%,29%
+- extendedWaitUntil:
+    visible:
+      id: blender_file_browser_add_location
+    timeout: 30000
+- tapOn:
+    id: blender_file_browser_add_location
+- extendedWaitUntil:
+    visible: Cancel
+    timeout: 30000
+- waitForAnimationToEnd
+- takeScreenshot: blender-ios-folder-picker
+- tapOn:
+    point: 84%,29%
+- extendedWaitUntil:
+    visible:
+      id: blender_file_browser_add_location
+    timeout: 30000
+- tapOn:
+    id: blender_file_browser_add_location
+- extendedWaitUntil:
+    visible: Cancel
+    timeout: 30000
+- waitForAnimationToEnd
+- takeScreenshot: blender-ios-folder-picker
+- tapOn:
+    point: 84%,29%
+- extendedWaitUntil:
+    visible:
+      id: blender_file_browser_add_location
+    timeout: 30000
+- tapOn:
+    id: blender_child_window_close
+- extendedWaitUntil:
+    notVisible:
+      id: blender_child_window_close
+    timeout: 30000
+- assertTrue: ${json(http.get('http://127.0.0.1:0/after-close').body).ok}
 - stopRecording

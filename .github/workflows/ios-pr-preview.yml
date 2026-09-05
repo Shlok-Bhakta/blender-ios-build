@@ -258,6 +258,11 @@ jobs:
             ${{ env.DEPS_BUILD }}/Release
           key: ${{ steps.cache-keys.outputs.dependency-cache-key }}
 
+      - name: Run iOS regression tests including Foundation provider stalls
+        env:
+          FMT_INCLUDE_DIR: ${{ env.DEPS_INSTALL }}/fmt/include
+        run: python3 -m unittest discover -s build_files/ios/tests -p 'test_*.py'
+
       - name: Build revision-matched native tools on cache miss
         if: steps.host-tool-cache.outputs.cache-hit != 'true'
         shell: bash
