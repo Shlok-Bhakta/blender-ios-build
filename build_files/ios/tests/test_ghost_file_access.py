@@ -53,12 +53,12 @@ class GhostFileAccessTests(unittest.TestCase):
         self.assertIn("constraintEqualToAnchor:close_button.leadingAnchor", access_source)
         self.assertIn("constraintEqualToAnchor:close_button.centerYAnchor", access_source)
 
-    def test_control_opens_the_system_folder_picker_without_copying(self) -> None:
+    def test_control_uses_the_documented_single_directory_picker(self) -> None:
         access_source = ACCESS_SOURCE.read_text()
 
         self.assertIn("initForOpeningContentTypes:@[ UTTypeFolder ]", access_source)
-        self.assertIn("asCopy:NO", access_source)
-        self.assertIn("allowsMultipleSelection = YES", access_source)
+        self.assertNotIn("asCopy:", access_source)
+        self.assertIn("allowsMultipleSelection = NO", access_source)
 
         cancel = access_source[
             access_source.rindex("documentPickerWasCancelled") : access_source.rindex(

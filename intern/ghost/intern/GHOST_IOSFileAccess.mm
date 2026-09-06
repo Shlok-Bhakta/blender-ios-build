@@ -94,10 +94,9 @@ static NSString *const GHOST_IOSFileLocationDidGrantAccess =
     return;
   }
 
-  picker_ = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[ UTTypeFolder ]
-                                                                        asCopy:NO];
+  picker_ = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[ UTTypeFolder ]];
   picker_.delegate = self;
-  picker_.allowsMultipleSelection = YES;
+  picker_.allowsMultipleSelection = NO;
   picker_.modalPresentationStyle = UIModalPresentationFormSheet;
   [view_controller_ presentViewController:picker_ animated:YES completion:nil];
 }

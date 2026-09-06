@@ -174,8 +174,16 @@ def exercise_device(app: Path, bundle_id: str, udid: str, name: str,
     storage = next(Path(line.split("\t", 1)[1]) for line in groups.splitlines()
                    if line.startswith("group.com.apple.FileProvider.LocalStorage\t"))
     folder = storage / "File Provider Storage" / "BlenderFolderRegression"
+    shutil.rmtree(folder, ignore_errors=True)
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "sentinel.txt").write_text("external folder regression fixture\n")
+    for item_index in range(90):
+        if item_index % 3 == 0:
+            nested = folder / f"Nested-{item_index:03}" / "Child"
+            nested.mkdir(parents=True)
+            (nested / "asset.blend").write_bytes(b"BLENDER")
+        else:
+            (folder / f"asset-{item_index:03}.blend").write_bytes(b"BLENDER")
     directory = Path(tempfile.mkdtemp(prefix="file-access-", dir=container / "tmp"))
     fixture = directory / "provider.dylib"
     run("xcrun", "--sdk", "iphonesimulator", "clang++", "-std=c++17", "-dynamiclib",
@@ -201,6 +209,7 @@ def exercise_device(app: Path, bundle_id: str, udid: str, name: str,
             process = subprocess.Popen(["maestro", "--device", udid, "test", "--test-output-dir",
                                         str(output), str(flow)], stdout=log, stderr=subprocess.STDOUT)
             if slow:
+                callback = directory / "picker-callback-entered"
                 claim = directory / "grant-claim"
                 entered = directory / "provider-entered"
 
@@ -209,6 +218,7 @@ def exercise_device(app: Path, bundle_id: str, udid: str, name: str,
                         raise FileAccessFailure(f"Maestro stopped before selection, see {output / 'maestro.txt'}")
                     return entered.exists()
 
+                wait_until(lambda: callback.exists(), "picker callback after tapping Open", 240)
                 wait_until(lambda: claim.exists(),
                            "folder permission claimed during the picker callback", 240)
                 claim_thread = claim.read_text()

@@ -54,8 +54,15 @@ class SimulatorFileAccessTests(unittest.TestCase):
     def test_device_reproduction_requires_the_grant_during_the_picker_callback(self):
         source = Path(MODULE.__file__).read_text()
 
+        self.assertIn('picker callback after tapping Open', source)
         self.assertIn('folder permission claimed during the picker callback', source)
         self.assertIn('claim_thread != "main"', source)
+
+    def test_external_folder_fixture_contains_many_nested_items(self):
+        source = Path(MODULE.__file__).read_text()
+
+        self.assertIn('for item_index in range(90)', source)
+        self.assertIn('Nested', source)
 
 
 if __name__ == '__main__':

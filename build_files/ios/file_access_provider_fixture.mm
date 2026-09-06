@@ -27,6 +27,11 @@ static BOOL observed_start_access(id url, SEL selector);
 
 static void picked_documents(id controls, SEL selector, id picker, NSArray *urls)
 {
+  [@"entered"
+      writeToFile:[marker_directory stringByAppendingPathComponent:@"picker-callback-entered"]
+       atomically:YES
+         encoding:NSUTF8StringEncoding
+            error:nil];
   /* Arm only from a real selection, never from startup refreshing a stale bookmark. */
   armed = delay_selection;
   delay_selection = false;
@@ -57,11 +62,11 @@ static void picked_documents(id controls, SEL selector, id picker, NSArray *urls
                error:nil];
 }
 
-static id picker_init(id picker, SEL selector, NSArray *types, BOOL as_copy)
+static id picker_init(id picker, SEL selector, NSArray *types)
 {
-  using InitFn = id (*)(id, SEL, NSArray *, BOOL);
+  using InitFn = id (*)(id, SEL, NSArray *);
   UIDocumentPickerViewController *result = reinterpret_cast<InitFn>(original_picker_init)(
-      picker, selector, types, as_copy);
+      picker, selector, types);
   result.directoryURL = picker_directory;
   return result;
 }
@@ -71,7 +76,7 @@ extern "C" void blender_test_set_picker_directory(const char *directory)
   picker_directory = [[NSURL fileURLWithPath:[NSString stringWithUTF8String:directory]
                                  isDirectory:YES] retain];
   Method method = class_getInstanceMethod(UIDocumentPickerViewController.class,
-                                          @selector(initForOpeningContentTypes:asCopy:));
+                                          @selector(initForOpeningContentTypes:));
   original_picker_init = method_setImplementation(method, reinterpret_cast<IMP>(picker_init));
 }
 
