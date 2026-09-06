@@ -12,11 +12,18 @@
 #import <QuartzCore/QuartzCore.h>
 #import <UIKit/UIKit.h>
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+#import <os/log.h>
 
 #include <cstring>
 
 static NSString *const GHOST_IOSFileLocationDidGrantAccess =
     @"GHOST_IOSFileLocationDidGrantAccess";
+
+static os_log_t GHOST_IOS_file_access_log()
+{
+  static os_log_t log = os_log_create("org.blenderfoundation.blender.ios", "FolderAccess");
+  return log;
+}
 
 @interface GHOSTIOSFileAccessControls : NSObject <UIDocumentPickerDelegate>
 {
@@ -94,6 +101,11 @@ static NSString *const GHOST_IOSFileLocationDidGrantAccess =
   if (picker_is_presented_ || view_controller_ == nil ||
       view_controller_.presentedViewController != nil)
   {
+    os_log(GHOST_IOS_file_access_log(),
+           "Picker presentation skipped: active=%{public}d host=%{public}d presented=%{public}d",
+           picker_is_presented_,
+           view_controller_ != nil,
+           view_controller_.presentedViewController != nil);
     return;
   }
 
@@ -112,27 +124,46 @@ static NSString *const GHOST_IOSFileLocationDidGrantAccess =
   picker_.allowsMultipleSelection = NO;
   picker_.modalPresentationStyle = UIModalPresentationFormSheet;
   picker_is_presented_ = YES;
-  [view_controller_ presentViewController:picker_ animated:YES completion:nil];
+  os_log(GHOST_IOS_file_access_log(), "Presenting folder picker");
+  [view_controller_ presentViewController:picker_
+                                 animated:YES
+                               completion:^{
+                                 os_log(GHOST_IOS_file_access_log(),
+                                        "Folder picker presentation completed");
+                               }];
 }
 
 - (void)documentPicker:(UIDocumentPickerViewController *)controller
     didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls
 {
+  os_log(GHOST_IOS_file_access_log(),
+         "Folder picker delegate entered: count=%{public}lu matches=%{public}d main=%{public}d",
+         (unsigned long)urls.count,
+         controller == picker_,
+         NSThread.isMainThread);
+  NSUInteger granted_count = 0;
   for (NSURL *url in urls) {
     if (url.isFileURL) {
       [[NSNotificationCenter defaultCenter]
           postNotificationName:GHOST_IOSFileLocationDidGrantAccess
                         object:url];
+      granted_count++;
     }
   }
 
   if (controller == picker_) {
     picker_is_presented_ = NO;
   }
+  os_log(GHOST_IOS_file_access_log(),
+         "Folder picker delegate returning: grants=%{public}lu",
+         (unsigned long)granted_count);
 }
 
 - (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)controller
 {
+  os_log(GHOST_IOS_file_access_log(),
+         "Folder picker cancelled: matches=%{public}d",
+         controller == picker_);
   if (controller == picker_) {
     picker_is_presented_ = NO;
   }
@@ -145,6 +176,9 @@ static NSString *const GHOST_IOSFileLocationDidGrantAccess =
 
 - (void)invalidate
 {
+  if (picker_is_presented_) {
+    os_log(GHOST_IOS_file_access_log(), "Folder picker owner invalidated while active");
+  }
   if (picker_ != nil) {
     UIDocumentPickerViewController *picker = picker_;
     picker_ = nil;

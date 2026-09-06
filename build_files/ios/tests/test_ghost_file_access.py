@@ -109,6 +109,18 @@ class GhostFileAccessTests(unittest.TestCase):
         self.assertIn("GHOST_IOSFileLocationDidGrantAccess", file_menu_source)
         self.assertIn("WM_main_add_notifier", file_menu_source)
 
+    def test_folder_handoff_has_device_diagnostics_without_logging_paths(self) -> None:
+        access_source = ACCESS_SOURCE.read_text()
+        file_menu_source = FILE_MENU_SOURCE.read_text()
+
+        self.assertIn('"Folder picker delegate entered:', access_source)
+        self.assertIn('"Folder picker delegate returning:', access_source)
+        self.assertIn('"Folder grant worker started"', file_menu_source)
+        self.assertIn('"Security scope request completed:', file_menu_source)
+        self.assertIn('"Folder publication completed"', file_menu_source)
+        self.assertNotIn("url.path", access_source)
+        self.assertNotIn("%{public}@\", url", access_source)
+
 
 if __name__ == "__main__":
     unittest.main()

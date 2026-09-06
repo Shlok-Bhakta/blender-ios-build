@@ -8,6 +8,7 @@
  */
 
 #import <Foundation/Foundation.h>
+#import <os/log.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -28,6 +29,12 @@ static NSString *const GHOST_IOSFileLocationDidGrantAccess =
     @"GHOST_IOSFileLocationDidGrantAccess";
 static NSString *const IOSFileLocationBookmarksKey = @"BlenderIOSFileLocationBookmarks";
 
+static os_log_t IOS_file_access_log()
+{
+  static os_log_t log = os_log_create("org.blenderfoundation.blender.ios", "FolderAccess");
+  return log;
+}
+
 static NSMutableDictionary<NSString *, NSURL *> *g_security_scoped_urls = nil;
 /* Provider I/O and security scopes belong to this serial queue. The menu cache
  * belongs to the main thread and never resolves bookmarks during a redraw. */
@@ -45,10 +52,19 @@ static void IOS_begin_accessing_file_location(NSURL *url)
 {
   NSString *key = IOS_file_location_key(url);
   if (key == nil || g_security_scoped_urls[key] != nil) {
+    os_log(IOS_file_access_log(),
+           "Security scope skipped: valid=%{public}d duplicate=%{public}d",
+           key != nil,
+           key != nil && g_security_scoped_urls[key] != nil);
     return;
   }
 
-  if ([url startAccessingSecurityScopedResource]) {
+  const BOOL access_started = [url startAccessingSecurityScopedResource];
+  os_log(IOS_file_access_log(),
+         "Security scope request completed: success=%{public}d main=%{public}d",
+         access_started,
+         NSThread.isMainThread);
+  if (access_started) {
     g_security_scoped_urls[key] = url;
   }
 }
@@ -87,7 +103,9 @@ static NSURL *IOS_resolve_file_location(NSData *bookmark, BOOL *is_stale)
                              bookmarkDataIsStale:is_stale
                                            error:&error];
   if (url == nil) {
-    NSLog(@"Unable to restore Blender file location: %@", error.localizedDescription);
+    os_log_error(IOS_file_access_log(),
+                 "Bookmark resolution failed: %{public}@",
+                 error.localizedDescription);
   }
   return url;
 }
@@ -100,7 +118,12 @@ static NSData *IOS_create_file_location_bookmark(NSURL *url)
                                     relativeToURL:nil
                                             error:&error];
   if (bookmark == nil) {
-    NSLog(@"Unable to save Blender file location: %@", error.localizedDescription);
+    os_log_error(IOS_file_access_log(),
+                 "Bookmark creation failed: %{public}@",
+                 error.localizedDescription);
+  }
+  else {
+    os_log(IOS_file_access_log(), "Bookmark creation completed");
   }
   return bookmark;
 }
@@ -149,6 +172,7 @@ static void IOS_insert_file_location(blender::FSMenu *fsmenu, NSURL *url)
 
 static void IOS_publish_file_location(NSURL *url)
 {
+  os_log(IOS_file_access_log(), "Scheduling folder publication on the main thread");
   /* A copied dispatch block retains the granted URL until the main thread has
    * consumed it. Do not capture an FSMenu or a file-browser window across I/O. */
   dispatch_async(dispatch_get_main_queue(), ^{
@@ -162,6 +186,7 @@ static void IOS_publish_file_location(NSURL *url)
     g_file_location_urls[key] = url;
     IOS_insert_file_location(blender::ED_fsmenu_get(), url);
     blender::WM_main_add_notifier(NC_SPACE | ND_SPACE_FILE_PARAMS, nullptr);
+    os_log(IOS_file_access_log(), "Folder publication completed");
   });
 }
 
@@ -191,15 +216,21 @@ static void IOS_restore_file_locations()
 - (void)didGrantFileLocationAccess:(NSNotification *)notification
 {
   NSURL *url = [notification.object isKindOfClass:[NSURL class]] ? notification.object : nil;
+  os_log(IOS_file_access_log(),
+         "Folder grant notification received: valid=%{public}d main=%{public}d",
+         url != nil && url.isFileURL,
+         NSThread.isMainThread);
   if (url == nil || !url.isFileURL) {
     return;
   }
 
   dispatch_async(g_file_location_queue, ^{
     @autoreleasepool {
+      os_log(IOS_file_access_log(), "Folder grant worker started");
       IOS_begin_accessing_file_location(url);
       IOS_publish_file_location(url);
       IOS_persist_file_location(url);
+      os_log(IOS_file_access_log(), "Folder grant worker completed");
     }
   });
 }
