@@ -3,6 +3,8 @@
 The folder button must return control to Blender after a selection, even when a
 Files provider stalls during bookmark creation or restoration. Repeated grants
 must produce one System entry, and saved locations must return after relaunch.
+The temporary security scope must be claimed during the picker delegate callback
+before bookmark and provider work moves to a worker queue.
 
 Run the host suite on macOS:
 
@@ -34,15 +36,17 @@ Use `--device <UDID>` to select one booted device. Without that argument, the
 script runs each booted iPhone and iPad sequentially. Omit `--slow-provider` to
 exercise ordinary provider timing.
 
-The script creates a folder in Files' local storage outside Blender's sandbox.
-Its test-only dylib sets the native picker's starting directory and, when
-requested, holds the real NSURL bookmark operation until the host releases it.
-Nothing in the production app loads this dylib. Maestro taps the real folder
-button and native Open button three times, then closes the file browser. A bpy
-timer verifies fresh main-loop ticks and one System entry. A loopback HTTP probe
-asserts those ticks inside the Maestro flow, before its runner can background the
-app. The script then verifies successful restoration
-after terminating and relaunching the app. Failed runs preserve logs and state.
+The script starts from a clean app container and creates a folder in Files' local
+storage outside Blender's sandbox. Its test-only dylib sets the native picker's
+starting directory, records that the selected URL's security scope is claimed on
+the main thread during the picker callback, and, when requested, holds the real
+NSURL bookmark operation until the host releases it. Nothing in the production
+app loads this dylib. Maestro taps the real folder button and native Open button
+three times, then closes the file browser. A bpy timer verifies fresh main-loop
+ticks and one System entry. A loopback HTTP probe asserts those ticks inside the
+Maestro flow, before its runner can background the app. The script then verifies
+successful restoration after terminating and relaunching the app. Failed runs
+preserve logs and state.
 
 The iOS 26.5 remote Files view does not expose its Open button reliably to XCTest.
 The flow uses a coordinate fallback for that button on iPhone landscape and iPad

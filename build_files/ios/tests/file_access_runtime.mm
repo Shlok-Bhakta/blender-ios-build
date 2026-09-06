@@ -20,6 +20,9 @@ static bool hold_creation = false;
 static bool hold_resolution = false;
 static IMP original_creation;
 static IMP original_resolution;
+static IMP original_start_access;
+static std::atomic<bool> scope_started{false};
+static std::atomic<bool> scope_started_on_main{false};
 static NSUserDefaults *test_defaults;
 
 static void require(bool condition, const char *message)
@@ -94,6 +97,17 @@ static id resolve_bookmark(id cls,
       cls, selector, data, options, relative, stale, error);
 }
 
+static BOOL start_access(id url, SEL selector)
+{
+  scope_started_on_main = NSThread.isMainThread;
+  scope_started = true;
+  using Fn = BOOL (*)(id, SEL);
+  (void)reinterpret_cast<Fn>(original_start_access)(url, selector);
+  /* The temporary-directory fixture has no sandbox extension on macOS. Treat
+   * the observed call as a successful claim so production retains the URL. */
+  return YES;
+}
+
 static void spin_until(const std::function<bool()> &predicate)
 {
   NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:10];
@@ -151,11 +165,24 @@ int main(int argc, char **argv)
         @selector(URLByResolvingBookmarkData:options:relativeToURL:bookmarkDataIsStale:error:));
     original_resolution = method_setImplementation(resolution,
                                                    reinterpret_cast<IMP>(resolve_bookmark));
+    Method start_access_method = class_getInstanceMethod(
+        NSURL.class, @selector(startAccessingSecurityScopedResource));
+    original_start_access = method_setImplementation(start_access_method,
+                                                     reinterpret_cast<IMP>(start_access));
     hold_creation = !restore;
     hold_resolution = restore;
     blender::fsmenu_read_system(blender::ED_fsmenu_get(), true);
     if (!restore) {
+      /* Hold the provider queue to prove the temporary sandbox extension is
+       * claimed synchronously, before the picker delegate is allowed to return. */
+      dispatch_sync(g_file_location_queue,
+                    ^{
+                    });
+      dispatch_suspend(g_file_location_queue);
       grant(url);
+      require(scope_started.load(), "folder grant was deferred until after the picker callback");
+      require(scope_started_on_main.load(), "folder grant was not claimed on the main thread");
+      dispatch_resume(g_file_location_queue);
     }
     spin_until([] { return provider_entered.load(); });
     auto main_responsive = std::make_shared<bool>(false);

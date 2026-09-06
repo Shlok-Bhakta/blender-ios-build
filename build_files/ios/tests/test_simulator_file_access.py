@@ -51,6 +51,12 @@ class SimulatorFileAccessTests(unittest.TestCase):
         compile(MODULE.state_source(Path('/tmp/test'), Path('/external/folder'),
                                     Path('/tmp/provider.dylib'), True), 'probe', 'exec')
 
+    def test_device_reproduction_requires_the_grant_during_the_picker_callback(self):
+        source = Path(MODULE.__file__).read_text()
+
+        self.assertIn('folder permission claimed during the picker callback', source)
+        self.assertIn('claim_thread != "main"', source)
+
 
 if __name__ == '__main__':
     unittest.main()

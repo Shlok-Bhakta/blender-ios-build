@@ -167,6 +167,7 @@ def exercise_device(app: Path, bundle_id: str, udid: str, name: str,
                     output: Path, slow: bool) -> None:
     output.mkdir(parents=True, exist_ok=True)
     run("xcrun", "simctl", "terminate", udid, bundle_id, check=False)
+    run("xcrun", "simctl", "uninstall", udid, bundle_id, check=False)
     run("xcrun", "simctl", "install", udid, str(app))
     container = Path(run("xcrun", "simctl", "get_app_container", udid, bundle_id, "data").stdout.strip())
     groups = run("xcrun", "simctl", "get_app_container", udid, "com.apple.DocumentsApp", "groups").stdout
@@ -200,6 +201,7 @@ def exercise_device(app: Path, bundle_id: str, udid: str, name: str,
             process = subprocess.Popen(["maestro", "--device", udid, "test", "--test-output-dir",
                                         str(output), str(flow)], stdout=log, stderr=subprocess.STDOUT)
             if slow:
+                claim = directory / "grant-claim"
                 entered = directory / "provider-entered"
 
                 def provider_started():
@@ -207,7 +209,14 @@ def exercise_device(app: Path, bundle_id: str, udid: str, name: str,
                         raise FileAccessFailure(f"Maestro stopped before selection, see {output / 'maestro.txt'}")
                     return entered.exists()
 
-                wait_until(provider_started, "real folder selection reaching bookmark I/O", 120)
+                wait_until(lambda: claim.exists(),
+                           "folder permission claimed during the picker callback", 240)
+                claim_thread = claim.read_text()
+                (output / "grant-claim.txt").write_text(claim_thread)
+                if claim_thread != "main":
+                    raise FileAccessFailure(
+                        f"folder permission was not claimed during the picker callback: {claim_thread}")
+                wait_until(provider_started, "real folder selection reaching bookmark I/O", 240)
                 thread = entered.read_text()
                 (output / "provider-thread.txt").write_text(thread)
                 if thread == "main":
@@ -216,7 +225,7 @@ def exercise_device(app: Path, bundle_id: str, udid: str, name: str,
                 wait_until(lambda: read_state(directory).get("ticks", 0) >= ticks + 3,
                            "fresh Blender ticks while the provider is blocked")
                 (directory / "provider-release").touch()
-            code = process.wait(timeout=180)
+            code = process.wait(timeout=360)
             if code:
                 raise FileAccessFailure(f"Maestro failed, see {output / 'maestro.txt'}")
         # Maestro validated these ticks while Blender was still foregrounded.
@@ -253,7 +262,11 @@ def exercise_device(app: Path, bundle_id: str, udid: str, name: str,
                 process.wait(timeout=40)
             except subprocess.TimeoutExpired:
                 process.terminate()
-                process.wait(timeout=10)
+                try:
+                    process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=10)
         if (directory / "state.json").exists():
             shutil.copy(directory / "state.json", output / "last-state.json")
         run("xcrun", "simctl", "terminate", udid, bundle_id, check=False)

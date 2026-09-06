@@ -12,20 +12,49 @@
 #include <unistd.h>
 
 static std::atomic<bool> armed{false};
+static std::atomic<bool> selection_callback_active{false};
+static std::atomic<bool> scope_claimed_during_selection{false};
+static std::atomic<bool> scope_claimed_on_main{false};
 static bool delay_selection = false;
 static NSString *marker_directory;
 static IMP original_bookmark;
 static IMP original_picker_init;
 static IMP original_selection;
+static IMP original_start_access;
 static NSURL *picker_directory;
+
+static BOOL observed_start_access(id url, SEL selector);
 
 static void picked_documents(id controls, SEL selector, id picker, NSArray *urls)
 {
   /* Arm only from a real selection, never from startup refreshing a stale bookmark. */
   armed = delay_selection;
   delay_selection = false;
+  if (original_start_access == nullptr) {
+    NSURL *selected_url = urls.firstObject;
+    Class url_class = selected_url.class;
+    SEL start_selector = @selector(startAccessingSecurityScopedResource);
+    Method start_access = class_getInstanceMethod(url_class, start_selector);
+    original_start_access = method_getImplementation(start_access);
+    if (!class_addMethod(url_class,
+                         start_selector,
+                         reinterpret_cast<IMP>(observed_start_access),
+                         method_getTypeEncoding(start_access)))
+    {
+      method_setImplementation(start_access, reinterpret_cast<IMP>(observed_start_access));
+    }
+  }
+  selection_callback_active = true;
   using SelectionFn = void (*)(id, SEL, id, NSArray *);
   reinterpret_cast<SelectionFn>(original_selection)(controls, selector, picker, urls);
+  selection_callback_active = false;
+  NSString *claim = scope_claimed_during_selection ?
+                        (scope_claimed_on_main ? @"main" : @"worker") :
+                        @"missing";
+  [claim writeToFile:[marker_directory stringByAppendingPathComponent:@"grant-claim"]
+          atomically:YES
+            encoding:NSUTF8StringEncoding
+               error:nil];
 }
 
 static id picker_init(id picker, SEL selector, NSArray *types, BOOL as_copy)
@@ -70,6 +99,16 @@ static id delayed_bookmark(id url,
   using BookmarkFn = id (*)(id, SEL, NSURLBookmarkCreationOptions, NSArray *, NSURL *, NSError **);
   return reinterpret_cast<BookmarkFn>(original_bookmark)(
       url, selector, options, keys, relative_url, error);
+}
+
+static BOOL observed_start_access(id url, SEL selector)
+{
+  if (selection_callback_active) {
+    scope_claimed_during_selection = true;
+    scope_claimed_on_main = NSThread.isMainThread;
+  }
+  using StartAccessFn = BOOL (*)(id, SEL);
+  return reinterpret_cast<StartAccessFn>(original_start_access)(url, selector);
 }
 
 extern "C" void blender_test_delay_next_bookmark(const char *directory)
