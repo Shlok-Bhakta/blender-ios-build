@@ -51,12 +51,14 @@ class SimulatorFileAccessTests(unittest.TestCase):
         compile(MODULE.state_source(Path('/tmp/test'), Path('/external/folder'),
                                     Path('/tmp/provider.dylib'), True), 'probe', 'exec')
 
-    def test_device_reproduction_requires_the_grant_during_the_picker_callback(self):
+    def test_device_reproduction_requires_callback_return_while_scope_is_stalled(self):
         source = Path(MODULE.__file__).read_text()
 
         self.assertIn('picker callback after tapping Open', source)
-        self.assertIn('folder permission claimed during the picker callback', source)
-        self.assertIn('claim_thread != "main"', source)
+        self.assertIn('picker callback return while permission I/O is blocked', source)
+        self.assertIn('folder selection blocked the picker in permission I/O', source)
+        self.assertIn('folder selection released the document picker host', source)
+        self.assertIn('folder picker copied instead of granting access', source)
 
     def test_external_folder_fixture_contains_many_nested_items(self):
         source = Path(MODULE.__file__).read_text()

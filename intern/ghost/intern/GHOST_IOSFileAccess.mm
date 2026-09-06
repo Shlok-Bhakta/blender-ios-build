@@ -23,6 +23,7 @@ static NSString *const GHOST_IOSFileLocationDidGrantAccess =
   UIButton *button_;
   UIViewController *view_controller_;
   UIDocumentPickerViewController *picker_;
+  BOOL picker_is_presented_;
 }
 
 - (instancetype)initWithInputView:(UIView *)input_view
@@ -46,6 +47,7 @@ static NSString *const GHOST_IOSFileLocationDidGrantAccess =
 
   view_controller_ = view_controller;
   picker_ = nil;
+  picker_is_presented_ = NO;
   button_ = [[UIButton buttonWithType:UIButtonTypeSystem] retain];
   button_.translatesAutoresizingMaskIntoConstraints = NO;
   button_.accessibilityLabel = @"Add file location";
@@ -89,15 +91,27 @@ static NSString *const GHOST_IOSFileLocationDidGrantAccess =
 
 - (void)showFolderPicker
 {
-  if (picker_ != nil || view_controller_ == nil || view_controller_.presentedViewController != nil)
+  if (picker_is_presented_ || view_controller_ == nil ||
+      view_controller_.presentedViewController != nil)
   {
     return;
   }
 
-  picker_ = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[ UTTypeFolder ]];
+  /* The system dismisses a completed document picker after its delegate returns.
+   * Retain that host until the next presentation so its remote Files view can
+   * finish the handoff before we clear the weak delegate. */
+  if (picker_ != nil) {
+    picker_.delegate = nil;
+    [picker_ release];
+    picker_ = nil;
+  }
+
+  picker_ = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[ UTTypeFolder ]
+                                                                        asCopy:NO];
   picker_.delegate = self;
   picker_.allowsMultipleSelection = NO;
   picker_.modalPresentationStyle = UIModalPresentationFormSheet;
+  picker_is_presented_ = YES;
   [view_controller_ presentViewController:picker_ animated:YES completion:nil];
 }
 
@@ -113,20 +127,14 @@ static NSString *const GHOST_IOSFileLocationDidGrantAccess =
   }
 
   if (controller == picker_) {
-    picker_.delegate = nil;
-    [picker_ dismissViewControllerAnimated:YES completion:nil];
-    [picker_ release];
-    picker_ = nil;
+    picker_is_presented_ = NO;
   }
 }
 
 - (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)controller
 {
   if (controller == picker_) {
-    picker_.delegate = nil;
-    [picker_ dismissViewControllerAnimated:YES completion:nil];
-    [picker_ release];
-    picker_ = nil;
+    picker_is_presented_ = NO;
   }
 }
 
@@ -138,10 +146,19 @@ static NSString *const GHOST_IOSFileLocationDidGrantAccess =
 - (void)invalidate
 {
   if (picker_ != nil) {
-    picker_.delegate = nil;
-    [picker_ dismissViewControllerAnimated:NO completion:nil];
-    [picker_ release];
+    UIDocumentPickerViewController *picker = picker_;
     picker_ = nil;
+    picker_is_presented_ = NO;
+    picker.delegate = nil;
+    if (picker.presentingViewController != nil) {
+      [picker dismissViewControllerAnimated:NO
+                                 completion:^{
+                                   [picker release];
+                                 }];
+    }
+    else {
+      [picker release];
+    }
   }
 
   if (button_ != nil) {

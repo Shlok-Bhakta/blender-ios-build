@@ -155,7 +155,6 @@ static void IOS_publish_file_location(NSURL *url)
     if (g_file_locations_stopping) {
       return;
     }
-    IOS_begin_accessing_file_location(url);
     NSString *key = IOS_file_location_key(url);
     if (key == nil) {
       return;
@@ -176,6 +175,7 @@ static void IOS_restore_file_locations()
     if (url == nil) {
       continue;
     }
+    IOS_begin_accessing_file_location(url);
     IOS_publish_file_location(url);
     if (is_stale) {
       IOS_persist_file_location(url);
@@ -195,11 +195,9 @@ static void IOS_restore_file_locations()
     return;
   }
 
-  /* Claim the temporary sandbox extension before the document-picker callback
-   * returns. Deferring this call can invalidate grants from real Files providers. */
-  IOS_begin_accessing_file_location(url);
   dispatch_async(g_file_location_queue, ^{
     @autoreleasepool {
+      IOS_begin_accessing_file_location(url);
       IOS_publish_file_location(url);
       IOS_persist_file_location(url);
     }

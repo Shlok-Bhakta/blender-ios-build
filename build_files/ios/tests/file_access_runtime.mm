@@ -16,7 +16,7 @@ static std::set<std::string> menu_paths;
 static int notifications = 0;
 static std::atomic<bool> provider_entered{false};
 static dispatch_semaphore_t provider_release;
-static bool hold_creation = false;
+static bool hold_access = false;
 static bool hold_resolution = false;
 static IMP original_creation;
 static IMP original_resolution;
@@ -70,10 +70,6 @@ static id create_bookmark(id url,
                           NSError **error)
 {
   require(!NSThread.isMainThread, "bookmark creation blocked the main thread");
-  if (hold_creation) {
-    provider_entered = true;
-    dispatch_semaphore_wait(provider_release, DISPATCH_TIME_FOREVER);
-  }
   using Fn = id (*)(id, SEL, NSURLBookmarkCreationOptions, NSArray *, NSURL *, NSError **);
   return reinterpret_cast<Fn>(original_creation)(url, selector, options, keys, relative, error);
 }
@@ -101,6 +97,11 @@ static BOOL start_access(id url, SEL selector)
 {
   scope_started_on_main = NSThread.isMainThread;
   scope_started = true;
+  require(!NSThread.isMainThread, "security-scope access blocked the picker callback");
+  if (hold_access) {
+    provider_entered = true;
+    dispatch_semaphore_wait(provider_release, DISPATCH_TIME_FOREVER);
+  }
   using Fn = BOOL (*)(id, SEL);
   (void)reinterpret_cast<Fn>(original_start_access)(url, selector);
   /* The temporary-directory fixture has no sandbox extension on macOS. Treat
@@ -169,19 +170,18 @@ int main(int argc, char **argv)
         NSURL.class, @selector(startAccessingSecurityScopedResource));
     original_start_access = method_setImplementation(start_access_method,
                                                      reinterpret_cast<IMP>(start_access));
-    hold_creation = !restore;
+    hold_access = !restore;
     hold_resolution = restore;
     blender::fsmenu_read_system(blender::ED_fsmenu_get(), true);
     if (!restore) {
-      /* Hold the provider queue to prove the temporary sandbox extension is
-       * claimed synchronously, before the picker delegate is allowed to return. */
+      /* Hold the provider queue to prove the picker handoff only enqueues work. */
       dispatch_sync(g_file_location_queue,
                     ^{
                     });
       dispatch_suspend(g_file_location_queue);
       grant(url);
-      require(scope_started.load(), "folder grant was deferred until after the picker callback");
-      require(scope_started_on_main.load(), "folder grant was not claimed on the main thread");
+      require(!scope_started.load(),
+              "folder grant performed provider work in the picker callback");
       dispatch_resume(g_file_location_queue);
     }
     spin_until([] { return provider_entered.load(); });
@@ -194,10 +194,12 @@ int main(int argc, char **argv)
     menu_paths.clear();
     blender::fsmenu_read_system(blender::ED_fsmenu_get(), true);
     require(!menu_paths.empty(), "Documents disappeared while provider was blocked");
-    hold_creation = false;
+    hold_access = false;
     hold_resolution = false;
     dispatch_semaphore_signal(provider_release);
     spin_until([&] { return notifications > 0 && menu_paths.count(url.path.UTF8String) == 1; });
+    require(scope_started.load(), "folder grant never claimed its security scope");
+    require(!scope_started_on_main.load(), "folder grant claimed its security scope on main");
     grant(url);
     grant(url);
     spin_until([] { return notifications >= 3; });

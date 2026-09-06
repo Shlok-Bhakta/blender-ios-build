@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Select a real Files folder and verify Blender survives slow bookmark I/O.
+"""Select a real Files folder and verify Blender survives a slow permission handoff.
 
 The simulator-only library sets the picker's starting directory and optionally
-holds NSURL's bookmark operation. Selection still goes through UIKit's Open
-button, the production delegate, Foundation, and Blender's real System menu.
+holds NSURL's security-scope operation. Selection still goes through UIKit's
+Open button, the production delegate, Foundation, and Blender's real System menu.
 """
 from __future__ import annotations
 
@@ -44,9 +44,9 @@ root = Path({str(directory)!r})
 fixture = ctypes.CDLL({str(fixture)!r})
 fixture.blender_test_set_picker_directory.argtypes = [ctypes.c_char_p]
 fixture.blender_test_set_picker_directory({str(folder).encode()!r})
-fixture.blender_test_delay_next_bookmark.argtypes = [ctypes.c_char_p]
+fixture.blender_test_delay_next_security_scope.argtypes = [ctypes.c_char_p]
 if {slow!r}:
-    fixture.blender_test_delay_next_bookmark({str(directory).encode()!r})
+    fixture.blender_test_delay_next_security_scope({str(directory).encode()!r})
 state = {{'ticks': 0, 'bookmarks': [], 'windows': 0}}
 def file_access_tick():
     state['ticks'] += 1
@@ -210,7 +210,9 @@ def exercise_device(app: Path, bundle_id: str, udid: str, name: str,
                                         str(output), str(flow)], stdout=log, stderr=subprocess.STDOUT)
             if slow:
                 callback = directory / "picker-callback-entered"
-                claim = directory / "grant-claim"
+                callback_returned = directory / "picker-callback-returned"
+                picker_host = directory / "picker-host"
+                picker_mode = directory / "picker-mode"
                 entered = directory / "provider-entered"
 
                 def provider_started():
@@ -219,18 +221,19 @@ def exercise_device(app: Path, bundle_id: str, udid: str, name: str,
                     return entered.exists()
 
                 wait_until(lambda: callback.exists(), "picker callback after tapping Open", 240)
-                wait_until(lambda: claim.exists(),
-                           "folder permission claimed during the picker callback", 240)
-                claim_thread = claim.read_text()
-                (output / "grant-claim.txt").write_text(claim_thread)
-                if claim_thread != "main":
-                    raise FileAccessFailure(
-                        f"folder permission was not claimed during the picker callback: {claim_thread}")
-                wait_until(provider_started, "real folder selection reaching bookmark I/O", 240)
+                wait_until(provider_started, "real folder selection reaching permission I/O", 240)
                 thread = entered.read_text()
                 (output / "provider-thread.txt").write_text(thread)
                 if thread == "main":
-                    raise FileAccessFailure("folder selection blocked the main thread in bookmark I/O")
+                    raise FileAccessFailure("folder selection blocked the picker in permission I/O")
+                wait_until(lambda: callback_returned.exists(),
+                           "picker callback return while permission I/O is blocked")
+                wait_until(lambda: picker_host.exists(), "retained document picker host")
+                if picker_host.read_text() != "retained":
+                    raise FileAccessFailure("folder selection released the document picker host")
+                wait_until(lambda: picker_mode.exists(), "explicit document picker mode")
+                if picker_mode.read_text() != "access":
+                    raise FileAccessFailure("folder picker copied instead of granting access")
                 ticks = read_state(directory).get("ticks", 0)
                 wait_until(lambda: read_state(directory).get("ticks", 0) >= ticks + 3,
                            "fresh Blender ticks while the provider is blocked")

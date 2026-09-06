@@ -38,12 +38,16 @@ class GhostFileAccessTests(unittest.TestCase):
         self.assertIn('strcmp(window_title, "File Browser")', access_source)
         self.assertIn('accessibilityIdentifier = @"blender_file_browser_add_location";', access_source)
         self.assertIn('systemImageNamed:@"folder.badge.plus"', access_source)
+
+    def test_window_title_refresh_does_not_destroy_an_open_picker(self) -> None:
+        window_source = WINDOW_SOURCE.read_text()
         set_title = window_source[
             window_source.index("void GHOST_WindowIOS::setTitle") : window_source.index(
                 "std::string GHOST_WindowIOS::getTitle"
             )
         ]
-        self.assertIn("updateFileAccessControls", set_title)
+
+        self.assertNotIn("updateFileAccessControls", set_title)
 
     def test_control_is_a_small_circle_immediately_left_of_close(self) -> None:
         access_source = ACCESS_SOURCE.read_text()
@@ -53,19 +57,36 @@ class GhostFileAccessTests(unittest.TestCase):
         self.assertIn("constraintEqualToAnchor:close_button.leadingAnchor", access_source)
         self.assertIn("constraintEqualToAnchor:close_button.centerYAnchor", access_source)
 
-    def test_control_uses_the_documented_single_directory_picker(self) -> None:
+    def test_control_uses_an_explicit_single_directory_access_picker(self) -> None:
         access_source = ACCESS_SOURCE.read_text()
 
         self.assertIn("initForOpeningContentTypes:@[ UTTypeFolder ]", access_source)
-        self.assertNotIn("asCopy:", access_source)
+        self.assertIn("asCopy:NO", access_source)
         self.assertIn("allowsMultipleSelection = NO", access_source)
 
-        cancel = access_source[
-            access_source.rindex("documentPickerWasCancelled") : access_source.rindex(
-                "- (BOOL)containsView"
+    def test_selection_callback_keeps_the_remote_picker_host_alive(self) -> None:
+        access_source = ACCESS_SOURCE.read_text()
+        selection = access_source[
+            access_source.index("didPickDocumentsAtURLs") : access_source.index(
+                "documentPickerWasCancelled"
             )
         ]
-        self.assertIn("dismissViewControllerAnimated:YES", cancel)
+
+        self.assertNotIn("delegate = nil", selection)
+        self.assertNotIn("dismissViewControllerAnimated", selection)
+        self.assertNotIn("[picker_ release]", selection)
+
+    def test_selection_callback_defers_security_scope_and_bookmark_work(self) -> None:
+        file_menu_source = FILE_MENU_SOURCE.read_text()
+        observer = file_menu_source[
+            file_menu_source.index("didGrantFileLocationAccess") : file_menu_source.index(
+                "IOS_ensure_file_location_observer"
+            )
+        ]
+
+        dispatch = observer.index("dispatch_async(g_file_location_queue")
+        self.assertNotIn("IOS_begin_accessing_file_location", observer[:dispatch])
+        self.assertIn("IOS_begin_accessing_file_location", observer[dispatch:])
 
     def test_control_touches_do_not_leak_into_blender(self) -> None:
         window_source = WINDOW_SOURCE.read_text()

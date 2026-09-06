@@ -2398,7 +2398,6 @@ void GHOST_WindowIOS::setTitle(const char *title)
   strcpy(window_title_, title);
   NSString *window_title = [NSString stringWithCString:title encoding:NSUTF8StringEncoding];
   uiview_controller_.title = window_title;
-  [(GHOSTUIWindow *)rootWindow updateFileAccessControls];
 }
 
 std::string GHOST_WindowIOS::getTitle() const
