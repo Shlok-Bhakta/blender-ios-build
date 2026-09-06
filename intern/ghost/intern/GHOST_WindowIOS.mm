@@ -9,6 +9,7 @@
 #include "GHOST_WindowIOS.hh"
 
 #include "GHOST_ContextIOS.hh"
+#include "GHOST_IOSFileAccess.hh"
 #include "GHOST_IOSInputTuning.hh"
 #include "GHOST_IOSVirtualPointer.hh"
 #include "GHOST_SystemIOS.hh"
@@ -399,12 +400,14 @@ static GHOST_TButton pointerButton(const UIEventButtonMask button_mask)
 
   /* Native controls for Blender child windows. */
   UIButton *close_window_button;
+  NSObject *file_access_controls;
 }
 
 - (void)setSystemAndWindowIOS:(GHOST_SystemIOS *)sysCocoa windowIOS:(GHOST_WindowIOS *)winCocoa;
 
 /* Window controls. */
 - (void)registerWindowControls;
+- (void)updateFileAccessControls;
 - (void)handleCloseWindow;
 
 /* Blender event generation. */
@@ -626,6 +629,7 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   toolbar_enabled = true;
   toolbar = nil;
   close_window_button = nil;
+  file_access_controls = nil;
 }
 
 - (void)releaseGestureRecognizer:(UIGestureRecognizer *)recognizer fromView:(UIView *)view
@@ -643,6 +647,9 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
   UIView *input_view = window != nullptr ? window->getView() : nil;
   /* Resigning the text field synchronously calls its edit-end target. */
   onscreen_keyboard_active = false;
+
+  GHOST_IOSFileAccess_destroyControls(file_access_controls);
+  file_access_controls = nil;
 
   if (close_window_button != nil) {
     [close_window_button removeTarget:self
@@ -773,6 +780,22 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
     [close_window_button.trailingAnchor constraintEqualToAnchor:safe_area.trailingAnchor
                                                         constant:-8.0f],
   ]];
+
+  [self updateFileAccessControls];
+}
+
+- (void)updateFileAccessControls
+{
+  GHOST_IOSFileAccess_destroyControls(file_access_controls);
+  file_access_controls = nil;
+  if (window == nullptr || close_window_button == nil) {
+    return;
+  }
+
+  file_access_controls = GHOST_IOSFileAccess_createControls(window->getView(),
+                                                            window->rootWindow.rootViewController,
+                                                            close_window_button,
+                                                            window->getTitle().c_str());
 }
 
 - (void)handleCloseWindow
@@ -1167,6 +1190,9 @@ static bool modifierForKey(const GHOST_TKey key, GHOST_TModifierKey &modifier)
       (touch.view == close_window_button ||
        [touch.view isDescendantOfView:close_window_button]))
   {
+    return NO;
+  }
+  if (GHOST_IOSFileAccess_containsView(file_access_controls, touch.view)) {
     return NO;
   }
   return YES;

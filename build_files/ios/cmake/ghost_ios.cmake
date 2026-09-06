@@ -6,6 +6,8 @@ list(APPEND SRC
   intern/GHOST_ContextIOS.hh
   intern/GHOST_ContextIOS.mm
   intern/GHOST_EventTouch.hh
+  intern/GHOST_IOSFileAccess.hh
+  intern/GHOST_IOSFileAccess.mm
   intern/GHOST_IOSInputTuning.hh
   intern/GHOST_IOSVirtualPointer.hh
   intern/GHOST_IOSVirtualPointer.mm
